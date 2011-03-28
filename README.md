@@ -5,6 +5,7 @@ This program will automatically repair concurrency Java bugs using a genetic alg
 This program was developed using Python 3.2. This version should be used for best results due to compatibility.
 
 Two external tools are necessary as well:
+
 1. IBM's [ConTest](http://www.alphaworks.ibm.com/tech/contest?open&S_TACT=105AGX59&S_CMP=GR&ca=dgr-lnxw03awcontest "ConTest")
 2. [TXL](http://www.txl.ca/ndownload.html "TXL")
 

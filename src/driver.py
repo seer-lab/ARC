@@ -36,7 +36,7 @@ class driver():
         """
         self._sharedInfo = sharedInfo  
 
-    def beginApproach(self):
+    def begin_approach(self):
         """Starts the whole approach to automatically repair the program
         specified by the user.
 
@@ -47,24 +47,24 @@ class driver():
 
         # Initial ConTest run
         print ('\n~> Performing Initial Testing Runs...')
-        self.runConTest()
+        self.run_contest()
         print ('~> Done')
 
 
         # Perform annotation of the source code
         print ('\n~> Performing Source Code Annotation...')
-        self.annotateWithTXL()
+        self.annotate_with_TXL()
         print ('~> Done')
 
         count = 0
         # Keep on mutating the source code until a satisfied condition is met 
-        while (not self.isSatisfied(count)):
+        while (not self.is_satisfied(count)):
 
             count += 1
 
             print ('\n-----Beginning Generation' + repr(count) + '-----')
             self._sharedInfo.reset_deadlock_count()
-            self.runConTest() # TODO maybe run a set of test, oppose to single
+            self.run_contest() # TODO maybe run a set of test, oppose to single
 
             print ('~> Number of Deadlocked Runs: ' + repr(self._sharedInfo.get_deadlock_count()) + '/' + repr(self._sharedInfo.numOfRuns))
             print ('----Completed Generation ' + repr(count) + '-----')
@@ -73,14 +73,14 @@ class driver():
         print ('~> Number of Generations completed: ' + repr(count) + '/' + repr(self._sharedInfo.numOfGenerations))
         print ('~> Number of Test Runs in each Generation: ' + repr(self._sharedInfo.numOfRuns))
 
-    def annotateWithTXL(self):
+    def annotate_with_TXL(self):
         """TXL is used to annotate the source code of the targeted program with
         mutation annotations.
         """
         # TODO complete this method by calling TXL on the program for each mutation
         pass
 
-    def runConTest(self):
+    def run_contest(self):
         """ConTest is ran on the class files of the project so that they are
         instrumented according to the kingPropertyFile. The instrumented class
         files are then ran in individual testRunner (concurrently) to take
@@ -110,11 +110,11 @@ class driver():
             time.sleep(2)
             done = True
             for testRunner in allTestRuns:
-                if (testRunner.isAlive()):
+                if (testRunner.is_alive()):
                     done = False
 
 
-    def isSatisfied(self, currentGenerations):
+    def is_satisfied(self, currentGenerations):
         """Checks to see if the process is satisfied in regards to terminating
         conditions.
 

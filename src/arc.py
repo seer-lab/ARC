@@ -44,7 +44,7 @@ def main():
     groupRun.add_argument(
             '-m',
             action='store',
-            default=False,
+            default=None,
             dest='mainClass',
             help='Main class of the input to be automatically repaired')
     groupRun.add_argument(
@@ -97,8 +97,12 @@ def main():
     directoriesPass = None
     toolsPass = None
     try:
-        directoriesPass = checkDirectories()
-        toolsPass = checkTools()
+        if (options.mainClass == None):
+            raise Exception('ERROR MISSING', 'mainClass')
+
+        directoriesPass = check_directories()
+        toolsPass = check_tools()
+
     except Exception as message:
         print (message.args)
 
@@ -114,12 +118,12 @@ def main():
         sharedInfo.numOfGenerations = options.generations
 
         healingDriver = driver.driver(sharedInfo)
-        healingDriver.beginApproach()
+        healingDriver.begin_approach()
     else:
         # Exit; the program is not ready.
         sys.exit()
 
-def checkTools():
+def check_tools():
     """Check that the required tools are installed and present.
 
     Returns:
@@ -142,9 +146,9 @@ def checkTools():
 
     return True
 
-def checkDirectories():
+def check_directories():
     """Checks that the required directories are present.
-    
+
     Returns:
         A bool representing if the directories are present. True == present.
     """
