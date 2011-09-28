@@ -2,7 +2,7 @@
 This program will automatically repair concurrency Java bugs using a genetic algorithmic approach.
 
 #Pre-Requirements
-This program was developed using Python 3.2. This version should be used for best results due to compatibility.
+This program was developed using Python 2.7. This version should be used for best results due to compatibility.
 
 Two external tools are necessary as well:
 
