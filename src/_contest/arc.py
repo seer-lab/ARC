@@ -11,10 +11,10 @@ import driver
 import os
 import shared_info
 
-# Directories and files
-_PARENT_DIR = os.getcwd() + os.sep + os.pardir + os.sep
-_CONTEST_DIR = _PARENT_DIR + "lib" + os.sep + "ConTest" + os.sep
-_INPUT_DIR = _PARENT_DIR + "input" + os.sep 
+# Configuration variables
+_ROOT_DIR = os.getcwd() + os.sep + os.pardir + os.sep +  os.pardir + os.sep
+_CONTEST_DIR = _ROOT_DIR + "lib" + os.sep + "ConTest" + os.sep
+_INPUT_DIR = _ROOT_DIR + "input" + os.sep 
 _SOURCE_DIR = _INPUT_DIR + "source" + os.sep
 _CLASS_DIR = _INPUT_DIR + "class" + os.sep
 _KINGPROPERTY_FILE = _CONTEST_DIR + "KingProperties"
