@@ -15,9 +15,11 @@ import config
 
 def test_target():
   # Check that the target project can be executed and record the time taken
-  process = subprocess.Popen( ['java', '-cp', config._PROJECT_CLASSPATH, 
-                      config._PROJECT_TESTSUITE], stdout=subprocess.PIPE, 
-                      shell=False)
+  process = subprocess.Popen( ['java',
+                    '-Xmx{}m'.format(config._PROJECT_TEST_MB), '-cp',
+                    config._PROJECT_CLASSPATH, config._PROJECT_TESTSUITE],
+                    stdout=subprocess.PIPE, cwd=config._PROJECT_DIR,
+                    shell=False)
   output,error = process.communicate()
   return error
 
@@ -31,10 +33,10 @@ def main():
   # Test to make sure the directories and tools are present
   directoriesPass = None
   toolsPass = None
-  
+
   # Determine if the testsuite will execute correctly
   try:
-    if (test_target() != None):
+    if (test_target() is not None):
       raise Exception('ERROR', 'testsuite')
 
   except Exception as message:
