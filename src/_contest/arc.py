@@ -9,19 +9,51 @@ import subprocess
 import contester
 import os
 import timeit
+import tempfile
 
 sys.path.append("..")
 import config
 
-def test_target():
-  # Check that the target project can be executed and record the time taken
-  process = subprocess.Popen( ['java',
-                    '-Xmx{}m'.format(config._PROJECT_TEST_MB), '-cp',
-                    config._PROJECT_CLASSPATH, config._PROJECT_TESTSUITE],
-                    stdout=subprocess.PIPE, cwd=config._PROJECT_DIR,
-                    shell=False)
-  output,error = process.communicate()
-  return error
+def test_execution(runs):
+  tester = contester.Contester()
+
+  # Determine if the testsuite will execute correctly
+  print "[INFO] Check if testsuite runs with ConTest (will retry if needed)"
+  try:
+    for i in range(1, runs + 1):
+
+      # Testsuite with ConTest noise (to ensure timeout parameter is alright)
+      outFile = tempfile.SpooledTemporaryFile()
+      errFile = tempfile.SpooledTemporaryFile()
+      testSuite = subprocess.Popen( ['java', 
+                        '-Xmx{}m'.format(config._PROJECT_TEST_MB), '-cp',
+                        config._PROJECT_CLASSPATH, '-javaagent:' + 
+                        config._CONTEST_JAR, '-Dcontest.verbose=0',
+                        config._PROJECT_TESTSUITE], stdout=outFile, 
+                        stderr=errFile, cwd=config._PROJECT_DIR, shell=False)
+
+      tester.run_test(testSuite, outFile, errFile, i)
+    
+    print "[INFO] Testing Runs Results..."
+    print "[INFO] Successes ", tester.get_successes()
+    print "[INFO] Timeouts ", tester.get_timeouts()
+    print "[INFO] Dataraces ", tester.get_dataraces()
+    print "[INFO] Deadlock ", tester.get_deadlocks()
+    print "[INFO] Errors ", tester.get_errors()
+    
+    if (tester.get_errors() >= 1):
+      raise Exception('ERROR', 'testsuite')
+    elif (tester.get_timeouts() >= 1):
+      raise Exception('ERROR', 'config._CONTEST_TIMEOUT_SEC is too low')
+    elif (tester.get_successes() >= 1):
+      print "[INFO] Capable of a successful execution of the testsuite"
+    else:
+      raise Exception('ERROR', 'No successful runs, try again or fix code')
+      
+  except Exception as message:
+    print (message.args)
+    sys.exit()
+
 
 def main():
   """Main function that parses the user input and stores them appropriately.
@@ -30,33 +62,24 @@ def main():
   and the healing process begins.
   """
 
-  # Test to make sure the directories and tools are present
+  # Determine that the required tools and configurations are correct
   directoriesPass = None
   toolsPass = None
 
-  # Determine if the testsuite will execute correctly
-  try:
-    if (test_target() is not None):
-      raise Exception('ERROR', 'testsuite')
-
-  except Exception as message:
-    print (message.args)
-    sys.exit()
-
-  # Determine the average execution time for the test suite
-  print "[INFO] Running testsuite {} times".format(config._TESTSUITE_AVG)
-  timer = timeit.Timer("test_target()", "from arc import test_target")
-  config._CONTEST_TIMEOUT_SET = timer.timeit(config._TESTSUITE_AVG) \
-                                             / config._TESTSUITE_AVG
-  print "[INFO] Testsuite took {}s".format(config._CONTEST_TIMEOUT_SET)
-
-  # Determine that the required tools and configurations are correct
   try:
     directoriesPass = check_directories()
     toolsPass = check_tools()
   except Exception as message:
     print (message.args)
     sys.exit()
+
+  # Check if the testsuite can successfully execute with the set parameters
+  print "[INFO] Practice testsuite run {} times".format(config._TESTSUITE_AVG)
+  command = "test_execution({})".format(config._TESTSUITE_AVG)
+  timer = timeit.Timer(command, "from arc import test_execution")
+
+  averageTime = timer.timeit(1) / config._TESTSUITE_AVG
+  print "[INFO] Practice testsuite runs took {}s as an AVG".format(averageTime)
 
   if (directoriesPass and toolsPass):
     tester = contester.Contester()

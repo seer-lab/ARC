@@ -34,8 +34,9 @@ class Contester():
 
   _deadlocks = 0
   _timeouts = 0
-  _succsesses = 0
+  _successes = 0
   _dataraces = 0
+  _errors = 0
 
   def begin_contesting(self):
     """Starts the whole approach to automatically repair the program
@@ -45,82 +46,109 @@ class Contester():
     condition is met.
     """
 
-    # ConTest
-    print "[INFO] Performing Testing Runs..."
-    self.apply_contest()
+    print "[INFO] Performing {} Test Runs...".format(config._CONTEST_RUNS)
 
     # Run the ConTest command as many times as needed
     for i in range(1, config._CONTEST_RUNS + 1):
 
       # To ensure stdout doesn't overflow or .poll() deadlocks
       outFile = tempfile.SpooledTemporaryFile()
+      errFile = tempfile.SpooledTemporaryFile()
 
       # Start the test process
-      process = subprocess.Popen( ['java', 
+      process = subprocess.Popen( ['java',
                         '-Xmx{}m'.format(config._PROJECT_TEST_MB), '-cp',
-                        config._PROJECT_CLASSPATH, config._PROJECT_TESTSUITE,
-                        '-javaagent: ' + config._CONTEST_JAR,
-                        '-Dcontest.verbose=0'], stdout=outFile,
-                        cwd=config._PROJECT_DIR, shell=False)
-      remainingTime = config._CONTEST_TIMEOUT_SEC
+                        config._PROJECT_CLASSPATH, '-javaagent:' + 
+                        config._CONTEST_JAR, '-Dcontest.verbose=0',
+                        config._PROJECT_TESTSUITE], stdout=outFile, 
+                        stderr=errFile, cwd=config._PROJECT_DIR, shell=False)
+      self.run_test(process, outFile, errFile, i)
 
-      # Set a timeout for the running process
-      while process.poll() is None and remainingTime > 0:
-        time.sleep(0.1)
-        remainingTime -= 0.1
-
-        # If the process did not finish in time
-        if process.poll() is None and remainingTime <= 0:
-
-          # Send the Quit signal to get thread dump information from JVM
-          process.send_signal(3)
-
-          # Sleep for a second to let std finish, then send terminate command
-          time.sleep(1)
-          process.terminate()
-
-          # Acquire the stdout information
-          outFile.seek(0);
-          output = outFile.read()
-          outFile.close()
-
-          # Check if there is any deadlock using "Java-level deadlock:"
-          if (output.find(b"Java-level deadlock:") >= 0):
-            print "[INFO] Test {} - Deadlock Encountered".format(i)
-            self._deadlocks += 1
-          else:
-            print "[INFO] Test {} - Timeout Encountered".format(i)
-            self._timeouts += 1
-
-        # If the process finished in time
-        elif process.poll() is not None:
-
-          # Acquire the stdout information
-          outFile.seek(0);
-          output = outFile.read()
-          outFile.close()
-
-          # Check to see if any tests failed, and if so how many?
-          errors = re.search("There were (\d+) errors:", output)
-          if errors is not None:
-            print "[INFO] Test {} - Datarace Encountered ({} errors)".format(i, 
-                  errors.groups()[0])
-            self._dataraces += 1  
-          else:
-            print "[INFO] Test {} - Successful Execution".format(i)
-            self._succsesses += 1
-
-    print "[INFO] Testing Runs Results..."
-    print "[INFO] Succsesses ", self._succsesses
+    print "[INFO] Test Runs Results..."
+    print "[INFO] Successes ", self._successes
     print "[INFO] Timeouts ", self._timeouts
     print "[INFO] Dataraces ", self._dataraces
     print "[INFO] Deadlock ", self._deadlocks
+    print "[INFO] Errors ", self._errors
 
-  def apply_contest(self):
-    """ConTest is ran on the class files of the project so that they are
-    instrumented according to the kingPropertyFile. The instrumented class
-    files are then ran in individual testRunner (concurrently) to take
-    advantage of multiple CPUs. A thread pool is used to manage the test
-    runners.
-    """
-    pass
+  def run_test(self, process, outFile, errFile, i):
+
+    remainingTime = config._CONTEST_TIMEOUT_SEC
+
+    # Set a timeout for the running process
+    while process.poll() is None and remainingTime > 0:
+      time.sleep(0.1)
+      remainingTime -= 0.1
+
+      # If the process did not finish in time
+      if process.poll() is None and remainingTime <= 0:
+
+        # Send the Quit signal to get thread dump information from JVM
+        process.send_signal(3)
+
+        # Sleep for a second to let std finish, then send terminate command
+        time.sleep(1)
+        process.terminate()
+
+        # Acquire the stdout information
+        outFile.seek(0);
+        errFile.seek(0);
+        output = outFile.read()
+        error = errFile.read()
+        outFile.close()
+        errFile.close()
+
+        # Check if there is any deadlock using "Java-level deadlock:"
+        if (output.find(b"Java-level deadlock:") >= 0):
+          print "[INFO] Test {} - Deadlock Encountered".format(i)
+          self._deadlocks += 1
+        else:
+          print "[INFO] Test {} - Timeout Encountered".format(i)
+          self._timeouts += 1
+
+      # If the process finished in time
+      elif process.poll() is not None:
+
+        # Acquire the stdout information
+        outFile.seek(0);
+        errFile.seek(0);
+        output = outFile.read()
+        error = errFile.read()
+        outFile.close()
+        errFile.close()
+
+        # Check to see if the testsuite itself has an error
+        if (len(error) > 0):
+          print "[INFO] Test {} - Error in Execution".format(i)
+          self._errors += 1
+        else:          
+          # Check to see if any tests failed, and if so how many?
+          errors = re.search("There were (\d+) errors:", output)
+          if errors is not None:
+            print "[INFO] Test {} - Datarace Encountered ({} errors)".format(i,
+                  errors.groups()[0])
+            self._dataraces += 1
+          else:
+            print "[INFO] Test {} - Successful Execution".format(i)
+            self._successes += 1
+
+  def clear_results(self):
+    self._successes = 0
+    self._timeouts = 0
+    self._dataraces = 0
+    self._deadlocks = 0
+  
+  def get_successes(self):
+    return self._successes
+    
+  def get_timeouts(self):
+    return self._timeouts
+
+  def get_dataraces(self):
+    return self._dataraces
+
+  def get_deadlocks(self):
+    return self._deadlocks
+
+  def get_errors(self):
+    return self._errors
