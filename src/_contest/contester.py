@@ -1,154 +1,130 @@
-"""The driver class that runs all the tests and manages the algorithm.
+""" Script to initialize ARC using user parameters and start the repairing.
 
-The running of ConTest and TXL occur from within this class, along with the 
-choice of the next mutation.
-
-The approach used in the driver is as follows:
-  - ConTest is ran to acquire a list of shared variables
-  - TXL is ran to annotate the source code with potential mutations
-  - Based on test results and current state, apply next appropriate mutation
-  - Test and score the new mutated program using ConTest
-  - Evaluate scores and decide to keep or drop mutant
-  - Test terminating condition
-  - Repeat from third step
+The user inputed parameters are taken into account, and used to initialize the
+shared_info singleton object. The process first checks to ensure that the all
+the tools and directories are present, only then will the repairing proceed.
 """
 import sys
-import time
 import subprocess
+import tester
+import os
+import timeit
 import tempfile
-import re
 
 sys.path.append("..")
 import config
 
-class Contester():
+def test_execution(runs):
+  testRunner = tester.Tester()
 
-  """Class that drives the automatic repairing of concurrency bugs. 
+  # Determine if the testsuite will execute correctly
+  print "[INFO] Check if testsuite runs with ConTest (will retry if needed)"
+  try:
+    for i in range(1, runs + 1):
 
-  ConTest, TXL and the mutation aspect are all used here to find the best 
-  solution to the inputed program.
-
-  Attributes:
-    _sharedInfo: The singleton object that is shared amongst all classes
-  """
-
-  _deadlocks = 0
-  _timeouts = 0
-  _successes = 0
-  _dataraces = 0
-  _errors = 0
-
-  def begin_contesting(self):
-    """Starts the whole approach to automatically repair the program
-    specified by the user.
-
-    The approach is automated and will only stop when a satisfaction
-    condition is met.
-    """
-
-    print "[INFO] Performing {} Test Runs...".format(config._CONTEST_RUNS)
-
-    # Run the ConTest command as many times as needed
-    for i in range(1, config._CONTEST_RUNS + 1):
-
-      # To ensure stdout doesn't overflow or .poll() deadlocks
+      # Testsuite with ConTest noise (to ensure timeout parameter is alright)
       outFile = tempfile.SpooledTemporaryFile()
       errFile = tempfile.SpooledTemporaryFile()
-
-      # Start the test process
-      process = subprocess.Popen( ['java',
+      testSuite = subprocess.Popen( ['java',
                         '-Xmx{}m'.format(config._PROJECT_TEST_MB), '-cp',
-                        config._PROJECT_CLASSPATH, '-javaagent:' + 
+                        config._PROJECT_CLASSPATH, '-javaagent:' +
                         config._CONTEST_JAR, '-Dcontest.verbose=0',
-                        config._PROJECT_TESTSUITE], stdout=outFile, 
+                        config._PROJECT_TESTSUITE], stdout=outFile,
                         stderr=errFile, cwd=config._PROJECT_DIR, shell=False)
-      self.run_test(process, outFile, errFile, i)
 
-    print "[INFO] Test Runs Results..."
-    print "[INFO] Successes ", self._successes
-    print "[INFO] Timeouts ", self._timeouts
-    print "[INFO] Dataraces ", self._dataraces
-    print "[INFO] Deadlock ", self._deadlocks
-    print "[INFO] Errors ", self._errors
-
-  def run_test(self, process, outFile, errFile, i):
-
-    remainingTime = config._CONTEST_TIMEOUT_SEC
-
-    # Set a timeout for the running process
-    while process.poll() is None and remainingTime > 0:
-      time.sleep(0.1)
-      remainingTime -= 0.1
-
-      # If the process did not finish in time
-      if process.poll() is None and remainingTime <= 0:
-
-        # Send the Quit signal to get thread dump information from JVM
-        process.send_signal(3)
-
-        # Sleep for a second to let std finish, then send terminate command
-        time.sleep(1)
-        process.terminate()
-
-        # Acquire the stdout information
-        outFile.seek(0);
-        errFile.seek(0);
-        output = outFile.read()
-        error = errFile.read()
-        outFile.close()
-        errFile.close()
-
-        # Check if there is any deadlock using "Java-level deadlock:"
-        if (output.find(b"Java-level deadlock:") >= 0):
-          print "[INFO] Test {} - Deadlock Encountered".format(i)
-          self._deadlocks += 1
-        else:
-          print "[INFO] Test {} - Timeout Encountered".format(i)
-          self._timeouts += 1
-
-      # If the process finished in time
-      elif process.poll() is not None:
-
-        # Acquire the stdout information
-        outFile.seek(0);
-        errFile.seek(0);
-        output = outFile.read()
-        error = errFile.read()
-        outFile.close()
-        errFile.close()
-
-        # Check to see if the testsuite itself has an error
-        if (len(error) > 0):
-          print "[INFO] Test {} - Error in Execution".format(i)
-          self._errors += 1
-        else:          
-          # Check to see if any tests failed, and if so how many?
-          errors = re.search("There were (\d+) errors:", output)
-          if errors is not None:
-            print "[INFO] Test {} - Datarace Encountered ({} errors)".format(i,
-                  errors.groups()[0])
-            self._dataraces += 1
-          else:
-            print "[INFO] Test {} - Successful Execution".format(i)
-            self._successes += 1
-
-  def clear_results(self):
-    self._successes = 0
-    self._timeouts = 0
-    self._dataraces = 0
-    self._deadlocks = 0
-  
-  def get_successes(self):
-    return self._successes
+      testRunner.run_test(testSuite, outFile, errFile, i)
     
-  def get_timeouts(self):
-    return self._timeouts
+    print "[INFO] Testing Runs Results..."
+    print "[INFO] Successes ", testRunner.get_successes()
+    print "[INFO] Timeouts ", testRunner.get_timeouts()
+    print "[INFO] Dataraces ", testRunner.get_dataraces()
+    print "[INFO] Deadlock ", testRunner.get_deadlocks()
+    print "[INFO] Errors ", testRunner.get_errors()
+    
+    if (testRunner.get_errors() >= 1):
+      raise Exception('ERROR', 'testsuite')
+    elif (testRunner.get_timeouts() >= 1):
+      raise Exception('ERROR', 'config._CONTEST_TIMEOUT_SEC is too low')
+    elif (testRunner.get_successes() >= 1):
+      print "[INFO] Capable of a successful execution of the testsuite"
+    else:
+      raise Exception('ERROR', 'No successful runs, try again or fix code')
+      
+  except Exception as message:
+    print (message.args)
+    sys.exit()
 
-  def get_dataraces(self):
-    return self._dataraces
 
-  def get_deadlocks(self):
-    return self._deadlocks
+def setup():
+  """Main function that parses the user input and stores them appropriately.
+  Will also check to make sure the directories and tools are present. After
+  these are checked, the shared_info object is created using the parameters
+  and the healing process begins.
+  """
 
-  def get_errors(self):
-    return self._errors
+  # Determine that the required tools and configurations are correct
+  try:
+    check_directories()
+    check_tools()
+  except Exception as message:
+    print (message.args)
+    sys.exit()
+
+  # Check if the testsuite can successfully execute with the set parameters
+  print "[INFO] Practice testsuite run {} times".format(config._TESTSUITE_AVG)
+  cmd = "test_execution({})".format(config._TESTSUITE_AVG)
+  timer = timeit.Timer(cmd, "from _contest.contester import test_execution")
+
+  averageTime = timer.timeit(1) / config._TESTSUITE_AVG
+  print "[INFO] Practice testsuite runs took {}s as an AVG".format(averageTime)
+
+def run_contest():
+    testRunner = tester.Tester()
+    testRunner.begin_testing()
+
+def check_tools():
+  """Check that the required tools are installed and present.
+
+  Returns:
+    A bool representing if the tools are present. True == present.
+  """
+
+  print "[INFO] Checking if txl is present"
+  try:
+    subprocess.check_call(["which", "txl"])
+  except subprocess.CalledProcessError:
+    raise Exception('ERROR MISSING TOOL' , 'txl')
+
+  print "[INFO] Checking if ConTest is present"
+  if (not os.path.exists(config._CONTEST_JAR)):
+    raise Exception('ERROR MISSING TOOL' , 'ConTest')
+
+  print "[INFO] Checking if ConTest's KingProperties is present"
+  if (not os.path.exists(config._CONTEST_KINGPROPERTY)):
+    raise Exception('ERROR MISSING CONFIGURATION' , 'KingProperties')
+
+  print "[INFO] All Pass"
+  return True
+
+def check_directories():
+  """Checks that the required directories are present.
+
+  Returns:
+    A bool representing if the directories are present. True == present.
+  """
+
+  if(not os.path.isdir(config._PROJECT_SRC_DIR)):
+    raise Exception('ERROR MISSING DIRECTORY', 'source')
+
+  if(not os.path.isdir(config._PROJECT_TEST_DIR)):
+    raise Exception('ERROR MISSING DIRECTORY', 'test')
+
+  if(not os.path.isdir(config._PROJECT_CLASS_DIR)):
+    raise Exception('ERROR MISSING DIRECTORY', 'class')
+
+  return True
+
+# If this module is ran as main
+if __name__ == '__main__':
+  setup()
+  run_contest()
