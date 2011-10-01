@@ -1,16 +1,7 @@
-"""The driver class that runs all the tests and manages the algorithm.
+"""This module is responsible for running and recording test results
 
-The running of ConTest and TXL occur from within this class, along with the 
-choice of the next mutation.
-
-The approach used in the driver is as follows:
-  - ConTest is ran to acquire a list of shared variables
-  - TXL is ran to annotate the source code with potential mutations
-  - Based on test results and current state, apply next appropriate mutation
-  - Test and score the new mutated program using ConTest
-  - Evaluate scores and decide to keep or drop mutant
-  - Test terminating condition
-  - Repeat from third step
+The Tester class will run a testsuite using ConTest to introduce random thread
+sleep() and yeild() into the executing testsuite.
 """
 import sys
 import time
@@ -18,49 +9,49 @@ import subprocess
 import tempfile
 import re
 
-sys.path.append("..")
+sys.path.append("..")  # To allow importing parent directory module
 import config
 
+
 class Tester():
+  """Class that drives the process of running the testsuite a number of times.
 
-  """Class that drives the automatic repairing of concurrency bugs. 
-
-  ConTest, TXL and the mutation aspect are all used here to find the best 
-  solution to the inputed program.
+  ConTest is used in conjunction with the test executions in an attempt to
+  explore more of the thread interleavings. Due to the non-deterministic nature
+  of concurrent programs, the testsuite must be ran many times to find
+  concurrency bugs. This class will perform the testing and record the result
+  of the test.
 
   Attributes:
-    _sharedInfo: The singleton object that is shared amongst all classes
+    _successes (int): number of test executions that resulted in a success
+    _timeouts (int): number of test executions that resulted in a timeout
+    _dataraces (int): number of test executions that resulted in a datarace
+    _deadlocks (int): number of test executions that resulted in a deadlock
+    _errors (int): number of test executions that resulted in an error
   """
 
-  _deadlocks = 0
-  _timeouts = 0
   _successes = 0
+  _timeouts = 0
   _dataraces = 0
+  _deadlocks = 0
   _errors = 0
 
   def begin_testing(self):
-    """Starts the whole approach to automatically repair the program
-    specified by the user.
-
-    The approach is automated and will only stop when a satisfaction
-    condition is met.
-    """
+    """Begins the testing phase by creating the test processes."""
 
     print "[INFO] Performing {} Test Runs...".format(config._CONTEST_RUNS)
-
-    # Run the ConTest command as many times as needed
     for i in range(1, config._CONTEST_RUNS + 1):
 
-      # To ensure stdout doesn't overflow or .poll() deadlocks
+      # To ensure stdout doesn't overflow because .poll() can deadlock
       outFile = tempfile.SpooledTemporaryFile()
       errFile = tempfile.SpooledTemporaryFile()
 
-      # Start the test process
-      process = subprocess.Popen( ['java',
+      # Start a test process
+      process = subprocess.Popen(['java',
                         '-Xmx{}m'.format(config._PROJECT_TEST_MB), '-cp',
-                        config._PROJECT_CLASSPATH, '-javaagent:' + 
+                        config._PROJECT_CLASSPATH, '-javaagent:' +
                         config._CONTEST_JAR, '-Dcontest.verbose=0',
-                        config._PROJECT_TESTSUITE], stdout=outFile, 
+                        config._PROJECT_TESTSUITE], stdout=outFile,
                         stderr=errFile, cwd=config._PROJECT_DIR, shell=False)
       self.run_test(process, outFile, errFile, i)
 
@@ -72,10 +63,26 @@ class Tester():
     print "[INFO] Errors ", self._errors
 
   def run_test(self, process, outFile, errFile, i):
+    """Runs a single test process.
 
-    remainingTime = config._CONTEST_TIMEOUT_SEC
+    The test process is ran with a timeout mechanism in place to determine if
+    the process is timing out or just deadlocked. The results of a test is
+    either:
+     * Success - the testsuite had no errors
+     * Timeout - the testsuite  never finished in time
+     * Datarace - the testsuite had at least one failing test case
+     * Deadlock - the testsuite timed out, and the JVM dump showed a deadlock
+     * Error - the testsuite was unable to run correctly
+
+    Args:
+      process (Popen): testsuite execution process
+      outFile (SpooledTemporaryFile): temporary file to hold stdout output
+      errFile (SpooledTemporaryFile): temporary file to hold stderr output
+      i (int): current test execution number
+    """
 
     # Set a timeout for the running process
+    remainingTime = config._CONTEST_TIMEOUT_SEC
     while process.poll() is None and remainingTime > 0:
       time.sleep(0.1)
       remainingTime -= 0.1
@@ -91,8 +98,8 @@ class Tester():
         process.terminate()
 
         # Acquire the stdout information
-        outFile.seek(0);
-        errFile.seek(0);
+        outFile.seek(0)
+        errFile.seek(0)
         output = outFile.read()
         error = errFile.read()
         outFile.close()
@@ -110,8 +117,8 @@ class Tester():
       elif process.poll() is not None:
 
         # Acquire the stdout information
-        outFile.seek(0);
-        errFile.seek(0);
+        outFile.seek(0)
+        errFile.seek(0)
         output = outFile.read()
         error = errFile.read()
         outFile.close()
@@ -121,7 +128,7 @@ class Tester():
         if (len(error) > 0):
           print "[INFO] Test {} - Error in Execution".format(i)
           self._errors += 1
-        else:          
+        else:
           # Check to see if any tests failed, and if so how many?
           errors = re.search("There were (\d+) errors:", output)
           if errors is not None:
@@ -133,22 +140,51 @@ class Tester():
             self._successes += 1
 
   def clear_results(self):
+    """Clears the results of the test runs thus far."""
+
     self._successes = 0
     self._timeouts = 0
     self._dataraces = 0
     self._deadlocks = 0
-  
+    self._errors = 0
+
   def get_successes(self):
+    """Returns the number of successful test runs.
+
+    Returns:
+      int: the number of successful test runs
+    """
+
     return self._successes
-    
+
   def get_timeouts(self):
+    """Returns the number of test runs that timed out.
+
+    Returns:
+      int: the number of timeout test runs
+    """
     return self._timeouts
 
   def get_dataraces(self):
+    """Returns the number of test runs that had a datarace.
+
+    Returns:
+      int: the number of datarace test runs
+    """
     return self._dataraces
 
   def get_deadlocks(self):
+    """Returns the number of test runs that had a deadlock.
+
+    Returns:
+      int: the number of deadlock test runs
+    """
     return self._deadlocks
 
   def get_errors(self):
+    """Returns the number of test runs that had an error.
+
+    Returns:
+      int: the number of error test runs
+    """
     return self._errors
