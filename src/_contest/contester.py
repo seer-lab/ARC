@@ -1,8 +1,8 @@
-""" Script to initialize ARC using user parameters and start the repairing.
+"""This module that the ConTest testing can occur then starts the approach.
 
-The user inputed parameters are taken into account, and used to initialize the
-shared_info singleton object. The process first checks to ensure that the all
-the tools and directories are present, only then will the repairing proceed.
+The setup() method should be called first to ensure that the testsuite and
+ConTest are setup correctly. The run_contest() method will start the testing
+approach using tester.py.
 """
 import sys
 import subprocess
@@ -11,13 +11,21 @@ import os
 import timeit
 import tempfile
 
-sys.path.append("..")
+sys.path.append("..")  # To allow importing parent directory module
 import config
 
-def test_execution(runs):
-  testRunner = tester.Tester()
 
-  # Determine if the testsuite will execute correctly
+def test_execution(runs):
+  """Test the testsuite to ensure it can run successfully at least once.
+
+  The testsuite will run through the tester.py test process to ensure that the
+  testsuite can actually run successfully.
+
+  Args:
+    runs (int): the number of runs the testsuite will be tested for
+  """
+
+  testRunner = tester.Tester()
   print "[INFO] Check if testsuite runs with ConTest (will retry if needed)"
   try:
     for i in range(1, runs + 1):
@@ -25,7 +33,7 @@ def test_execution(runs):
       # Testsuite with ConTest noise (to ensure timeout parameter is alright)
       outFile = tempfile.SpooledTemporaryFile()
       errFile = tempfile.SpooledTemporaryFile()
-      testSuite = subprocess.Popen( ['java',
+      testSuite = subprocess.Popen(['java',
                         '-Xmx{}m'.format(config._PROJECT_TEST_MB), '-cp',
                         config._PROJECT_CLASSPATH, '-javaagent:' +
                         config._CONTEST_JAR, '-Dcontest.verbose=0',
@@ -33,14 +41,14 @@ def test_execution(runs):
                         stderr=errFile, cwd=config._PROJECT_DIR, shell=False)
 
       testRunner.run_test(testSuite, outFile, errFile, i)
-    
+
     print "[INFO] Testing Runs Results..."
     print "[INFO] Successes ", testRunner.get_successes()
     print "[INFO] Timeouts ", testRunner.get_timeouts()
     print "[INFO] Dataraces ", testRunner.get_dataraces()
     print "[INFO] Deadlock ", testRunner.get_deadlocks()
     print "[INFO] Errors ", testRunner.get_errors()
-    
+
     if (testRunner.get_errors() >= 1):
       raise Exception('ERROR', 'testsuite')
     elif (testRunner.get_timeouts() >= 1):
@@ -49,23 +57,18 @@ def test_execution(runs):
       print "[INFO] Capable of a successful execution of the testsuite"
     else:
       raise Exception('ERROR', 'No successful runs, try again or fix code')
-      
+
   except Exception as message:
     print (message.args)
     sys.exit()
 
 
 def setup():
-  """Main function that parses the user input and stores them appropriately.
-  Will also check to make sure the directories and tools are present. After
-  these are checked, the shared_info object is created using the parameters
-  and the healing process begins.
-  """
+  """Check if the directories and tools are present for testing process."""
 
-  # Determine that the required tools and configurations are correct
   try:
-    check_directories()
-    check_tools()
+    _check_directories()
+    _check_tools()
   except Exception as message:
     print (message.args)
     sys.exit()
@@ -78,39 +81,43 @@ def setup():
   averageTime = timer.timeit(1) / config._TESTSUITE_AVG
   print "[INFO] Practice testsuite runs took {}s as an AVG".format(averageTime)
 
-def run_contest():
-    testRunner = tester.Tester()
-    testRunner.begin_testing()
 
-def check_tools():
+def run_contest():
+  """Run the testsuite with ConTest using the approach in tester.py."""
+  testRunner = tester.Tester()
+  testRunner.begin_testing()
+
+
+def _check_tools():
   """Check that the required tools are installed and present.
 
   Returns:
-    A bool representing if the tools are present. True == present.
+    bool: if the tools are present, then True
   """
 
   print "[INFO] Checking if txl is present"
   try:
     subprocess.check_call(["which", "txl"])
   except subprocess.CalledProcessError:
-    raise Exception('ERROR MISSING TOOL' , 'txl')
+    raise Exception('ERROR MISSING TOOL', 'txl')
 
   print "[INFO] Checking if ConTest is present"
   if (not os.path.exists(config._CONTEST_JAR)):
-    raise Exception('ERROR MISSING TOOL' , 'ConTest')
+    raise Exception('ERROR MISSING TOOL', 'ConTest')
 
   print "[INFO] Checking if ConTest's KingProperties is present"
   if (not os.path.exists(config._CONTEST_KINGPROPERTY)):
-    raise Exception('ERROR MISSING CONFIGURATION' , 'KingProperties')
+    raise Exception('ERROR MISSING CONFIGURATION', 'KingProperties')
 
   print "[INFO] All Pass"
   return True
 
-def check_directories():
+
+def _check_directories():
   """Checks that the required directories are present.
 
   Returns:
-    A bool representing if the directories are present. True == present.
+    bool: if the directories are present. then True
   """
 
   if(not os.path.isdir(config._PROJECT_SRC_DIR)):
