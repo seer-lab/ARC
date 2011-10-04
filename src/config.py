@@ -56,3 +56,12 @@ _MUTATIONS_FILE = {'ASAS': _ROOT_DIR + "src/_txl/ASAS.Txl",
                    'SHSB': _ROOT_DIR + "src/_txl/SHSB.Txl"}
 
 # Pyevolve variables
+_PYEVOLVE_SEED = 0  # Use 0 if a random seed is desired
+_PYEVOLVE_FREQ_UPDATE = 10
+_PYEVOLVE_GENERATIONS = 100
+_PYEVOLVE_POPULATION = 80
+_PYEVOLVE_ELITISM = 0
+_PYEVOLVE_EXECUTION_ID = "ARC"  # A string ID to represent the run in the DB
+_PYEVOLVE_SQLITE = False  # Enables run statistics to be stored in Pyevolve's DB
+_PYEVOLVE_VPYTHON = False  # Enables real-time statistics
+_PYEVOLVE_VPYTHON_FREQ = 1  # VPython's real-time update frequency
