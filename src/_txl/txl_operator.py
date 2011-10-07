@@ -1,14 +1,12 @@
 """Run TXL to create the mutant programs.  Count the number of instances of
 each and return the count in a list.
 """
-
-#import sys
+import sys
 import subprocess
 import os
 import os.path
-#import timeit
-#import tempfile
 
+sys.path.append("..")  # To allow importing parent directory module
 import config
 
 # Input: 1, 17, DoSomething.java
