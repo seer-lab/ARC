@@ -5,6 +5,7 @@ A new genome is used along with ConTest to evolve concurrent software into a
 version that has a better functional and non-functional fitness.
 """
 
+from __future__ import division
 from pyevolve import GSimpleGA
 from pyevolve import DBAdapters
 from pyevolve import Consts
@@ -14,8 +15,9 @@ from G2DVariableBinaryString import G2DVariableBinaryString
 
 sys.path.append("..")  # To allow importing parent directory module
 import config
+from _contest import tester
 
-
+id = 0
 def evaluation(genome):
   """Perform the actual evaluation of said individual using ConTest testing.
 
@@ -23,18 +25,43 @@ def evaluation(genome):
   """
 
   fitness = 0.0
-  # TODO ConTest testing and fitness function
+  print "Evaluating individual {}".format(genome.id)
+
+  # ConTest testing
+  contest = tester.Tester()
+  contest.begin_testing()
+
+  success_rate = contest.get_successes() / config._CONTEST_RUNS
+  timeout_rate = contest.get_timeouts() / config._CONTEST_RUNS
+  datarace_rate = contest.get_dataraces() / config._CONTEST_RUNS
+  deadlock_rate = contest.get_deadlocks() / config._CONTEST_RUNS
+  error_rate = contest.get_errors() / config._CONTEST_RUNS
+
   # TODO Functional fitness
   # TODO Non-Functional fitness
+
+  # Store achieve rates into genome
+  genome.lastSuccessRate = success_rate
+  genome.lastTimeoutRate = timeout_rate
+  genome.lastDataraceRate = datarace_rate
+  genome.lastDeadlockRate = deadlock_rate
+  genome.lastErrorRate = error_rate
+
+  contest.clear_results()
+  
   return fitness
 
 
 def G2DVariableBinaryStringInitializator(genome, **args):
   """An initializer for the 2D variable binary string genome."""
 
-  genome.repopulateGenome()
-  print genome
+  # Keep track of the unique id for this specific genome
+  global id
+  id += 1
+  genome.id = id
 
+  # Perform the population
+  genome.repopulateGenome()
 
 def G2DVariableBinaryStringSingleMutation(genome, **args):
   """A mutator for the 2D variable binary string genome using single mutation.
@@ -48,6 +75,8 @@ def G2DVariableBinaryStringSingleMutation(genome, **args):
 
   # Pick a mutation operator to apply
   op = randint(0, genome.height - 1)  # TODO use last execution's feedback
+  genome.lastOperator = randint(0, 100)
+  genome.appliedOperators = randint(0, 100)
 
   # Flip a random bit for the selected mutation operator
   if len(genome.genomeString[op]) == 0:

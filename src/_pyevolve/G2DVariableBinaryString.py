@@ -19,6 +19,14 @@ class G2DVariableBinaryString(GenomeBase.GenomeBase):
    Attributes:
     height (int): number of mutation operators used, also the number of rows
     genomeString ([int][int]): actual 2D binary string representation
+    id (int): a unique id for this individual
+    lastOperator (string): the last used operator for this individual
+    appliedOperators ([string]): a list of applied operators to this individual
+    lastSuccessRate (double): the last individual had what rate of successes
+    lastTimeoutRate (double): the last individual had what rate of timeouts
+    lastDataraceRate (double): the last individual had what rate of dataraces
+    lastDeadlockRate (double): the last individual had what rate of deadlocks
+    lastErrorRate (double): the last individual had what rate of errors
    """
 
    def __init__(self, height):
@@ -30,6 +38,16 @@ class G2DVariableBinaryString(GenomeBase.GenomeBase):
 
       # The number of mutation operators in use
       self.height = height
+
+      # Additional information that is tracked
+      self.id = None
+      self.lastOperator = None
+      self.appliedOperators = None
+      self.lastSuccessRate = None
+      self.lastTimeoutRate = None
+      self.lastDataraceRate = None
+      self.lastDeadlockRate = None
+      self.lastErrorRate = None
 
       # Repopulate genome with new possible mutation operator locations
       self.repopulateGenome()
@@ -59,16 +77,23 @@ class G2DVariableBinaryString(GenomeBase.GenomeBase):
       """Return a string representation of this genome """
 
       ret = GenomeBase.GenomeBase.__repr__(self)
-      ret += "- G2DVariableBinaryString\n"
-      ret += "    Genome:\n"
+      ret += " -----Genome-----\n"
       i = 0
       for line in self.genomeString:
          i += 1
-         ret += "      Op" + repr(i) + ": "
+         ret += " Op" + repr(i) + ": "
          for item in line:
-            ret += "[%s] " % (item)
+            ret += "[{}]".format(item)
          ret += "\n"
       ret += "\n"
+      ret += " Id: {}\n".format(self.id)
+      ret += " Last Operator: {}\n".format(self.lastOperator)
+      ret += " Applied Operators: {}\n".format(self.appliedOperators)
+      ret += " Last Success Rate: {}\n".format(self.lastSuccessRate)
+      ret += " Last Timeout Rate: {}\n".format(self.lastTimeoutRate)
+      ret += " Last Datarace Rate: {}\n".format(self.lastDataraceRate)
+      ret += " Last Deadlock Rate: {}\n".format(self.lastDeadlockRate)
+      ret += " Last Error Rate: {}\n".format(self.lastErrorRate)
       return ret
 
    def copy(self, genome):
@@ -76,6 +101,14 @@ class G2DVariableBinaryString(GenomeBase.GenomeBase):
 
       GenomeBase.GenomeBase.copy(self, genome)
       genome.height = self.height
+      genome.id = self.id
+      genome.lastOperator = self.lastOperator
+      genome.appliedOperators = self.appliedOperators
+      genome.lastSuccessRate = self.lastSuccessRate
+      genome.lastTimeoutRate = self.lastTimeoutRate
+      genome.lastDataraceRate = self.lastDataraceRate
+      genome.lastDeadlockRate = self.lastDeadlockRate
+      genome.lastErrorRate = self.lastErrorRate
       for i in xrange(self.height):
          genome.genomeString[i] = self.genomeString[i][:]
 
@@ -84,4 +117,15 @@ class G2DVariableBinaryString(GenomeBase.GenomeBase):
 
       newcopy = G2DVariableBinaryString(self.height)
       self.copy(newcopy)
+
+      # Not sure if it is needed
+      newcopy.id = self.id
+      newcopy.lastOperator = self.lastOperator
+      newcopy.appliedOperators = self.appliedOperators
+      newcopy.lastSuccessRate = self.lastSuccessRate
+      newcopy.lastTimeoutRate = self.lastTimeoutRate
+      newcopy.lastDataraceRate = self.lastDataraceRate
+      newcopy.lastDeadlockRate = self.lastDeadlockRate
+      newcopy.lastErrorRate = self.lastErrorRate
+      
       return newcopy
