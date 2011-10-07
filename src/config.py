@@ -5,7 +5,7 @@ variables that are set in this file and are used all throughout ARC.
 """
 
 # System variables
-_ROOT_DIR = "/home/jalbert/workspace/arc/"
+_ROOT_DIR = "/users/kelk/workspace/arc/"
 _MAX_MEMORY_MB = 2000
 _MAX_CORES = 2
 

@@ -6,6 +6,7 @@ import subprocess
 import os
 import os.path
 import tempfile
+import time
 
 sys.path.append("..")  # To allow importing parent directory module
 import config
@@ -93,14 +94,20 @@ def count_mutants(generation, memberNum, fileName, txlOpName):
   if not os.path.exists(mutantDir):
     return -1
 
+  numDirs = 0
+
   # Number of subdirectories
-  #number = 0
-  #number = len(os.walk(mutantDir)[1])
-  #return number
+  for aFile in os.listdir(mutantDir):
+    fullPath = os.path.join(mutantDir, aFile)
+    try:
+      if os.path.isdir(fullPath):
+        numDirs = numDirs + 1
+        # If this sleep isn't here, the number of directories is under-counted
+        time.sleep(0.1)
+    except Exception, e:
+      print e
 
-  root, dirs, files = os.walk(mutantDir)
-  return len(dirs)
-
+  return numDirs
 
 # Input: 1, 17, DoSomething.java
 # Output: List of numer of mutations by type, eg:  [5, 3, 7, ...]

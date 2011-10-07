@@ -114,7 +114,7 @@ function main
 	% initialize and export the name of the current mutant which
 	% will be used for folder name generation
 	construct MutantOpName [stringlit]
-		"RSAS"
+		"RSAV"
 	export MutantOpName
 
 	replace [program] 
@@ -185,7 +185,7 @@ function doSynchronizedDelMutation
 
 	% create mutant comment to appear in source
 	construct MutantString [stringlit]
-		"RSAS (Removed Sync Around Sync)"
+		"RSAV (Removed Sync Around Variable)"
 
 	by
 		% Replace with empty syncronized statement

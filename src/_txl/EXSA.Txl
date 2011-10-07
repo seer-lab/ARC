@@ -104,7 +104,7 @@ function main
 	% initialize and export the name of the current mutant while 
 	% will be used for folder name generation
 	construct MutantOpName [stringlit]
-		"EXCR"
+		"EXSA"
 	export MutantOpName
 
 	replace [program] 
@@ -164,7 +164,7 @@ function doExpandCriticalRegion
 
 	% create mutant comment to appear in source
 	construct MutantString [stringlit]
-		"EXCR (Expand Critical Region)"
+		"EXSA (Expand Sync After)"
 
 	by
 		'MUTATED 
