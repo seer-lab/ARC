@@ -5,16 +5,16 @@ variables that are set in this file and are used all throughout ARC.
 """
 
 # System variables
-_ROOT_DIR = "/users/kelk/workspace/arc/"
+_ROOT_DIR = "/home/jalbert/workspace/arc/"
 _MAX_MEMORY_MB = 2000
 _MAX_CORES = 2
+_TMP_DIR = _ROOT_DIR + "tmp/"
 
 # Target project variables
 _PROJECT_DIR = _ROOT_DIR + "input/"
 _PROJECT_SRC_DIR = _PROJECT_DIR + "source/"
 _PROJECT_TEST_DIR = _PROJECT_DIR + "source/"
 _PROJECT_CLASS_DIR = _PROJECT_DIR + "class/"
-_PROJECT_TEMP_DIR = _PROJECT_DIR + "temp/"
 _PROJECT_PREFIX = ""
 _PROJECT_TESTSUITE = "Deadlock2"
 _PROJECT_CLASSPATH = _PROJECT_CLASS_DIR

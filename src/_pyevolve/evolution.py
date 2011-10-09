@@ -17,7 +17,6 @@ sys.path.append("..")  # To allow importing parent directory module
 import config
 from _contest import tester
 
-id = 0
 def evaluation(genome):
   """Perform the actual evaluation of said individual using ConTest testing.
 
@@ -25,7 +24,9 @@ def evaluation(genome):
   """
 
   fitness = 0.0
-  print "Evaluating individual {}".format(genome.id)
+
+  print "Evaluating individual {} on generation {}".format(genome.id, 
+                                                           genome.generation)
 
   # ConTest testing
   contest = tester.Tester()
@@ -48,20 +49,16 @@ def evaluation(genome):
   genome.lastErrorRate = error_rate
 
   contest.clear_results()
-  
-  return fitness
+
+  return success_rate
 
 
 def G2DVariableBinaryStringInitializator(genome, **args):
   """An initializer for the 2D variable binary string genome."""
 
-  # Keep track of the unique id for this specific genome
-  global id
-  id += 1
-  genome.id = id
-
   # Perform the population
   genome.repopulateGenome()
+
 
 def G2DVariableBinaryStringSingleMutation(genome, **args):
   """A mutator for the 2D variable binary string genome using single mutation.
@@ -84,6 +81,8 @@ def G2DVariableBinaryStringSingleMutation(genome, **args):
   else:
     genome.genomeString[op][randint(0, len(genome.genomeString[op]) - 1)] = 1
 
+  # TODO Apply TXL mutation
+
   return 1
 
 
@@ -100,7 +99,13 @@ def start():
   Consts.CDefGAPopulationSize = config._PYEVOLVE_POPULATION
   Consts.CDefGAElitismReplacement = config._PYEVOLVE_ELITISM
 
-  genome = G2DVariableBinaryString(3)  # TODO Get number of mutation operators
+  # The number of enabled mutation operators
+  mutationOperators = 0
+  for operator in config._MUTATIONS_ENABLE:
+    if config._MUTATIONS_ENABLE[operator]:
+      mutationOperators += 1
+
+  genome = G2DVariableBinaryString(mutationOperators)
   genome.evaluator.set(evaluation)
   genome.initializator.set(G2DVariableBinaryStringInitializator)
   genome.mutator.set(G2DVariableBinaryStringSingleMutation)
