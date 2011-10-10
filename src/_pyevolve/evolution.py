@@ -10,6 +10,7 @@ from pyevolve import GSimpleGA
 from pyevolve import DBAdapters
 from pyevolve import Consts
 from random import randint
+from random import uniform
 import sys
 from G2DVariableBinaryString import G2DVariableBinaryString
 
@@ -60,6 +61,46 @@ def G2DVariableBinaryStringInitializator(genome, **args):
   genome.repopulateGenome()
 
 
+def feedback_selection(genome):
+  """Given the genome this function will find the next operator to apply.
+
+  The selection of the next operator takes into account the individual's last
+  test execution as feedback. The feedback is used to heuristically guide what
+  mutation operator to apply next.
+  """
+
+  opType = 'race'
+  candatateChoices = []
+
+  # Acquire a random value that is less then the total of the bug rates
+  totalBugRate = genome.lastDeadlockRate + genome.lastDataraceRate
+  choice = uniform(0, totalBugRate)
+
+  # Determine which it bug type to use
+  if genome.lastDataraceRate > genome.lastDeadlockRate:
+    # If choice falls past the datarace range then type is lock
+    if choice >= genome.lastDataraceRate:
+      opType = 'lock'
+  else:
+    # If choice falls under the deadlock range then type is lock
+    if choice <= genome.lastDeadlockRate:
+      opType = 'lock'
+
+  # Select the appropriate operator based on enable/type/functional
+  if opType is 'race':
+    for operator in config._MUTATIONS:
+      if operator[1] and operator[2] and operator[4]:
+        candatateChoices.append(operator)
+  elif opType is 'lock':
+    for operator in config._MUTATIONS:
+      if operator[1] and operator[3] and operator[4]:
+        candatateChoices.append(operator)
+
+  selectedOperator = candatateChoices[randint(0, len(candatateChoices) - 1)]
+
+  return selectedOperator
+
+
 def G2DVariableBinaryStringSingleMutation(genome, **args):
   """A mutator for the 2D variable binary string genome using single mutation.
 
@@ -71,15 +112,23 @@ def G2DVariableBinaryStringSingleMutation(genome, **args):
   genome.repopulateGenome()
 
   # Pick a mutation operator to apply
-  op = randint(0, genome.height - 1)  # TODO use last execution's feedback
-  genome.lastOperator = randint(0, 100)
-  genome.appliedOperators = randint(0, 100)
+  index = -1
+  while index is -1:
 
-  # Flip a random bit for the selected mutation operator
-  if len(genome.genomeString[op]) == 0:
-    print "No mutation instances for this operator, skipping"
-  else:
-    genome.genomeString[op][randint(0, len(genome.genomeString[op]) - 1)] = 1
+    # Acquire operator
+    selectedOperator = feedback_selection(genome)
+    operatorIndex = config._MUTATIONS.index(selectedOperator)
+
+    # Check if there are possible mutant instances
+    if len(genome.genomeString[operatorIndex]) == 0:
+      print "Cannot mutate using this operator, trying again"
+    else:
+      index = randint(0, len(genome.genomeString[operatorIndex]) - 1)
+
+  # Update genome
+  genome.lastOperator = selectedOperator
+  genome.appliedOperators.append(selectedOperator[0])
+  genome.genomeString[operatorIndex][index] = 1
 
   # TODO Apply TXL mutation
 
@@ -101,8 +150,8 @@ def start():
 
   # The number of enabled mutation operators
   mutationOperators = 0
-  for operator in config._MUTATIONS_ENABLE:
-    if config._MUTATIONS_ENABLE[operator]:
+  for operator in config._MUTATIONS:
+    if operator[1]:
       mutationOperators += 1
 
   genome = G2DVariableBinaryString(mutationOperators)

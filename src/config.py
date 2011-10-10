@@ -9,6 +9,7 @@ _ROOT_DIR = "/home/jalbert/workspace/arc/"
 _MAX_MEMORY_MB = 2000
 _MAX_CORES = 2
 _TMP_DIR = _ROOT_DIR + "tmp/"
+_TXL_DIR = _ROOT_DIR + "src/_txl/"
 
 # Target project variables
 _PROJECT_DIR = _ROOT_DIR + "input/"
@@ -29,31 +30,23 @@ _CONTEST_RUNS = 25
 _CONTEST_TIMEOUT_SEC = 2  # Aim for around x2-3 desirable performance
 _TESTSUITE_AVG = 20  # Number of test executions for finding the average time
 
-# Mutation operator variables (True == considered as an operator)
-_MUTATIONS_ENABLE = {'ASAS': True,
-                     'ASAV': True,
-                     'ASM': True,
-                     'CSO': True,
-                     'EXCR': True,
-                     'EXSA': True,
-                     'RSAS': True,
-                     'RSAV': True,
-                     'RSB': True,
-                     'RSM': True,
-                     'SHSA': True,
-                     'SHSB': True}
-_MUTATIONS_FILE = {'ASAS': _ROOT_DIR + "src/_txl/ASAS.Txl",
-                   'ASAV': _ROOT_DIR + "src/_txl/ASAV.Txl",
-                   'ASM': _ROOT_DIR + "src/_txl/ASM.Txl",
-                   'CSO': _ROOT_DIR + "src/_txl/CSO.Txl",
-                   'EXCR': _ROOT_DIR + "src/_txl/EXCR.Txl",
-                   'EXSA': _ROOT_DIR + "src/_txl/EXSA.Txl",
-                   'RSAS': _ROOT_DIR + "src/_txl/RSAS.Txl",
-                   'RSAV': _ROOT_DIR + "src/_txl/RSAV.Txl",
-                   'RSB': _ROOT_DIR + "src/_txl/RSB.Txl",
-                   'RSM': _ROOT_DIR + "src/_txl/RSM.Txl",
-                   'SHSA': _ROOT_DIR + "src/_txl/SHSA.Txl",
-                   'SHSB': _ROOT_DIR + "src/_txl/SHSB.Txl"}
+# Mutation operator variables
+# [0]Name  [1]Enable  [2]DataRace  [3]Deadlock  [4]Funct  [5]Non-Funct  [6]File
+_MUTATION_ASAS = ['ASAS', True, True, True, True, False, _TXL_DIR + "ASAS.Txl"]
+_MUTATION_ASAV = ['ASAV', True, True, True, True, False, _TXL_DIR + "ASAV.Txl"]
+_MUTATION_ASM  = ['ASM', True, True, True, True, False, _TXL_DIR + "ASM.Txl"]
+_MUTATION_CSO  = ['CSO', True, False, True, True, False, _TXL_DIR + "CSO.Txl"]
+_MUTATION_EXCR = ['EXCR', True, True, True, True, False, _TXL_DIR + "EXCR.Txl"]
+_MUTATION_EXSA = ['EXSA', True, True, True, True, False, _TXL_DIR + "EXSA.Txl"]
+_MUTATION_RSAS = ['RSAS', True, True, True, False, True, _TXL_DIR + "RSAS.Txl"]
+_MUTATION_RSAV = ['RSAV', True, True, True, False, True, _TXL_DIR + "RSAV.Txl"]
+_MUTATION_RSB  = ['RSB', True, True, True, False, True, _TXL_DIR + "RSB.Txl"]
+_MUTATION_RSM  = ['RSM', True, True, True, False, True, _TXL_DIR + "RSM.Txl"]
+_MUTATION_SHSA = ['SHSA', True, True, True, False, True, _TXL_DIR + "SHSA.Txl"]
+_MUTATION_SHSB = ['SHSB', True, True, True, False, True, _TXL_DIR + "SHSB.Txl"]
+_MUTATIONS = [_MUTATION_ASAS, _MUTATION_ASAV, _MUTATION_ASM, _MUTATION_CSO,
+              _MUTATION_EXCR, _MUTATION_EXSA, _MUTATION_RSAS, _MUTATION_RSAV,
+              _MUTATION_RSB, _MUTATION_RSM, _MUTATION_SHSA, _MUTATION_SHSB]
 
 # Pyevolve variables
 _PYEVOLVE_SEED = 0  # Use 0 if a random seed is desired

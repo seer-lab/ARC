@@ -46,15 +46,13 @@ class G2DVariableBinaryString(GenomeBase.GenomeBase):
     # Additional information that is tracked
     self.id = randint(0, 100)
     self.generation = 0
-    self.lastOperator = None
-    self.appliedOperators = None
-    self.lastSuccessRate = None
-    self.lastTimeoutRate = None
-    self.lastDataraceRate = None
-    self.lastDeadlockRate = None
-    self.lastErrorRate = None
-
-    print "Creating New Individual"
+    self.lastOperator = ""
+    self.appliedOperators = []
+    self.lastSuccessRate = 0.0
+    self.lastTimeoutRate = 0.0
+    self.lastDataraceRate = 0.0
+    self.lastDeadlockRate = 0.0
+    self.lastErrorRate = 0.0
 
     # Repopulate genome with new possible mutation operator locations
     self.repopulateGenome()
@@ -107,7 +105,6 @@ class G2DVariableBinaryString(GenomeBase.GenomeBase):
   def copy(self, genome):
     """Copies this genome's values onto the specified genome."""
 
-    #print "Copy", self.id, self.generation, "|", genome.id, genome.generation
     GenomeBase.GenomeBase.copy(self, genome)
     genome.height = self.height
     genome.id = self.id
@@ -125,7 +122,6 @@ class G2DVariableBinaryString(GenomeBase.GenomeBase):
   def clone(self):
     """Creates and returns a new clone of this genome."""
 
-    #print "Clone", self.id, self.generation
     newcopy = G2DVariableBinaryString(self.height)
     self.copy(newcopy)
 

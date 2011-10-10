@@ -16,15 +16,15 @@ import config
 # Output: Mutants by directory
 def generate_all_mutants(generation, memberNum, fileName):
   # Loop over the selected operators in the config file
-  for txlOpName in config._MUTATIONS_ENABLE:
-    if config._MUTATIONS_ENABLE[txlOpName]:
-      generate_mutants(generation, memberNum, fileName, txlOpName)
+  for operator in config._MUTATIONS:
+    if operator[1]:
+      generate_mutants(generation, memberNum, fileName, operator)
   time.sleep(0.5)  # Small delay to allow directories/files to form
 
 
 # Input: 15, 39, JustDoIt.java, ASAS
 # Output: Mutations of one TXL operator, all in one directory
-def generate_mutants(generation, memberNum, fileName, txlOpName):
+def generate_mutants(generation, memberNum, fileName, txlOperator):
   # Look for a /temp/[generation]/[member]/[filename]/[txlopname]
   # directory.
 
@@ -33,7 +33,7 @@ def generate_mutants(generation, memberNum, fileName, txlOpName):
 
   mutantDir = "".join([config._TMP_DIR, str(memberNum), os.sep,
                        str(generation), os.sep, fileNameOnly, os.sep,
-                       txlOpName, os.sep])
+                       txlOperator[0], os.sep])
 
   # print "generate_mutants mutantDir: {}".format(mutantDir)
 
@@ -81,10 +81,9 @@ def generate_mutants(generation, memberNum, fileName, txlOpName):
   #        mutantDir]
 
   process = subprocess.Popen(['txl', '-v', fileName,
-                config._MUTATIONS_FILE[txlOpName], '-', '-outfile',
-                fileNameOnly + txlOpName + fileExtOnly, '-outdir', mutantDir],
-                stdout=outFile, stderr=errFile, cwd=config._PROJECT_DIR, 
-                shell=False)
+                txlOperator[6], '-', '-outfile', fileNameOnly + txlOperator[0]
+                + fileExtOnly, '-outdir', mutantDir], stdout=outFile, 
+                stderr=errFile, cwd=config._PROJECT_DIR, shell=False)
 
 
 # Input: 1, 17, DoSomething.java, ASAS
@@ -123,9 +122,9 @@ def count_mutants(generation, memberNum, fileName, txlOpName):
 def generate_representation(generation, memberNum, fileName):
   rep = []
   # Loop over the selected operators in the config file
-  for txlOpName in config._MUTATIONS_ENABLE:
-    if config._MUTATIONS_ENABLE[txlOpName]:
-      rep.append(count_mutants(generation, memberNum, fileName, txlOpName))
+  for operator in config._MUTATIONS:
+    if operator[1]:
+      rep.append(count_mutants(generation, memberNum, fileName, operator[0]))
 
   return rep
 
