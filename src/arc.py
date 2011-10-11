@@ -6,14 +6,16 @@ within the config.py module.
 
 import argparse
 from _contest import contester
-
+from _pyevolve import evolution
 
 def main():
   """The entry point to ARC, to start the evolutionary approach."""
 
   # Run Contest on the test program
-  contester.setup()
-  contester.run_contest()
+  #contester.setup()
+
+  # Run Pyevolve
+  evolution.start()
 
 # If this module is ran as main
 if __name__ == '__main__':
@@ -22,7 +24,7 @@ if __name__ == '__main__':
   parser = argparse.ArgumentParser(
     description="ARC: Automatically Repair Concurrency bugs in Java "\
                   "<https://github.com/sqrg-uoit/arc>",
-    version="ARC 0.1.0",
+    version="ARC 0.2.0",
     usage="python arc.py")
 
   # Parse the arguments passed from the shell

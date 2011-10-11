@@ -6,6 +6,7 @@ import subprocess
 import os
 import os.path
 import tempfile
+import time
 
 sys.path.append("..")  # To allow importing parent directory module
 import config
@@ -15,23 +16,26 @@ import config
 # Output: Mutants by directory
 def generate_all_mutants(generation, memberNum, fileName):
   # Loop over the selected operators in the config file
-  for i in config._MUTATIONS_ENABLE:
-    if i[1]:
-      generate_mutants(generation, memberNum, fileName, i[0:])
+  for operator in config._MUTATIONS:
+    if operator[1]:
+      generate_mutants(generation, memberNum, fileName, operator)
+  time.sleep(0.5)  # Small delay to allow directories/files to form
 
 
 # Input: 15, 39, JustDoIt.java, ASAS
 # Output: Mutations of one TXL operator, all in one directory
-def generate_mutants(generation, memberNum, fileName, txlOpName):
+def generate_mutants(generation, memberNum, fileName, txlOperator):
   # Look for a /temp/[generation]/[member]/[filename]/[txlopname]
   # directory.
 
   pathNoExt = os.path.splitext(fileName)[0]
   fileNameOnly = os.path.split(pathNoExt)[1]
 
-  mutantDir = config._ROOT_DIR + 'temp' + os.sep + bin(memberNum) + os.sep + bin(generation) + os.sep + fileNameOnly + os.sep + txlOpName + os.sep
+  mutantDir = "".join([config._TMP_DIR, str(memberNum), os.sep,
+                       str(generation), os.sep, fileNameOnly, os.sep,
+                       txlOperator[0], os.sep])
 
-  print 'generate_mutants mutantDir: ', mutantDir
+  # print "generate_mutants mutantDir: {}".format(mutantDir)
 
   # If it doesn't exist, create it
   if not os.path.exists(mutantDir):
@@ -65,16 +69,21 @@ def generate_mutants(generation, memberNum, fileName, txlOpName):
   outFile = tempfile.SpooledTemporaryFile()
   errFile = tempfile.SpooledTemporaryFile()
 
-  print 'fileName: ', fileName
-  print 'txlOpName: ', txlOpName
-  print 'pathNoExt:', pathNoExt
-  print 'fileNameOnly: ', fileNameOnly
-  print 'fileExtOnly: ', fileExtOnly
+  # print 'fileName: ', fileName
+  # print 'txlOpName: ', txlOpName
+  # print 'pathNoExt:', pathNoExt
+  # print 'fileNameOnly: ', fileNameOnly
+  # print 'fileExtOnly: ', fileExtOnly
 
-  print 'TXL command line: ' 
-  print ['txl', '-v', fileName, config._ROOT_DIR + 'src' + os.sep + '_txl' + os.sep + txlOpName + '.Txl', '-', '-outfile', fileNameOnly + txlOpName + fileExtOnly, '-outdir', mutantDir]
+  # print 'TXL command line: ' 
+  # print ['txl', '-v', fileName, config._MUTATIONS_FILE[txlOpName], '-',
+  #        '-outfile', fileNameOnly + txlOpName + fileExtOnly, '-outdir',
+  #        mutantDir]
 
-  process = subprocess.Popen(['txl', '-v', fileName, config._ROOT_DIR + 'src' + os.sep + '_txl' + os.sep + txlOpName + '.Txl', '-', '-outfile', fileNameOnly + txlOpName + fileExtOnly, '-outdir', mutantDir], stdout=outFile, stderr=errFile, cwd=config._PROJECT_DIR, shell=False)
+  process = subprocess.Popen(['txl', '-v', fileName,
+                txlOperator[6], '-', '-outfile', fileNameOnly + txlOperator[0]
+                + fileExtOnly, '-outdir', mutantDir], stdout=outFile, 
+                stderr=errFile, cwd=config._PROJECT_DIR, shell=False)
 
 
 # Input: 1, 17, DoSomething.java, ASAS
@@ -86,30 +95,36 @@ def count_mutants(generation, memberNum, fileName, txlOpName):
   pathNoExt = os.path.splitext(fileName)[0]
   fileNameOnly = os.path.split(pathNoExt)[1]
 
-  mutantDir = config._ROOT_DIR + 'temp' + os.sep + bin(memberNum) + os.sep + bin(generation) + os.sep + fileNameOnly + os.sep + txlOpName + os.sep
+  mutantDir = "".join([config._TMP_DIR, str(memberNum), os.sep,
+                       str(generation), os.sep, fileNameOnly, os.sep,
+                       txlOpName, os.sep])
 
-  print 'count_mutants mutantDir: ', mutantDir
+  # print "count_mutants mutantDir: {}".format(mutantDir)
 
   if not os.path.exists(mutantDir):
     return -1
 
+  numDirs = 0
+
   # Number of subdirectories
-  #number = 0
-  #number = len(os.walk(mutantDir)[1])
-  #return number
+  for aFile in os.listdir(mutantDir):
+    fullPath = os.path.join(mutantDir, aFile)
+    try:
+      if os.path.isdir(fullPath):
+        numDirs = numDirs + 1
+    except Exception, e:
+      print e
 
-  root, dirs, files = os.walk(mutantDir)
-  return len(dirs)
-
+  return numDirs
 
 # Input: 1, 17, DoSomething.java
 # Output: List of numer of mutations by type, eg:  [5, 3, 7, ...]
 def generate_representation(generation, memberNum, fileName):
   rep = []
   # Loop over the selected operators in the config file
-  for i in config._MUTATIONS_ENABLE:
-    if i[1]:
-      rep.append(count_mutants(generation, memberNum, fileName, i[0:]))
+  for operator in config._MUTATIONS:
+    if operator[1]:
+      rep.append(count_mutants(generation, memberNum, fileName, operator[0]))
 
   return rep
 
