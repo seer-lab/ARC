@@ -11,14 +11,14 @@ import sys
 sys.path.append("..")  # To allow importing parent directory module
 import config
 
-class G2DVariableBinaryString():
+class Individual():
   """A 2D binary string that has a variable width for each row.
 
   Additionally, there exists attributes related to ARC evolution.
 
   Attributes:
   height (int): number of mutation operators used, also the number of rows
-  genomeString ([int][int]): actual 2D binary string representation
+  genome ([int][int]): a 2D binary string of txl mutation locations
   id (int): a unique id for this individual
   lastOperator (string): the last used operator for this individual
   appliedOperators ([string]): a list of applied operators to this individual
@@ -30,9 +30,9 @@ class G2DVariableBinaryString():
   """
 
   def __init__(self, height, id):
-    """Initializes the genome using the possible TXL mutation locations."""
+    """Initializes the individual using the possible TXL mutation locations."""
 
-    self.genomeString = []
+    self.genome = []
 
     # The number of mutation operators in use
     self.height = height
@@ -52,15 +52,15 @@ class G2DVariableBinaryString():
     self.repopulateGenome()
 
   def repopulateGenome(self):
-    """This function will re-populate the genomeString with location values.
+    """This function will re-populate the genome with location values.
 
     The values are all zero, though the number of values per row indicates
     the number of possible mutations that can occur for that operator (row).
     """
 
     # Delete old genome and recreate an empty one
-    del self.genomeString[:]
-    self.genomeString = [None] * self.height
+    del self.genome[:]
+    self.genome = [None] * self.height
 
     # Figure out the number of new possible mutation operator locations
     workingFile = config._PROJECT_SRC_DIR + "Deadlock2.java"  # TODO Auto it
@@ -70,14 +70,14 @@ class G2DVariableBinaryString():
 
     # Populate the genome string with the number of hits
     for i in xrange(len(hits)):
-       self.genomeString[i] = [0] * hits[i]
+       self.genome[i] = [0] * hits[i]
 
   def __repr__(self):
-    """Return a string representation of this genome """
+    """Return a string representation of this individual """
 
-    ret = " -----Genome-----\n"
+    ret = " -----Individual-----\n"
     i = 0
-    for line in self.genomeString:
+    for line in self.genome:
        i += 1
        ret += " Op" + repr(i) + ": "
        for item in line:
