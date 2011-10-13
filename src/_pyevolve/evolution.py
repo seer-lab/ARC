@@ -6,9 +6,6 @@ version that has a better functional and non-functional fitness.
 """
 
 from __future__ import division
-from pyevolve import GSimpleGA
-from pyevolve import DBAdapters
-from pyevolve import Consts
 from random import randint
 from random import uniform
 import sys
@@ -18,15 +15,13 @@ sys.path.append("..")  # To allow importing parent directory module
 import config
 from _contest import tester
 
-def evaluation(genome):
+def evaluate(genome):
   """Perform the actual evaluation of said individual using ConTest testing.
 
   The fitness is determined using functional and non-functional fitness values.
   """
 
-  fitness = 0.0
-
-  print "Evaluating individual {} on generation {}".format(genome.id, 
+  print "Evaluating individual {} on generation {}".format(genome.id,
                                                            genome.generation)
 
   # ConTest testing
@@ -50,15 +45,6 @@ def evaluation(genome):
   genome.lastErrorRate = error_rate
 
   contest.clear_results()
-
-  return success_rate
-
-
-def G2DVariableBinaryStringInitializator(genome, **args):
-  """An initializer for the 2D variable binary string genome."""
-
-  # Perform the population
-  genome.repopulateGenome()
 
 
 def feedback_selection(genome):
@@ -101,12 +87,15 @@ def feedback_selection(genome):
   return selectedOperator
 
 
-def G2DVariableBinaryStringSingleMutation(genome, **args):
+def mutation(genome, **args):
   """A mutator for the 2D variable binary string genome using single mutation.
 
   This mutator will apply a single mutation in a random location within the
   genome.
   """
+
+  print "Mutating individual {} on generation {}".format(genome.id, 
+                                                         genome.generation)
 
   # Repopulate the genome with new possible mutation locations
   genome.repopulateGenome()
@@ -132,21 +121,7 @@ def G2DVariableBinaryStringSingleMutation(genome, **args):
 
   # TODO Apply TXL mutation
 
-  return 1
-
-
-def start():
-  """The actual starting process for ARC's evolutionary process.
-
-  Basic configurations for Pyevolve are set here.
-  """
-
-  Consts.CDefGACrossoverRate = 0.0  # Enforce no crossover
-  Consts.CDefGAMutationRate = 1.0  # Enforce 100% mutations
-
-  Consts.CDefGAGenerations = config._PYEVOLVE_GENERATIONS
-  Consts.CDefGAPopulationSize = config._PYEVOLVE_POPULATION
-  Consts.CDefGAElitismReplacement = config._PYEVOLVE_ELITISM
+def initialize():
 
   # The number of enabled mutation operators
   mutationOperators = 0
@@ -154,23 +129,49 @@ def start():
     if operator[1]:
       mutationOperators += 1
 
-  genome = G2DVariableBinaryString(mutationOperators)
-  genome.evaluator.set(evaluation)
-  genome.initializator.set(G2DVariableBinaryStringInitializator)
-  genome.mutator.set(G2DVariableBinaryStringSingleMutation)
+  # Create and initialize the population of individuals
+  population = []
+  for i in xrange(1, config._PYEVOLVE_POPULATION + 1):
+    print "Creating individual {}".format(i)
+    individual = G2DVariableBinaryString(mutationOperators, i)
+    population.append(individual)
 
-  ga = GSimpleGA.GSimpleGA(genome, config._PYEVOLVE_SEED)
+  return population
 
-  # Attach sqlite DB to Pyevolve if enabled within config.py
-  if config._PYEVOLVE_SQLITE:
-    sqlite = DBAdapters.DBSQLite(identify=config._PYEVOLVE_EXECUTION_ID)
-    ga.setDBAdapter(sqlite)
+def start():
+  """The actual starting process for ARC's evolutionary process.
 
-  # Attach VPython statistics to Pyevolve if enabled within config.py
-  if config._PYEVOLVE_VPYTHON:
-    vpython = DBAdapters.DBVPythonGraph(identify=config._PYEVOLVE_EXECUTION_ID,
-                                      frequency=config._PYEVOLVE_VPYTHON_FREQ)
-    ga.setDBAdapter(vpython)
+  Basic configurations for Pyevolve are set here.
+  """
 
-  ga.evolve(freq_stats=config._PYEVOLVE_FREQ_UPDATE)
-  print ga.bestIndividual()
+  # Initialize the population
+  population = initialize()
+
+  # Evolve the population for the required generations
+  generation = 1
+  done = False
+  while not done:
+
+    # Evaluate each individual
+    for individual in population:
+      evaluate(individual)
+
+    # Mutate each individual
+    for individual in population:
+      mutation(individual)
+      individual.generation += 1
+
+    # Check for terminating conditions
+    for individual in population:
+      if individual.lastSuccessRate == 1:
+        print "Found best individual", individual.id
+        done = True
+        break
+      if generation == config._PYEVOLVE_GENERATIONS:
+        print "Exhausted all generations"
+        done = True
+        break
+
+    generation += 1
+
+  print population

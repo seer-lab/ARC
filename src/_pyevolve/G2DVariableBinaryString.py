@@ -5,17 +5,13 @@ the capabilities to have a variable width for each row. In addition, there are
 specific attributes used in the ARC evolutionary process.
 """
 
-from pyevolve import GenomeBase
-from pyevolve import Consts
-from pyevolve import Util
-from random import randint
 from _txl import txl_operator
 import sys
 
 sys.path.append("..")  # To allow importing parent directory module
 import config
 
-class G2DVariableBinaryString(GenomeBase.GenomeBase):
+class G2DVariableBinaryString():
   """A 2D binary string that has a variable width for each row.
 
   Additionally, there exists attributes related to ARC evolution.
@@ -33,10 +29,8 @@ class G2DVariableBinaryString(GenomeBase.GenomeBase):
   lastErrorRate (double): the last individual had what rate of errors
   """
 
-  def __init__(self, height):
+  def __init__(self, height, id):
     """Initializes the genome using the possible TXL mutation locations."""
-
-    GenomeBase.GenomeBase.__init__(self)
 
     self.genomeString = []
 
@@ -44,7 +38,7 @@ class G2DVariableBinaryString(GenomeBase.GenomeBase):
     self.height = height
 
     # Additional information that is tracked
-    self.id = randint(0, 100)
+    self.id = id
     self.generation = 0
     self.lastOperator = ""
     self.appliedOperators = []
@@ -81,8 +75,7 @@ class G2DVariableBinaryString(GenomeBase.GenomeBase):
   def __repr__(self):
     """Return a string representation of this genome """
 
-    ret = GenomeBase.GenomeBase.__repr__(self)
-    ret += " -----Genome-----\n"
+    ret = " -----Genome-----\n"
     i = 0
     for line in self.genomeString:
        i += 1
@@ -101,28 +94,3 @@ class G2DVariableBinaryString(GenomeBase.GenomeBase):
     ret += " Last Deadlock Rate: {}\n".format(self.lastDeadlockRate)
     ret += " Last Error Rate: {}\n".format(self.lastErrorRate)
     return ret
-
-  def copy(self, genome):
-    """Copies this genome's values onto the specified genome."""
-
-    GenomeBase.GenomeBase.copy(self, genome)
-    genome.height = self.height
-    genome.id = self.id
-    genome.generation = self.generation
-    genome.lastOperator = self.lastOperator
-    genome.appliedOperators = self.appliedOperators
-    genome.lastSuccessRate = self.lastSuccessRate
-    genome.lastTimeoutRate = self.lastTimeoutRate
-    genome.lastDataraceRate = self.lastDataraceRate
-    genome.lastDeadlockRate = self.lastDeadlockRate
-    genome.lastErrorRate = self.lastErrorRate
-    for i in xrange(self.height):
-       genome.genomeString[i] = self.genomeString[i][:]
-
-  def clone(self):
-    """Creates and returns a new clone of this genome."""
-
-    newcopy = G2DVariableBinaryString(self.height)
-    self.copy(newcopy)
-
-    return self
