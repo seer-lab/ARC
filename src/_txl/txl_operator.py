@@ -212,7 +212,9 @@ def restore_project(startDir):
 
 # Input : 1, 16, MyFile.java, ASAS, 2
 # Output: Copy a mutant file in to the local project for this generation and member
-def move_mutant_to_local_project(generation, memberNum, fileName, txlOperator, mutantNum):
+def move_mutant_to_local_project(generation, memberNum, txlOperator, mutantNum):
+
+  # TODO Find the appropriate file to move based on parameters
 
   pathNoExt = os.path.splitext(fileName)[0]
   pathNoFileName = os.path.split(pathNoExt)[0]

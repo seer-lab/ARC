@@ -9,6 +9,7 @@ from individual import Individual
 sys.path.append("..")  # To allow importing parent directory module
 import config
 from _contest import tester
+from _txl import txl_operator
 
 def evaluate(individual):
   """Perform the actual evaluation of said individual using ConTest testing.
@@ -110,7 +111,9 @@ def mutation(individual):
   individual.appliedOperators.append(selectedOperator[0])
   individual.genome[operatorIndex][index] = 1
 
-  # TODO Apply TXL mutation
+  # Apply TXL mutation
+  move_mutant_to_local_project(individual.generation, individual.id,
+                               selectedOperator[0]), index)
 
 def initialize():
   """Initialize the population of individuals with and id and values."""
@@ -132,6 +135,9 @@ def initialize():
 
 def start():
   """The actual starting process for ARC's evolutionary process."""
+
+  # Backup project
+  backup_project(config._PROJECT_SRC_DIR)
 
   # Initialize the population
   population = initialize()
@@ -164,3 +170,6 @@ def start():
     generation += 1
 
   print population
+
+  # Restore project to original
+  restore_project(config._PROJECT_BACKUP_DIR)
