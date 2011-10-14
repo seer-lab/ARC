@@ -12,6 +12,14 @@ import shutil
 sys.path.append("..")  # To allow importing parent directory module
 import config
 
+# For whatever reason, file names aren't tracked throughout ARC.
+# So, we have to do it with a dictionary here.  This dic has the
+# form: (generation, memberNum): directory
+# directory points to the directory of the mutated file. eg:
+# /home/myrikhan/workspace/arc/tmp/1/4/whatever/DeadlockDemo/
+# The subdirectories of this directory are ASAS, RSAS, ...
+mutationHistory = {}
+
 # -----------------------------------------------------------------------------------------------
 #
 # Mutant related functions 
@@ -61,6 +69,9 @@ def generate_mutants(generation, memberNum, fileName, txlOperator):
   fileNameOnly = os.path.split(pathNoExt)[1]
 
   mutantDir = "".join([config._TMP_DIR, str(generation), os.sep, str(memberNum), os.sep, relPath, os.sep, fileNameOnly, os.sep, txlOperator[0], os.sep])
+
+  # Record the file mutated for each (generation, member) combination
+  mutationHistory[(generation, memberNum)] = "".join([config._TMP_DIR, str(generation), os.sep, str(memberNum), os.sep, relPath, os.sep, fileNameOnly, os.sep])
 
   #print '---------------------------'
   #print 'fileName:       ' + fileName
@@ -120,8 +131,6 @@ def count_mutants(generation, memberNum, fileName, txlOpName):
 
   mutantDir = "".join([config._TMP_DIR, str(generation), os.sep, str(memberNum), os.sep, relPath, os.sep, fileNameOnly, os.sep, txlOpName, os.sep])
 
-  # print "count_mutants mutantDir: {}".format(mutantDir)
-
   if not os.path.exists(mutantDir):
     return -1
 
@@ -137,6 +146,7 @@ def count_mutants(generation, memberNum, fileName, txlOpName):
       print e
 
   return numDirs
+
 
 # Input : 1, 17, DoSomething.java
 # Output: List of numer of mutations by type, eg:  [5, 3, 7, ...]
@@ -209,34 +219,54 @@ def restore_project(startDir):
 
       shutil.copy(fName, dst)
 
+# Input : A member directory like, 'tmp\1\4'
+# Output: 
+#def find_mutated_file(startDir)
 
-# Input : 1, 16, MyFile.java, ASAS, 2
+#  for root, dirs, files in os.walk(startDir):
+#    for aDir in dirs:
+#      if os.path.split(aDir)[1] != 'project'
+#        return find_mutated_files(aDir)
+#    for aFile in files:
+#      fName = os.path.join(root, aFile)
+#      return fName
+	
+#TODO: Remove fileName argument
+
+# Input : 1, 16, ASAS, 2
 # Output: Copy a mutant file in to the local project for this generation and member
 def move_mutant_to_local_project(generation, memberNum, txlOperator, mutantNum):
 
-  # TODO Find the appropriate file to move based on parameters
+  fileName = mutationHistory[(generation, memberNum)]
 
-  pathNoExt = os.path.splitext(fileName)[0]
-  pathNoFileName = os.path.split(pathNoExt)[0]
-  if ((pathNoFileName + '/') != config._TMP_DIR):
-    relPath = pathNoFileName.replace(config._TMP_DIR, '') + os.sep
+  pathNoFileName = os.path.split(os.path.split(fileName)[0])[0]
+  if (pathNoFileName != config._TMP_DIR + str(generation) + os.sep + str(memberNum)):
+    relPath = pathNoFileName.replace(config._TMP_DIR + str(generation) + os.sep + str(memberNum), '') + os.sep
   else:
     relPath = ''
-  fileNameOnly = os.path.split(pathNoExt)[1]
-  fileExtOnly = os.path.splitext(fileName)[1]
+  fileNameOnly = os.path.split(os.path.split(fileName)[0])[1]
+  
+  mutDir = txlOperator + '_' + fileNameOnly + '.java_' + str(mutantNum)
 
-  #projectTitle = os.path.split(config._PROJECT_DIR)[1]
-
-  mutDir = txlOperator + '_' + fileNameOnly + fileExtOnly + '_' + str(mutantNum)
-
-  src = "".join([config._TMP_DIR, str(generation), os.sep, str(memberNum), os.sep, relPath, os.sep, fileNameOnly, os.sep, txlOperator, os.sep, mutDir, os.sep, fileNameOnly + fileExtOnly])
+  src = "".join([fileName, txlOperator, os.sep, mutDir, os.sep, fileNameOnly + '.java'])
 
   dst = config._TMP_DIR + str(generation) + os.sep + str(memberNum) + os.sep + 'project' + relPath 
 
   if not os.path.exists(dst):
     os.makedirs(dst)
 
-  dst2 = dst + fileNameOnly + fileExtOnly
+  dst2 = dst + fileNameOnly + '.java'
+
+  print '---------------------------'
+  print 'fileName:       ' + fileName
+  print 'txlOperator:    ' + txlOperator
+  print 'pathNoFileName: ' + pathNoFileName
+  print 'relPath:        ' + relPath
+  print 'fileNameOnly:   ' + fileNameOnly
+  print 'mutDir:         ' + mutDir
+  print 'mmtlp src:      ' + src
+  print 'mmtlp dst:      ' + dst
+  print 'mmtlp dst2:     ' + dst2gedit
 
   shutil.copy(src, dst2)
 
@@ -326,7 +356,7 @@ def main():
   for i, v in enumerate(muties):
     print v #muties[i]
 
-  #move_mutant_to_local_project(1, 4, 'DeadlockDemo.java', 'ASAS', 3)
+  move_mutant_to_local_project(1, 4, 'ASAS', 3)
 
   #  mutatedProject = config._TMP_DIR + str(gener) + os.sep + str(member) + os.sep + 'project' + os.sep
   #move_local_project_to_original(1, 4, mutatedProject)
