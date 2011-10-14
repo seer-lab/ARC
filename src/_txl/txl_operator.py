@@ -29,81 +29,101 @@ mutationHistory = {}
 
 # Input : /project/directory/, 42, 5
 # Output: Mutants for every java file in the project
-def mutate_project(projectDir, generation, memberNum):
+def mutate_project(generation, memberNum):
 
-  for root, dirs, files in os.walk(projectDir):
-    for aDir in dirs:
-      mutate_project(aDir, generation, memberNum)
+  if generation == 1:
+    sourceDir = config._PROJECT_SRC_DIR
+    destDir = config._TMP_DIR + str(generation) + os.sep + str(memberNum) + os.sep
+  else:
+    sourceDir = config._TMP_DIR + str(generation - 1) + os.sep + str(memberNum) + os.sep + 'project' + os.sep
+    destDir = config._TMP_DIR + str(generation) + os.sep + str(memberNum) + os.sep
+
+  recursively_mutate_project(generation, memberNum, sourceDir, destDir)
+
+
+def recursively_mutate_project(generation, memberNum, sourceDir, destDir):
+  for root, dirs, files in os.walk(sourceDir):
+    for sourceSubDir in dirs:
+      recursively_mutate_project(generation, memberNum, sourceSubDir, destDir)
     for aFile in files:
-      fName = os.path.join(root, aFile)
+      sourceFile = os.path.join(root, aFile)
       #print 'fName: ' + fName
-      generate_all_mutants(generation, memberNum, fName)
+      generate_all_mutants(generation, memberNum, sourceFile, destDir)
 
 
-# Input : 1, 17, DoSomething.java
+# Input : 1, 17, /subdir/DoSomething.java
 # Output: Mutants by directory
-def generate_all_mutants(generation, memberNum, fileName):
+def generate_all_mutants(generation, memberNum, sourceFile, destDir):
   # Loop over the selected operators in the config file
   for operator in config._MUTATIONS:
     if operator[1]:
-      generate_mutants(generation, memberNum, fileName, operator)
+      generate_mutants(generation, memberNum, operator, sourceFile, destDir)
   time.sleep(0.5)  # Small delay to allow directories/files to form
 
 
-# Input : 15, 39, JustDoIt.java, ASAS
+# Input : 15, 39, /subdir/JustDoIt.java, ASAS
 # Output: Mutations of one TXL operator, all in one directory
-def generate_mutants(generation, memberNum, fileName, txlOperator):
+def generate_mutants(generation, memberNum, txlOperator, sourceName, destDir):
 
   # Start a TXL process to generate mutants in
   # /temp/[generation]/[member]/[OPNAME]
 
-  pathNoExt = os.path.splitext(fileName)[0]
-  pathNoFileName = os.path.split(pathNoExt)[0]
-  if ((pathNoFileName + '/') != config._PROJECT_SRC_DIR):
-    relPath = pathNoFileName.replace(config._PROJECT_SRC_DIR, '')
-  else:
-    relPath = '.'
-  fileNameOnly = os.path.split(pathNoExt)[1]
-  fileExtOnly = os.path.splitext(fileName)[1]
-  pathNoExt = os.path.splitext(fileName)[0]
-  fileNameOnly = os.path.split(pathNoExt)[1]
+  sourceNoExt = os.path.splitext(sourceName)[0]
+  sourceNoFileName = os.path.split(sourceNoExt)[0] + os.sep
+  sourceNameOnly = os.path.split(sourceNoExt)[1]
+  sourceExtOnly = os.path.splitext(sourceName)[1]
 
-  mutantDir = "".join([config._TMP_DIR, str(generation), os.sep, str(memberNum), os.sep, relPath, os.sep, fileNameOnly, os.sep, txlOperator[0], os.sep])
+  sourceRelPath = ''
+  if (generation == 1):
+    sourceRelPath = sourceNoFileName.replace(config._PROJECT_SRC_DIR, '')
+  else:
+    sourceRelPath = sourceNoFileName.replace(config._TMP_DIR + str(generation - 1) + os.sep + str(memberNum) + os.sep + 'project' + os.sep, '')
+
+  sourceRelPath = sourceRelPath.replace(os.sep, '')
+
+  #print '-----------------'
+  #print 'sourceRelPath: ' + sourceRelPath
+
+  #sourceRelPath = os.path.split(sourceRelPath)[1]
+  if sourceRelPath == '':
+    sourceRelPath = '.'
+
+  txlDestDir = "".join([destDir, sourceRelPath, os.sep, sourceNameOnly, os.sep, txlOperator[0], os.sep])
 
   # Record the file mutated for each (generation, member) combination
-  mutationHistory[(generation, memberNum)] = "".join([config._TMP_DIR, str(generation), os.sep, str(memberNum), os.sep, relPath, os.sep, fileNameOnly, os.sep])
+  mutationHistory[(generation, memberNum)] = "".join([destDir, sourceRelPath, os.sep, sourceNameOnly, os.sep])
 
   #print '---------------------------'
-  #print 'fileName:       ' + fileName
-  #print 'txlOperator:    ' + txlOperator[0]
-  #print 'pathNoExt:      ' + pathNoExt
-  #print 'pathNoFileName: ' + pathNoFileName
-  #print 'relPath:        ' + relPath
-  #print 'fileNameOnly:   ' + fileNameOnly
-  #print 'fileExtOnly:    ' + fileExtOnly
-  #print "mutantDir:      " + mutantDir
+  #print 'sourceName:       ' + sourceName
+  #print 'destDir:          ' + destDir
+  #print 'txlOperator:      ' + txlOperator[0]
+  #print 'sourceNoExt:      ' + sourceNoExt
+  #print 'sourceNoFileName: ' + sourceNoFileName
+  #print 'sourceRelPath:    ' + sourceRelPath
+  #print 'sourceNameOnly:   ' + sourceNameOnly
+  #print 'sourceExtOnly:    ' + sourceExtOnly
+  #print 'txlDestDir:       ' + txlDestDir
 
   # If it doesn't exist, create it
-  #print 'generate_mutants  mutantDir      :' + mutantDir
-  if not os.path.exists(mutantDir):
-    os.makedirs(mutantDir)
+  if not os.path.exists(txlDestDir):
+    os.makedirs(txlDestDir)
 
   # If it exists, delete any files and subdirectories in it
   else:
-    for aFile in os.listdir(mutantDir):
-      fullPath = os.path.join(mutantDir, aFile)
+    for aFile in os.listdir(txlDestDir):
+      txlPath = os.path.join(txlDestDir, aFile)
       try:
-        if os.path.isfile(fullPath):
-          os.unlink(fullPath)
-        if os.path.isdir(fullPath):
-          for killFile in os.listdir(fullPath):
-            killFullPath = os.path.join(fullPath, killFile)
+        if os.path.isfile(txlPath):
+          os.unlink(txlPath)
+        if os.path.isdir(txlPath):
+          for killFile in os.listdir(txlPath):
+            killFullPath = os.path.join(txlPath, killFile)
             try:
               if os.path.isfile(killFullPath):
                 os.unlink(killFullPath)
             except Exception, f:
               print f
-          os.rmdir(fullPath)
+          os.rmdir(txlPath)
       except Exception, e:
         print e
 
@@ -111,9 +131,9 @@ def generate_mutants(generation, memberNum, fileName, txlOperator):
   errFile = tempfile.SpooledTemporaryFile()
 
   #print 'TXL command line: '
-  #print ['txl', '-v', fileName, txlOperator[6], '-', '-outfile', fileNameOnly + txlOperator[0] + fileExtOnly, '-outdir', mutantDir]
+  #print ['txl', '-v', sourceName, txlOperator[6], '-', '-outfile', sourceNameOnly + txlOperator[0] + sourceExtOnly, '-outdir', txlDestDir]
 
-  process = subprocess.Popen(['txl', '-v', fileName, txlOperator[6], '-', '-outfile', fileNameOnly + fileExtOnly, '-outdir', mutantDir], stdout=outFile, stderr=errFile, cwd=config._PROJECT_DIR, shell=False)
+  process = subprocess.Popen(['txl', '-v', sourceName, txlOperator[6], '-', '-outfile', sourceNameOnly + sourceExtOnly, '-outdir', txlDestDir], stdout=outFile, stderr=errFile, cwd=config._PROJECT_DIR, shell=False)
 
 
 # Input : 1, 17, DoSomething.java, ASAS
@@ -228,7 +248,7 @@ def restore_project(startDir):
 #         or drawn from the local project of the same member from generation - 1
 def create_local_project(generation, memberNum):
 
-  if generation == 0:
+  if generation == 1:
     srcDir = config._PROJECT_SRC_DIR
   else:
     # Note: generation - 1 vs generation
@@ -379,15 +399,9 @@ def main():
   backup_project(config._PROJECT_DIR)
   restore_project(config._PROJECT_BACKUP_DIR)
 
-  # For generation 1 we take the source from the project directory
-  # afterwards, we draw the mutated source from a local directory.
-  # (We never alter the original source files.)
-  if (gener == 1):
-    testProj = config._PROJECT_SRC_DIR
-  else:
-    testProj = config._TMP_DIR + os.sep + gener + os.sep + member + os.sep + 'src' + os.sep
-
-  mutate_project(testProj, gener, member)
+  mutate_project(gener, member)
+  create_local_project(1, 4)
+  move_mutant_to_local_project(1, 4, 'ASAS', 3)
 
   # Create the representation of a file (The array of numbers of mutants by type)
   testFile = config._PROJECT_SRC_DIR + 'DeadlockDemo.java'
@@ -398,9 +412,9 @@ def main():
   for i, v in enumerate(muties):
     print v #muties[i]
 
-  create_local_project(1, 4)
-
-  move_mutant_to_local_project(1, 4, 'ASAS', 3)
+  mutate_project(2, member)
+  create_local_project(2, 4)
+  move_mutant_to_local_project(2, 4, 'ASAS', 3)
 
   #  mutatedProject = config._TMP_DIR + str(gener) + os.sep + str(member) + os.sep + 'project' + os.sep
   #move_local_project_to_original(1, 4, mutatedProject)
