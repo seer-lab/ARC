@@ -84,6 +84,7 @@ def generate_mutants(generation, memberNum, fileName, txlOperator):
   #print "mutantDir:      " + mutantDir
 
   # If it doesn't exist, create it
+  #print 'generate_mutants  mutantDir      :' + mutantDir
   if not os.path.exists(mutantDir):
     os.makedirs(mutantDir)
 
@@ -185,6 +186,7 @@ def backup_project(startDir):
 
       dst = config._PROJECT_BACKUP_DIR + relPath + os.sep
 
+      #print 'backup_project dst    :' + dst
       if not os.path.exists(dst):
         os.makedirs(dst)
 
@@ -214,24 +216,64 @@ def restore_project(startDir):
       #print 'resto_p   relPath: ' + relPath
       #print 'resto_p   dst:     ' + dst
 
+      #print 'restore_project dst    :' + dst
       if not os.path.exists(dst):
         os.makedirs(dst)
 
       shutil.copy(fName, dst)
 
-# Input : A member directory like, 'tmp\1\4'
-# Output: 
-#def find_mutated_file(startDir)
 
-#  for root, dirs, files in os.walk(startDir):
-#    for aDir in dirs:
-#      if os.path.split(aDir)[1] != 'project'
-#        return find_mutated_files(aDir)
-#    for aFile in files:
-#      fName = os.path.join(root, aFile)
-#      return fName
-	
-#TODO: Remove fileName argument
+# Input : Generation and member to create the local project for
+# Output: Project, drawn from the pristine source if we are on generation 1,
+#         or drawn from the local project of the same member from generation - 1
+def create_local_project(generation, memberNum):
+
+  if generation == 1:
+    srcDir = config._PROJECT_SRC_DIR
+  else:
+    # Note: generation - 1 vs generation
+    srcDir = config._TMP_DIR + str(generation - 1) + os.sep + str(memberNum) + os.sep + 'project' + os.sep
+
+  destDir = config._TMP_DIR + str(generation) + os.sep + str(memberNum) + os.sep + 'project' + os.sep
+
+  #print 'clp srcDir:  ' + srcDir
+  #print 'clp destDir: ' + destDir
+
+  recurse_create_local_project(srcDir, srcDir, destDir)
+
+
+# Input : Source and destination for copying
+# Output: Recursively copy files from source to destination
+def recurse_create_local_project(pristineDir, srcDir, destDir):
+
+  for root, dirs, files in os.walk(srcDir):
+    for aDir in dirs:
+      recurse_create_local_project(pristineDir, aDir, destDir)
+    for aFile in files:
+      fName = os.path.join(root, aFile).replace(os.sep + os.sep, os.sep)
+      pathNoFileName = os.path.split(fName)[0]
+
+      #print '---------------------'
+      #print 'rclp pathNoFileName: ' + pathNoFileName
+      #print 'rclp pristineDir:    ' + pristineDir
+
+      if ((pathNoFileName + os.sep) != pristineDir):
+        relPath = pathNoFileName.replace(pristineDir, '') + os.sep
+      else:
+        relPath = ''
+
+      dst = (destDir + relPath).replace(os.sep + os.sep, os.sep)
+
+      #print 'rclp relPath  ' + relPath
+      #print 'rclp fName:   ' + fName
+      #print 'rclp destDir  ' + destDir
+      #print 'rclp dst      ' + dst
+      
+      if not os.path.exists(dst):
+        os.makedirs(dst)
+
+      shutil.copy(fName, dst)
+
 
 # Input : 1, 16, ASAS, 2
 # Output: Copy a mutant file in to the local project for this generation and member
@@ -257,16 +299,16 @@ def move_mutant_to_local_project(generation, memberNum, txlOperator, mutantNum):
 
   dst2 = dst + fileNameOnly + '.java'
 
-  print '---------------------------'
-  print 'fileName:       ' + fileName
-  print 'txlOperator:    ' + txlOperator
-  print 'pathNoFileName: ' + pathNoFileName
-  print 'relPath:        ' + relPath
-  print 'fileNameOnly:   ' + fileNameOnly
-  print 'mutDir:         ' + mutDir
-  print 'mmtlp src:      ' + src
-  print 'mmtlp dst:      ' + dst
-  print 'mmtlp dst2:     ' + dst2gedit
+  #print '---------------------------'
+  #print 'mmtlp fileName:       ' + fileName
+  #print 'mmtlp txlOperator:    ' + txlOperator
+  #print 'mmtlp pathNoFileName: ' + pathNoFileName
+  #print 'mmtlp relPath:        ' + relPath
+  #print 'mmtlp fileNameOnly:   ' + fileNameOnly
+  #print 'mmtlp mutDir:         ' + mutDir
+  #print 'mmtlp src:            ' + src
+  #print 'mmtlp dst:            ' + dst
+  #print 'mmtlp dst2:           ' + dst2
 
   shutil.copy(src, dst2)
 
@@ -355,6 +397,8 @@ def main():
   print 'Mutant numbers:'
   for i, v in enumerate(muties):
     print v #muties[i]
+
+  create_local_project(1, 4)
 
   move_mutant_to_local_project(1, 4, 'ASAS', 3)
 
