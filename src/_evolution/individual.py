@@ -48,9 +48,6 @@ class Individual():
     self.lastDeadlockRate = 0.0
     self.lastErrorRate = 0.0
 
-    # Repopulate genome with new possible mutation operator locations
-    self.repopulateGenome()
-
   def repopulateGenome(self):
     """This function will re-populate the genome with location values.
 

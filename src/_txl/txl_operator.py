@@ -62,7 +62,7 @@ def generate_mutants(generation, memberNum, fileName, txlOperator):
   if ((pathNoFileName + '/') != config._PROJECT_SRC_DIR):
     relPath = pathNoFileName.replace(config._PROJECT_SRC_DIR, '')
   else:
-    relPath = ''
+    relPath = '.'
   fileNameOnly = os.path.split(pathNoExt)[1]
   fileExtOnly = os.path.splitext(fileName)[1]
   pathNoExt = os.path.splitext(fileName)[0]
@@ -228,7 +228,7 @@ def restore_project(startDir):
 #         or drawn from the local project of the same member from generation - 1
 def create_local_project(generation, memberNum):
 
-  if generation == 1:
+  if generation == 0:
     srcDir = config._PROJECT_SRC_DIR
   else:
     # Note: generation - 1 vs generation

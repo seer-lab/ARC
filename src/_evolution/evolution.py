@@ -111,9 +111,11 @@ def mutation(individual):
   individual.appliedOperators.append(selectedOperator[0])
   individual.genome[operatorIndex][index] = 1
 
-  # Apply TXL mutation
-  move_mutant_to_local_project(individual.generation, individual.id,
-                               selectedOperator[0]), index)
+  # Create local project then apply mutation
+  txl_operator.create_local_project(individual.generation, index + 1)
+  txl_operator.move_mutant_to_local_project(individual.generation,
+                                            individual.id, selectedOperator[0],
+                                            index + 1)
 
 def initialize():
   """Initialize the population of individuals with and id and values."""
@@ -137,24 +139,25 @@ def start():
   """The actual starting process for ARC's evolutionary process."""
 
   # Backup project
-  backup_project(config._PROJECT_SRC_DIR)
+  txl_operator.backup_project(config._PROJECT_SRC_DIR)
 
   # Initialize the population
   population = initialize()
 
   # Evolve the population for the required generations
-  generation = 1
+  generation = 0
   done = False
   while not done:
+
+    generation += 1
+    # Mutate each individual
+    for individual in population:
+      individual.generation = generation
+      mutation(individual)
 
     # Evaluate each individual
     for individual in population:
       evaluate(individual)
-
-    # Mutate each individual
-    for individual in population:
-      mutation(individual)
-      individual.generation += 1
 
     # Check for terminating conditions
     for individual in population:
@@ -167,9 +170,8 @@ def start():
         done = True
         break
 
-    generation += 1
 
   print population
 
   # Restore project to original
-  restore_project(config._PROJECT_BACKUP_DIR)
+  txl_operator.restore_project(config._PROJECT_BACKUP_DIR)
