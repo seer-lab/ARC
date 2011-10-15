@@ -60,10 +60,8 @@ class Individual():
     self.genome = [None] * self.height
 
     # Figure out the number of new possible mutation operator locations
-    workingFile = config._PROJECT_SRC_DIR + "Deadlock2.java"  # TODO Auto it
-    txl_operator.generate_all_mutants(self.generation, self.id, workingFile)
-    hits = txl_operator.generate_representation(self.generation, 
-                                                self.id, workingFile)
+    txl_operator.mutate_project(self.generation, self.id)
+    hits = txl_operator.generate_representation(self.generation, self.id)
 
     # Populate the genome string with the number of hits
     for i in xrange(len(hits)):

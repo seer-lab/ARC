@@ -20,6 +20,10 @@ def evaluate(individual):
   print "Evaluating individual {} on generation {}".format(individual.id,
                                                         individual.generation)
 
+  # TODO Move the local project to the target's source
+
+  # TODO Compile target's source
+
   # ConTest testing
   contest = tester.Tester()
   contest.begin_testing()

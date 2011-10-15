@@ -123,7 +123,7 @@ def generate_mutants(generation, memberNum, txlOperator, sourceName, destDir):
                 os.unlink(killFullPath)
             except Exception, f:
               print f
-          os.rmdir(txlPath)
+            os.rmdir(txlPath)
       except Exception, e:
         print e
 
@@ -333,7 +333,7 @@ def move_mutant_to_local_project(generation, memberNum, txlOperator, mutantNum):
 # Input : 1, 7, \1\7\project\
 #         (Be sure to back up the original project first!)
 # Output: Files in original project overwritten
-def move_local_project_to_original(generation, memberNum, mutantDir):
+def move_local_project_to_original(generation, memberNum):
 
   # Check for existence of a backup
   if len([item for item in os.listdir(config._PROJECT_BACKUP_DIR) if os.path.isfile(item)]) == 0:
@@ -341,23 +341,29 @@ def move_local_project_to_original(generation, memberNum, mutantDir):
     return
 
   #projectTitle = os.path.split(config._PROJECT_DIR)[1]
+  mutantDir = config._TMP_DIR + str(generation) + os.sep + str(mutantNum) + os.sep + 'project' + os.sep
+
+  recurse_move_local_project_to_original(generation, memberNum, mutantDir, mutantDir)
+
+
+def recurse_move_local_project_to_original(generation, memberNum, pristineMutantDir, mutantDir):
 
   for root, dirs, files in os.walk(mutantDir):
     for aDir in dirs:
-      move_local_project_to_original(generation, memberNum, aDir)
+      move_local_project_to_original(generation, memberNum, pristineMutantDir, aDir)
     for aFile in files:
       fName = os.path.join(root, aFile)
       pathNoFileName = os.path.split(fName)[0]
-      if ((pathNoFileName + '/') != mutantDir):
-        relPath = pathNoFileName.replace(mutantDir, '') + os.sep 
+      if pathNoFileName + os.sep != pristineMutantDir:
+        relPath = pathNoFileName.replace(PristineMutantDir, '') + os.sep 
       else:
-        relPath = ''
+        relPath = '.'
 
       dst = config._PROJECT_SRC_DIR + relPath + aFile
-
-      #print 'to_orig   fName:   ' + fName
-      #print 'to_orig   relPath: ' + relPath
-      #print 'to_orig   dst:     ' + dst
+  
+      # print 'to_orig   pathNoFileName:   ' + fName
+      # print 'to_orig   relPath:          ' + relPath
+      # print 'to_orig   dst:              ' + dst
 
       if not os.path.exists(dst):
         os.makedirs(dst)
