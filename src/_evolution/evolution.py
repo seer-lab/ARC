@@ -21,6 +21,8 @@ def evaluate(individual):
                                                         individual.generation)
 
   # TODO Move the local project to the target's source
+  txl_operator.move_local_project_to_original(individual.generation, 
+                                              individual.id)
 
   # TODO Compile target's source
 
@@ -116,7 +118,7 @@ def mutation(individual):
   individual.genome[operatorIndex][index] = 1
 
   # Create local project then apply mutation
-  txl_operator.create_local_project(individual.generation, index + 1)
+  txl_operator.create_local_project(individual.generation, individual.id)
   txl_operator.move_mutant_to_local_project(individual.generation,
                                             individual.id, selectedOperator[0],
                                             index + 1)
