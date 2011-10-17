@@ -27,7 +27,7 @@ mutationHistory = {}
 # -----------------------------------------------------------------------------------------------
 
 
-# Input : /project/directory/, 42, 5
+# Input : 42, 5
 # Output: Mutants for every java file in the project
 def mutate_project(generation, memberNum):
 
@@ -46,12 +46,12 @@ def recursively_mutate_project(generation, memberNum, sourceDir, destDir):
     for sourceSubDir in dirs:
       recursively_mutate_project(generation, memberNum, sourceSubDir, destDir)
     for aFile in files:
-      sourceFile = os.path.join(root, aFile)
-      #print 'fName: ' + fName
-      generate_all_mutants(generation, memberNum, sourceFile, destDir)
+      if (aFile.split[1] == '.java')
+        sourceFile = os.path.join(root, aFile)
+        generate_all_mutants(generation, memberNum, sourceFile, destDir)
 
 
-# Input : 1, 17, /subdir/DoSomething.java
+# Input : 1, 17, /project/somejava.java, /1/2/project/
 # Output: Mutants by directory
 def generate_all_mutants(generation, memberNum, sourceFile, destDir):
   # Loop over the selected operators in the config file
@@ -61,7 +61,7 @@ def generate_all_mutants(generation, memberNum, sourceFile, destDir):
   time.sleep(0.5)  # Small delay to allow directories/files to form
 
 
-# Input : 15, 39, /subdir/JustDoIt.java, ASAS
+# Input : 15, 39, ASAS, /subdir/JustDoIt.java, /4/7/ 
 # Output: Mutations of one TXL operator, all in one directory
 def generate_mutants(generation, memberNum, txlOperator, sourceName, destDir):
 
@@ -336,13 +336,12 @@ def move_mutant_to_local_project(generation, memberNum, txlOperator, mutantNum):
 def move_local_project_to_original(generation, memberNum):
 
   # Check for existence of a backup
-  if len([item for item in os.listdir(config._PROJECT_BACKUP_DIR) if os.path.isfile(item)]) == 0:
-    print '[ERROR] txl_operator.move_local_project_to_original: config._PROJECT_BACKUP_DIR is empty.  No backup means original files could be lost.  Move not completed.'
-    return
+  for root, dirs, files in os.walk(config._PROJECT_BACKUP_DIR):
+    if files == [] and dirs == []:
+      print '[ERROR] txl_operator.move_local_project_to_original: config._PROJECT_BACKUP_DIR is empty.  No backup means original files could be lost.  Move not completed.'
+      return
 
-  #projectTitle = os.path.split(config._PROJECT_DIR)[1]
   mutantDir = config._TMP_DIR + str(generation) + os.sep + str(memberNum) + os.sep + 'project' + os.sep
-
   recurse_move_local_project_to_original(generation, memberNum, mutantDir, mutantDir)
 
 
@@ -352,23 +351,27 @@ def recurse_move_local_project_to_original(generation, memberNum, pristineMutant
     for aDir in dirs:
       recurse_move_local_project_to_original(generation, memberNum, pristineMutantDir, aDir)
     for aFile in files:
-      fName = os.path.join(root, aFile)
-      pathNoFileName = os.path.split(fName)[0]
+      src = os.path.join(root, aFile)
+      pathNoFileName = os.path.split(src)[0]
       if pathNoFileName + os.sep != pristineMutantDir:
         relPath = pathNoFileName.replace(pristineMutantDir, '') + os.sep 
       else:
         relPath = ''
 
-      dst = config._PROJECT_SRC_DIR + relPath + aFile
-  
-      # print 'to_orig   pathNoFileName:   ' + fName
-      # print 'to_orig   relPath:          ' + relPath
-      # print 'to_orig   dst:              ' + dst
+      dst = config._PROJECT_SRC_DIR + relPath
+
+      #print '------------------------------'
+      #print 'rec_to_orig pristineMutantDir ' + pristineMutantDir   
+      #print 'rec_to_orig mutantDir         ' + mutantDir 
+      #print 'rec_to_orig pathNoFileName    ' + pathNoFileName
+      #print 'rec_to_orig relPath           ' + relPath
+      #print 'rec_to_orig src               ' + src 
+      #print 'rec_to_orig dst               ' + dst
 
       if not os.path.exists(dst):
         os.makedirs(dst)
 
-      shutil.copy(fName, dst)
+      shutil.copy2(src, dst)
 
 # Input : Look for an Ant build.xml in the project directory (ant.apache.org)
 # Output: Run build.xml if it is found. 'ant compile' and 'ant build' are tried  
@@ -402,24 +405,26 @@ def main():
   #backup_project(config._PROJECT_DIR)
   restore_project(config._PROJECT_BACKUP_DIR)
 
-  #mutate_project(gener, member)
-  #create_local_project(1, 4)
-  #move_mutant_to_local_project(1, 4, 'ASAS', 3)
+  mutate_project(gener, member)
+  create_local_project(1, 4)
+  move_mutant_to_local_project(1, 4, 'ASAS', 3)
 
   # Create the representation of a file (The array of numbers of mutants by type)
   testFile = config._PROJECT_SRC_DIR + 'DeadlockDemo.java'
   muties = []
-  #muties = generate_representation(gener, member)
+  muties = generate_representation(gener, member)
 
   print 'Mutant numbers:'
   for i, v in enumerate(muties):
     print v #muties[i]
 
-  #mutate_project(2, member)
-  #create_local_project(2, 4)
-  #move_mutant_to_local_project(2, 4, 'ASAS', 3)
+  mutate_project(2, member)
+  create_local_project(2, 4)
+  move_mutant_to_local_project(2, 4, 'ASAS', 3)
 
-  #move_local_project_to_original(1, 4, mutatedProject)
+  move_local_project_to_original(1, 4)
+
+  compile_project()
 
 if __name__ == "__main__":
   sys.exit(main())
