@@ -393,33 +393,32 @@ def compile_project():
 #
 # ------------------------------------------------------------------------------------------------
 
-# Input: None
-# Output: None
+# Input : Everything 
+# Output: Nothing
 def main():
   gener = 1
   member = 4
 
-  backup_project(config._PROJECT_DIR)
+  #backup_project(config._PROJECT_DIR)
   restore_project(config._PROJECT_BACKUP_DIR)
 
-  mutate_project(gener, member)
-  create_local_project(1, 4)
-  move_mutant_to_local_project(1, 4, 'ASAS', 3)
+  #mutate_project(gener, member)
+  #create_local_project(1, 4)
+  #move_mutant_to_local_project(1, 4, 'ASAS', 3)
 
   # Create the representation of a file (The array of numbers of mutants by type)
   testFile = config._PROJECT_SRC_DIR + 'DeadlockDemo.java'
   muties = []
-  muties = generate_representation(gener, member)
+  #muties = generate_representation(gener, member)
 
   print 'Mutant numbers:'
   for i, v in enumerate(muties):
     print v #muties[i]
 
-  mutate_project(2, member)
-  create_local_project(2, 4)
-  move_mutant_to_local_project(2, 4, 'ASAS', 3)
+  #mutate_project(2, member)
+  #create_local_project(2, 4)
+  #move_mutant_to_local_project(2, 4, 'ASAS', 3)
 
-  #  mutatedProject = config._TMP_DIR + str(gener) + os.sep + str(member) + os.sep + 'project' + os.sep
   #move_local_project_to_original(1, 4, mutatedProject)
 
 if __name__ == "__main__":
