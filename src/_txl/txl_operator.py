@@ -341,7 +341,7 @@ def move_local_project_to_original(generation, memberNum):
     return
 
   #projectTitle = os.path.split(config._PROJECT_DIR)[1]
-  mutantDir = config._TMP_DIR + str(generation) + os.sep + str(mutantNum) + os.sep + 'project' + os.sep
+  mutantDir = config._TMP_DIR + str(generation) + os.sep + str(memberNum) + os.sep + 'project' + os.sep
 
   recurse_move_local_project_to_original(generation, memberNum, mutantDir, mutantDir)
 
@@ -350,14 +350,14 @@ def recurse_move_local_project_to_original(generation, memberNum, pristineMutant
 
   for root, dirs, files in os.walk(mutantDir):
     for aDir in dirs:
-      move_local_project_to_original(generation, memberNum, pristineMutantDir, aDir)
+      recurse_move_local_project_to_original(generation, memberNum, pristineMutantDir, aDir)
     for aFile in files:
       fName = os.path.join(root, aFile)
       pathNoFileName = os.path.split(fName)[0]
       if pathNoFileName + os.sep != pristineMutantDir:
-        relPath = pathNoFileName.replace(PristineMutantDir, '') + os.sep 
+        relPath = pathNoFileName.replace(pristineMutantDir, '') + os.sep 
       else:
-        relPath = '.'
+        relPath = ''
 
       dst = config._PROJECT_SRC_DIR + relPath + aFile
   
