@@ -13,7 +13,11 @@ sys.path.append("..")  # To allow importing parent directory module
 import config
 
 # A dictionary to hold the path of unique mutations per individual's generation
+# The mapping is:
 # (generation, memberNum, txlOperator, mutantNum) => directory path
+# For example:
+# (2 4 EXCR 6) -> /home/myrikhan/workspace/arc/tmp/2/4/source/DeadlockDemo/EXCR
+#                 /EXCR_DeadlockDemo.java_3
 uniqueMutants = {}
 
 
@@ -24,19 +28,24 @@ uniqueMutants = {}
 # -----------------------------------------------------------------------------
 
 
-# Input : 42, 5
-# Output: Mutants for every java file in the project
+# Create all of the mutants for a member of the genetic pool.  Mutants and
+# projects are stored by generation and member
+
 def mutate_project(generation, memberNum):
+  destDir = config._TMP_DIR + str(generation) + os.sep + str(memberNum) + os.sep
 
   if generation == 1:
     sourceDir = config._PROJECT_SRC_DIR
-    destDir = config._TMP_DIR + str(generation) + os.sep + str(memberNum) + os.sep
   else:
     sourceDir = config._TMP_DIR + str(generation - 1) + os.sep + str(memberNum) + os.sep + 'project' + os.sep
-    destDir = config._TMP_DIR + str(generation) + os.sep + str(memberNum) + os.sep
-
+ 
   recursively_mutate_project(generation, memberNum, sourceDir, destDir)
 
+
+# For a given member and generation, generate all of the mutants for a
+# project.  The source project depends on the generation:
+# Gen 1: The source project is the original project
+# Gen >= 2: Source project is from generation -1, for the same memberNum
 
 def recursively_mutate_project(generation, memberNum, sourceDir, destDir):
   for root, dirs, files in os.walk(sourceDir):
@@ -56,8 +65,8 @@ def recursively_mutate_project(generation, memberNum, sourceDir, destDir):
         generate_all_mutants(generation, memberNum, sourceFile, destDir)
 
 
-# Input : 1, 17, /project/somejava.java, /1/2/project/
-# Output: Mutants by directory
+# See comment for recursively_mutate_project
+
 def generate_all_mutants(generation, memberNum, sourceFile, destDir):
   # Loop over the selected operators in the config file
   for operator in config._MUTATIONS:
@@ -65,13 +74,10 @@ def generate_all_mutants(generation, memberNum, sourceFile, destDir):
       generate_mutants(generation, memberNum, operator, sourceFile, destDir)
 
 
-# Input : 15, 39, ASAS, /subdir/JustDoIt.java, /4/7/
-# Output: Mutations of one TXL operator, all in one directory
+# See comment for recursively_mutate_project.  The only new parameter here
+# is the txlOperator to apply to a file
+
 def generate_mutants(generation, memberNum, txlOperator, sourceName, destDir):
-
-  # Start a TXL process to generate mutants in
-  # /temp/[generation]/[member]/[OPNAME]
-
   sourceNoExt = os.path.splitext(sourceName)[0]
   sourceNoFileName = os.path.split(sourceNoExt)[0] + os.sep
   sourceNameOnly = os.path.split(sourceNoExt)[1]
@@ -84,9 +90,6 @@ def generate_mutants(generation, memberNum, txlOperator, sourceName, destDir):
     sourceRelPath = sourceNoFileName.replace(config._TMP_DIR +
                     str(generation - 1) + os.sep + str(memberNum) + os.sep +
                     'project' + os.sep, '')
-
-  #print '-----------------'
-  #print 'sourceRelPath: ' + sourceRelPath
 
   if sourceRelPath == '':
     sourceRelPath = os.sep
@@ -117,26 +120,26 @@ def generate_mutants(generation, memberNum, txlOperator, sourceName, destDir):
   outFile = tempfile.SpooledTemporaryFile()
   errFile = tempfile.SpooledTemporaryFile()
 
-  #print 'TXL command line: '
-  #print ['txl', '-v', sourceName, txlOperator[6], '-', '-outfile', sourceNameOnly + txlOperator[0] + sourceExtOnly, '-outdir', txlDestDir]
-
   process = subprocess.Popen(['txl', sourceName, txlOperator[6], '-',
-          '-outfile', sourceNameOnly + sourceExtOnly, '-outdir', txlDestDir], stdout=outFile, stderr=errFile,
-          cwd=config._PROJECT_DIR, shell=False)
+            '-outfile', sourceNameOnly + sourceExtOnly, '-outdir', txlDestDir], 
+            stdout=outFile, stderr=errFile, cwd=config._PROJECT_DIR, shell=False)
   process.wait()
 
 
-# Input : 1, 17
-# Output: Dictionary of number of mutations by type, eg: OpName => # counted
-def generate_representation(generation, memberNum):
+# Generate the representation for a member.  It is a list of form:
+#     mutation operator: boolean
+# At the same time, generate the dictionary for use here.
 
+def generate_representation(generation, memberNum):
   rep = {}
   for mutationOp in config._MUTATIONS:
     rep[mutationOp[0]] = 0
   
   # Recusive dir walk
-  for root, dirs, files in os.walk(config._TMP_DIR + str(generation) + os.sep + str(memberNum) + os.sep):
+  recurDir = config._TMP_DIR + str(generation) + os.sep + str(memberNum) + os.sep
+  for root, dirs, files in os.walk(recurDir):
     for aDir in dirs:
+
       # Count mutant operator if present in dir name
       for mutationOp in config._MUTATIONS:
 
@@ -144,8 +147,10 @@ def generate_representation(generation, memberNum):
           rep[mutationOp[0]] += 1
 
           # Store the unique instance's directory
+          #print '(' + str(generation) + ' ' + str(memberNum) + ' ' + mutationOp[0] + ' ' + str(rep[mutationOp[0]])   + ')' + '->' + root + os.sep + aDir
+          
           uniqueMutants[(generation, memberNum, mutationOp[0], 
-                          rep[mutationOp[0]])] = root + os.sep + aDir
+                        rep[mutationOp[0]])] = root + os.sep + aDir
 
   return rep
 
@@ -157,35 +162,43 @@ def generate_representation(generation, memberNum):
 # -----------------------------------------------------------------------------
 
 
-# Output: Remote pristine project is backed up into ARC
-def backup_project():
+# Back up the remote, pristine projecft
+# This has to be done as we copy mutant files to the project directory and
+# compile them there.  We don't want to damage the original project!
 
+def backup_project():
   if os.path.exists(config._PROJECT_BACKUP_DIR):
     shutil.rmtree(config._PROJECT_BACKUP_DIR)
   shutil.copytree(config._PROJECT_SRC_DIR, config._PROJECT_BACKUP_DIR)
 
 
-# Output: Pristine project stored in ARC is restored to it's directory
-def restore_project():
+# At the end of an ARC run, restore the project to it's pristine state
 
+def restore_project():
   if os.path.exists(config._PROJECT_SRC_DIR):
     shutil.rmtree(config._PROJECT_SRC_DIR)
   shutil.copytree(config._PROJECT_BACKUP_DIR, config._PROJECT_SRC_DIR)
 
 
-# Input : Generation and member to create the local project for
-# Output: Project, drawn from the pristine source if we are on generation 1,
-#         or drawn from the local project of the same member from generation - 1
-def create_local_project(generation, memberNum, restart):
+# After mutating the files above, create the local project for a member of
+# a given generation.  The source of the project depends on the generation:
+# Gen 1: Original project
+# Gen >= 2: Source project is from generation - 1, for the same memberNum
+# Note that if it is not possible to mutate a member further, or a member
+# has shown no improvement over a number of generations, we have the option
+# reset (restart) the member by overwriting the mutated project with the
+# pristine original.
 
+def create_local_project(generation, memberNum, restart):
+  staticPart = os.sep + str(memberNum) + os.sep + 'project' + os.sep
   # If the indivudal is on the first or restarted, use the original
   if generation is 1 or restart:
     srcDir = config._PROJECT_SRC_DIR
   else:
     # Note: generation - 1 vs generation
-    srcDir = config._TMP_DIR + str(generation - 1) + os.sep + str(memberNum) + os.sep + 'project' + os.sep
+    srcDir = config._TMP_DIR + str(generation - 1) + staticPart 
 
-  destDir = config._TMP_DIR + str(generation) + os.sep + str(memberNum) + os.sep + 'project' + os.sep
+  destDir = config._TMP_DIR + str(generation) + staticPart
 
   # print 'clp srcDir:  ', srcDir, os.path.exists(srcDir)
   # print 'clp destDir: ', destDir,  os.path.exists(destDir)
@@ -195,28 +208,28 @@ def create_local_project(generation, memberNum, restart):
   shutil.copytree(srcDir, destDir)
 
 
-# Input : 1, 16, ASAS, 2
-# Output: Copy a mutant file in to the local project for this generation and member
-def move_mutant_to_local_project(generation, memberNum, txlOperator, mutantNum):
+# After the files have been mutated and the local project formed (by copying
+# it in), move a mutated file to the local project
 
+def move_mutant_to_local_project(generation, memberNum, txlOperator, mutantNum):
+  # Use the dictionary defined at the top of the file
   sourceDir = uniqueMutants[(generation, memberNum, txlOperator, mutantNum)]
 
   pathNoFileName = os.path.split(os.path.split(sourceDir)[0])[0]
-  print pathNoFileName
-  if (pathNoFileName != config._TMP_DIR + str(generation) + os.sep + str(memberNum)):
-    relPath = pathNoFileName.replace(config._TMP_DIR + str(generation) + os.sep + str(memberNum), '')
+
+  basePath = config._TMP_DIR + str(generation) + os.sep + str(memberNum)
+
+  if (pathNoFileName != basePath):
+    relPath = pathNoFileName.replace(basePath, '')
     relPath = os.path.split(relPath)[0] + os.sep
   else:
     relPath = '/'
 
   for root, dirs, files in os.walk(sourceDir):
       for aFile in files:
-        dst = config._TMP_DIR + str(generation) + os.sep + str(memberNum) + os.sep + 'project' + relPath + aFile
+        dst = basePath + os.sep + 'project' + relPath + aFile
         sourceDir += os.sep + aFile
         break
-
-  if not os.path.exists(dst):
-    os.makedirs(dst)
 
   # print '---------------------------'
   # print 'mmtlp txlOperator:    ' + txlOperator
@@ -224,15 +237,17 @@ def move_mutant_to_local_project(generation, memberNum, txlOperator, mutantNum):
   # print 'mmtlp relPath:        ' + relPath
   # print 'mmtlp src:            ' + sourceDir
   # print 'mmtlp dst:            ' + dst
+ 
+  if not os.path.exists(dst):
+    os.makedirs(dst)
 
   shutil.copy(sourceDir, dst)
 
 
-# Input : 1, 7, \1\7\project\
-#         (Be sure to back up the original project first!)
-# Output: Files in original project overwritten
-def move_local_project_to_original(generation, memberNum):
+# When the mutants are generated, project assembled and mutant copied in, the final step
+# is to copy the locak project back to the original directory and compile it. (See next.) 
 
+def move_local_project_to_original(generation, memberNum):
   # Check for existence of a backup
   for root, dirs, files in os.walk(config._PROJECT_BACKUP_DIR):
     if files == [] and dirs == []:
@@ -240,18 +255,15 @@ def move_local_project_to_original(generation, memberNum):
       return
 
   srcDir = config._TMP_DIR + str(generation) + os.sep + str(memberNum) + os.sep + 'project' + os.sep
-  # print "src", srcDir, os.path.exists(srcDir)
-  # print "dst", config._PROJECT_SRC_DIR, os.path.exists(config._PROJECT_SRC_DIR)
 
   if os.path.exists(config._PROJECT_SRC_DIR):
     shutil.rmtree(config._PROJECT_SRC_DIR)
   shutil.copytree(srcDir, config._PROJECT_SRC_DIR)
 
 
-# Input : Look for an Ant build.xml in the project directory (ant.apache.org)
-# Output: Run build.xml if it is found. 'ant compile' and 'ant build' are tried
-def compile_project():
+# After the local project is copied back to the original, compile it.
 
+def compile_project():
   if not os.path.isfile(config._PROJECT_DIR + 'build.xml'):
     print '[ERROR] txl_operator.compile_project: Ant build.xml not found in root directory.  Project wasn\'t compiled.'
   else:
@@ -263,8 +275,6 @@ def compile_project():
     # Make an ant call to compile the program
     antProcess = subprocess.Popen(['ant', 'compile'], stdout=outFile,
                         stderr=errFile, cwd=config._PROJECT_DIR, shell=False)
-    # antProcess = subprocess.Popen(['ant', 'build'], stdout=outFile,
-    #                     stderr=errFile cwd=config._PROJECT_DIR, shell=False)
     antProcess.wait()
 
 
@@ -274,34 +284,32 @@ def compile_project():
 #
 # -----------------------------------------------------------------------------
 
-
-# Input : Everything
-# Output: Nothing
 def main():
   gener = 1
   member = 4
-
-  #backup_project(config._PROJECT_DIR)
-  restore_project(config._PROJECT_BACKUP_DIR)
-
-  mutate_project(gener, member)
-  create_local_project(1, 4)
-  move_mutant_to_local_project(1, 4, 'ASAS', 3)
-
   # Create the representation of a file (The array of numbers of mutants by type)
   testFile = config._PROJECT_SRC_DIR + 'DeadlockDemo.java'
   muties = []
+
+  #backup_project()
+  restore_project()
+
+  mutate_project(gener, member)
   muties = generate_representation(gener, member)
+  create_local_project(gener, member, False)
+  move_mutant_to_local_project(gener, member, 'ASAS', 3)
 
   print 'Mutant numbers:'
   for i, v in enumerate(muties):
-    print v #muties[i]
+    print v
 
   mutate_project(2, member)
-  create_local_project(2, 4)
-  move_mutant_to_local_project(2, 4, 'ASAS', 3)
+  muties = generate_representation(2, member)
+  create_local_project(2, member, False)
+  move_mutant_to_local_project(2, member, 'ASAS', 1)
 
-  move_local_project_to_original(1, 4)
+  
+  move_local_project_to_original(gener, member)
 
   compile_project()
 
