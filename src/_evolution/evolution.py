@@ -20,11 +20,12 @@ def evaluate(individual):
   print "Evaluating individual {} on generation {}".format(individual.id,
                                                         individual.generation)
 
-  # TODO Move the local project to the target's source
-  txl_operator.move_local_project_to_original(individual.generation, 
+  # Move the local project to the target's source
+  txl_operator.move_local_project_to_original(individual.generation,
                                               individual.id)
 
-  # TODO Compile target's source
+  # Compile target's source
+  txl_operator.compile_project()
 
   # ConTest testing
   contest = tester.Tester()
@@ -100,28 +101,42 @@ def mutation(individual):
 
   # Pick a mutation operator to apply
   index = -1
-  while index is -1:
+  limit = 100
+  while index is -1 and limit is not 0:
 
-    # Acquire operator
+    # Acquire operator and the index of that operator
     selectedOperator = feedback_selection(individual)
-    operatorIndex = config._MUTATIONS.index(selectedOperator)
+    operatorIndex = -1
+    for mutationOp in config._MUTATIONS:
+      if mutationOp[1]:
+        operatorIndex += 1
+        if mutationOp is selectedOperator:
+          break;
 
     # Check if there are possible mutant instances
     if len(individual.genome[operatorIndex]) == 0:
-      print "Cannot mutate using this operator, trying again"
+      # print "Cannot mutate using this operator, trying again"
+      limit -= 1;  
     else:
       index = randint(0, len(individual.genome[operatorIndex]) - 1)
 
-  # Update individual
-  individual.lastOperator = selectedOperator
-  individual.appliedOperators.append(selectedOperator[0])
-  individual.genome[operatorIndex][index] = 1
+  # If there 
+  if limit is not 0:
+    # Update individual
+    individual.lastOperator = selectedOperator
+    individual.appliedOperators.append(selectedOperator[0])
+    individual.genome[operatorIndex][index] = 1
 
-  # Create local project then apply mutation
-  txl_operator.create_local_project(individual.generation, individual.id)
-  txl_operator.move_mutant_to_local_project(individual.generation,
-                                            individual.id, selectedOperator[0],
-                                            index + 1)
+    # Create local project then apply mutation
+    txl_operator.create_local_project(individual.generation, 
+                                      individual.id, False)
+    txl_operator.move_mutant_to_local_project(individual.generation,
+                                              individual.id, 
+                                              selectedOperator[0], index + 1)
+  else:
+    txl_operator.create_local_project(individual.generation, individual.id, 
+                                      True)
+
 
 def initialize():
   """Initialize the population of individuals with and id and values."""
@@ -145,7 +160,7 @@ def start():
   """The actual starting process for ARC's evolutionary process."""
 
   # Backup project
-  txl_operator.backup_project(config._PROJECT_SRC_DIR)
+  txl_operator.backup_project()
 
   # Initialize the population
   population = initialize()
@@ -180,4 +195,4 @@ def start():
   print population
 
   # Restore project to original
-  txl_operator.restore_project(config._PROJECT_BACKUP_DIR)
+  txl_operator.restore_project()

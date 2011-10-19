@@ -64,8 +64,14 @@ class Individual():
     hits = txl_operator.generate_representation(self.generation, self.id)
 
     # Populate the genome string with the number of hits
-    for i in xrange(len(hits)):
-       self.genome[i] = [0] * hits[i]
+    # for i in xrange(len(hits)):
+    #    self.genome[i] = [0] * hits[i]
+    i = 0
+    for mutationOp in config._MUTATIONS:
+      if mutationOp[1]:
+        self.genome[i] = [0] * hits[mutationOp[0]]
+        i += 1
+
 
   def __repr__(self):
     """Return a string representation of this individual """
@@ -74,7 +80,7 @@ class Individual():
     i = 0
     for line in self.genome:
        i += 1
-       ret += " Op" + repr(i) + ": "
+       ret += " Op" + repr(i) + ": "  # TODO Use the actual op name
        for item in line:
           ret += "[{}]".format(item)
        ret += "\n"
