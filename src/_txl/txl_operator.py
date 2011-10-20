@@ -12,12 +12,12 @@ import shutil
 sys.path.append("..")  # To allow importing parent directory module
 import config
 
-# A dictionary to hold the path of unique mutations per individual's generation
-# The mapping is:
+# A dictionary to hold the path of unique mutations by individual's and
+# generation. The mapping is:
 # (generation, memberNum, txlOperator, mutantNum) => directory path
 # For example:
-# (2 4 EXCR 6) -> /home/myrikhan/workspace/arc/tmp/2/4/source/DeadlockDemo/EXCR
-#                 /EXCR_DeadlockDemo.java_3
+# (2 4 EXCR 6) -> /home/myrikhan/workspace/arc/tmp/2/4/source/DeadlockDemo
+#                 /EXCR/EXCR_DeadlockDemo.java_3
 uniqueMutants = {}
 
 
@@ -31,7 +31,8 @@ uniqueMutants = {}
 # Create all of the mutants for a member of the genetic pool.  Mutants and
 # projects are stored by generation and member
 
-def mutate_project(generation, memberNum):
+# Returns nothing
+def mutate_project(generation, memberNum):   
   destDir = config._TMP_DIR + str(generation) + os.sep + str(memberNum) + os.sep
 
   if generation == 1:
@@ -47,6 +48,7 @@ def mutate_project(generation, memberNum):
 # Gen 1: The source project is the original project
 # Gen >= 2: Source project is from generation -1, for the same memberNum
 
+# Returns nothing
 def recursively_mutate_project(generation, memberNum, sourceDir, destDir):
   for root, dirs, files in os.walk(sourceDir):
     for sourceSubDir in dirs:
@@ -67,6 +69,7 @@ def recursively_mutate_project(generation, memberNum, sourceDir, destDir):
 
 # See comment for recursively_mutate_project
 
+# Returns nothing
 def generate_all_mutants(generation, memberNum, sourceFile, destDir):
   # Loop over the selected operators in the config file
   for operator in config._MUTATIONS:
@@ -77,6 +80,7 @@ def generate_all_mutants(generation, memberNum, sourceFile, destDir):
 # See comment for recursively_mutate_project.  The only new parameter here
 # is the txlOperator to apply to a file
 
+# Returns nothing
 def generate_mutants(generation, memberNum, txlOperator, sourceName, destDir):
   sourceNoExt = os.path.splitext(sourceName)[0]
   sourceNoFileName = os.path.split(sourceNoExt)[0] + os.sep
@@ -126,10 +130,12 @@ def generate_mutants(generation, memberNum, txlOperator, sourceName, destDir):
   process.wait()
 
 
-# Generate the representation for a member.  It is a list of form:
-#     mutation operator: boolean
-# At the same time, generate the dictionary for use here.
+# Generate the representation for a member.  
+# Generate the dictionary for use here.
 
+# Returns a list ints where each int corresponds to the number of mutations
+# of one type.  eg: {5, 7, 3, ...} = 5 of type ASAS, 7 of type ASAV
+# The order of the mutation types is the same as that in config._MUTATIONS.
 def generate_representation(generation, memberNum):
   rep = {}
   for mutationOp in config._MUTATIONS:
@@ -187,7 +193,7 @@ def restore_project():
 # Note that if it is not possible to mutate a member further, or a member
 # has shown no improvement over a number of generations, we have the option
 # reset (restart) the member by overwriting the mutated project with the
-# pristine original.
+# pristine original.  This is the 'restart' parameter - a boolean.
 
 def create_local_project(generation, memberNum, restart):
   staticPart = os.sep + str(memberNum) + os.sep + 'project' + os.sep
@@ -277,7 +283,17 @@ def compile_project():
                         stderr=errFile, cwd=config._PROJECT_DIR, shell=False)
     antProcess.wait()
 
+    # Look for a compilation error
+    errFile.seek(0)
+    errorText = errFile.read()
+    errFile.close()
 
+    if (errorText.find(b"BUILD FAILED") >= 0):
+      print "[INFO] txl_operator.compile_project():  ANT build failed."
+      return False
+    else:
+      return True
+      
 # -----------------------------------------------------------------------------
 #
 # Main

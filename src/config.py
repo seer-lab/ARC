@@ -27,7 +27,7 @@ _PROJECT_TEST_MB = 2000
 _CONTEST_DIR = _ROOT_DIR + "lib/ConTest/"
 _CONTEST_KINGPROPERTY = _CONTEST_DIR + "KingProperties"
 _CONTEST_JAR = _CONTEST_DIR + "ConTest.jar"
-_CONTEST_RUNS = 25
+_CONTEST_RUNS = 5
 _CONTEST_TIMEOUT_SEC = 2  # Aim for around x2-3 desirable performance
 _TESTSUITE_AVG = 20  # Number of test executions for finding the average time
 
