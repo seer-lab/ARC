@@ -38,6 +38,9 @@ def evaluate(individual):
   error_rate = contest.get_errors() / config._CONTEST_RUNS
 
   # TODO Functional fitness
+  funcFit = contest.get_successes() * config._FITNESS_CORRECT_WEIGHT +
+            + contest.get_timeouts() * config._TIMEOUT_TIMEOUT_WEIGHT
+
   # TODO Non-Functional fitness
 
   # Store achieve rates into genome
