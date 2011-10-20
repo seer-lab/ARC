@@ -1,6 +1,6 @@
 """This module holds all the configuration values that are used in ARC.
 
-There are system, target project, ConTest, mutation operator and Pyevolve
+There are system, target project, ConTest, mutation operator and evolution
 variables that are set in this file and are used all throughout ARC.
 """
 
@@ -16,6 +16,7 @@ _PROJECT_DIR = _ROOT_DIR + "input/"
 _PROJECT_SRC_DIR = _PROJECT_DIR + "source/"
 _PROJECT_TEST_DIR = _PROJECT_DIR + "source/"
 _PROJECT_CLASS_DIR = _PROJECT_DIR + "class/"
+_PROJECT_BACKUP_DIR = _ROOT_DIR + "project_backup/"
 _PROJECT_PREFIX = ""
 _PROJECT_TESTSUITE = "Deadlock2"
 _PROJECT_CLASSPATH = _PROJECT_CLASS_DIR
@@ -48,13 +49,7 @@ _MUTATIONS = [_MUTATION_ASAS, _MUTATION_ASAV, _MUTATION_ASM, _MUTATION_CSO,
               _MUTATION_EXCR, _MUTATION_EXSA, _MUTATION_RSAS, _MUTATION_RSAV,
               _MUTATION_RSB, _MUTATION_RSM, _MUTATION_SHSA, _MUTATION_SHSB]
 
-# Pyevolve variables
-_PYEVOLVE_SEED = 0  # Use 0 if a random seed is desired
-_PYEVOLVE_FREQ_UPDATE = 10
-_PYEVOLVE_GENERATIONS = 100
-_PYEVOLVE_POPULATION = 80
-_PYEVOLVE_ELITISM = 0
-_PYEVOLVE_EXECUTION_ID = "ARC"  # A string ID to represent the run in the DB
-_PYEVOLVE_SQLITE = False  # Enables run statistics to be stored in Pyevolve's DB
-_PYEVOLVE_VPYTHON = False  # Enables real-time statistics
-_PYEVOLVE_VPYTHON_FREQ = 1  # VPython's real-time update frequency
+# Evolution variables
+_EVOLUTION_GENERATIONS = 3
+_EVOLUTION_POPULATION = 2
+_EVOLUTION_ELITISM = 0

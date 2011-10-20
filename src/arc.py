@@ -6,7 +6,7 @@ within the config.py module.
 
 import argparse
 from _contest import contester
-from _pyevolve import evolution
+from _evolution import evolution
 
 def main():
   """The entry point to ARC, to start the evolutionary approach."""
@@ -14,7 +14,7 @@ def main():
   # Run Contest on the test program
   #contester.setup()
 
-  # Run Pyevolve
+  # Run evolution
   evolution.start()
 
 # If this module is ran as main

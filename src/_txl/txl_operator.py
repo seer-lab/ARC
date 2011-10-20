@@ -12,322 +12,306 @@ import shutil
 sys.path.append("..")  # To allow importing parent directory module
 import config
 
-# -----------------------------------------------------------------------------------------------
+# A dictionary to hold the path of unique mutations per individual's generation
+# The mapping is:
+# (generation, memberNum, txlOperator, mutantNum) => directory path
+# For example:
+# (2 4 EXCR 6) -> /home/myrikhan/workspace/arc/tmp/2/4/source/DeadlockDemo/EXCR
+#                 /EXCR_DeadlockDemo.java_3
+uniqueMutants = {}
+
+
+# -----------------------------------------------------------------------------
 #
-# Mutant related functions 
+# Mutant related functions
 #
-# -----------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 
 
-# Input : /project/directory/, 42, 5
-# Output: Mutants for every java file in the project
-def mutate_project(projectDir, generation, memberNum):
+# Create all of the mutants for a member of the genetic pool.  Mutants and
+# projects are stored by generation and member
 
-  for root, dirs, files in os.walk(projectDir):
-    for aDir in dirs:
-      mutate_project(aDir, generation, memberNum)
+def mutate_project(generation, memberNum):
+  destDir = config._TMP_DIR + str(generation) + os.sep + str(memberNum) + os.sep
+
+  if generation == 1:
+    sourceDir = config._PROJECT_SRC_DIR
+  else:
+    sourceDir = config._TMP_DIR + str(generation - 1) + os.sep + str(memberNum) + os.sep + 'project' + os.sep
+ 
+  recursively_mutate_project(generation, memberNum, sourceDir, destDir)
+
+
+# For a given member and generation, generate all of the mutants for a
+# project.  The source project depends on the generation:
+# Gen 1: The source project is the original project
+# Gen >= 2: Source project is from generation -1, for the same memberNum
+
+def recursively_mutate_project(generation, memberNum, sourceDir, destDir):
+  for root, dirs, files in os.walk(sourceDir):
+    for sourceSubDir in dirs:
+      
+      # Check to ensure the root is still within the dest dir
+      # Weird error that occurs only on 1+ generations (root sometimes lies
+      # outside of the actual sourceDir)
+      if destDir in str(sourceDir) and generation is not 1:
+        recursively_mutate_project(generation, memberNum, sourceSubDir, destDir)
+      elif generation is 1:
+        recursively_mutate_project(generation, memberNum, sourceSubDir, destDir)
+
     for aFile in files:
-      fName = os.path.join(root, aFile)
-      #print 'fName: ' + fName
-      generate_all_mutants(generation, memberNum, fName)
+      if ("." in aFile and aFile.split(".")[1] == "java"):
+        sourceFile = os.path.join(root, aFile)
+        generate_all_mutants(generation, memberNum, sourceFile, destDir)
 
 
-# Input : 1, 17, DoSomething.java
-# Output: Mutants by directory
-def generate_all_mutants(generation, memberNum, fileName):
+# See comment for recursively_mutate_project
+
+def generate_all_mutants(generation, memberNum, sourceFile, destDir):
   # Loop over the selected operators in the config file
   for operator in config._MUTATIONS:
     if operator[1]:
-      generate_mutants(generation, memberNum, fileName, operator)
-  time.sleep(0.5)  # Small delay to allow directories/files to form
+      generate_mutants(generation, memberNum, operator, sourceFile, destDir)
 
 
-# Input : 15, 39, JustDoIt.java, ASAS
-# Output: Mutations of one TXL operator, all in one directory
-def generate_mutants(generation, memberNum, fileName, txlOperator):
+# See comment for recursively_mutate_project.  The only new parameter here
+# is the txlOperator to apply to a file
 
-  # Start a TXL process to generate mutants in
-  # /temp/[generation]/[member]/[OPNAME]
+def generate_mutants(generation, memberNum, txlOperator, sourceName, destDir):
+  sourceNoExt = os.path.splitext(sourceName)[0]
+  sourceNoFileName = os.path.split(sourceNoExt)[0] + os.sep
+  sourceNameOnly = os.path.split(sourceNoExt)[1]
+  sourceExtOnly = os.path.splitext(sourceName)[1]
 
-  pathNoExt = os.path.splitext(fileName)[0]
-  pathNoFileName = os.path.split(pathNoExt)[0]
-  if ((pathNoFileName + '/') != config._PROJECT_SRC_DIR):
-    relPath = pathNoFileName.replace(config._PROJECT_SRC_DIR, '')
+  sourceRelPath = ''
+  if (generation == 1):
+    sourceRelPath = sourceNoFileName.replace(config._PROJECT_SRC_DIR, '')
   else:
-    relPath = ''
-  fileNameOnly = os.path.split(pathNoExt)[1]
-  fileExtOnly = os.path.splitext(fileName)[1]
-  pathNoExt = os.path.splitext(fileName)[0]
-  fileNameOnly = os.path.split(pathNoExt)[1]
+    sourceRelPath = sourceNoFileName.replace(config._TMP_DIR +
+                    str(generation - 1) + os.sep + str(memberNum) + os.sep +
+                    'project' + os.sep, '')
 
-  mutantDir = "".join([config._TMP_DIR, str(generation), os.sep, str(memberNum), os.sep, relPath, os.sep, fileNameOnly, os.sep, txlOperator[0], os.sep])
+  if sourceRelPath == '':
+    sourceRelPath = os.sep
 
-  #print '---------------------------'
-  #print 'fileName:       ' + fileName
-  #print 'txlOperator:    ' + txlOperator[0]
-  #print 'pathNoExt:      ' + pathNoExt
-  #print 'pathNoFileName: ' + pathNoFileName
-  #print 'relPath:        ' + relPath
-  #print 'fileNameOnly:   ' + fileNameOnly
-  #print 'fileExtOnly:    ' + fileExtOnly
-  #print "mutantDir:      " + mutantDir
+  txlDestDir = "".join([destDir, sourceRelPath, sourceNameOnly, os.sep,
+                       txlOperator[0], os.sep])
+
+  # print '---------------------------'
+  # print 'sourceName:       ' + sourceName
+  # print 'destDir:          ' + destDir
+  # print 'txlOperator:      ' + txlOperator[0]
+  # print 'sourceNoExt:      ' + sourceNoExt
+  # print 'sourceNoFileName: ' + sourceNoFileName
+  # print 'sourceRelPath:    ' + sourceRelPath
+  # print 'sourceNameOnly:   ' + sourceNameOnly
+  # print 'sourceExtOnly:    ' + sourceExtOnly
+  # print 'txlDestDir:       ' + txlDestDir
 
   # If it doesn't exist, create it
-  if not os.path.exists(mutantDir):
-    os.makedirs(mutantDir)
+  if not os.path.exists(txlDestDir):
+    os.makedirs(txlDestDir)
 
   # If it exists, delete any files and subdirectories in it
   else:
-    for aFile in os.listdir(mutantDir):
-      fullPath = os.path.join(mutantDir, aFile)
-      try:
-        if os.path.isfile(fullPath):
-          os.unlink(fullPath)
-        if os.path.isdir(fullPath):
-          for killFile in os.listdir(fullPath):
-            killFullPath = os.path.join(fullPath, killFile)
-            try:
-              if os.path.isfile(killFullPath):
-                os.unlink(killFullPath)
-            except Exception, f:
-              print f
-          os.rmdir(fullPath)
-      except Exception, e:
-        print e
+    shutil.rmtree(txlDestDir)
+    os.makedirs(txlDestDir)
 
   outFile = tempfile.SpooledTemporaryFile()
   errFile = tempfile.SpooledTemporaryFile()
 
-  #print 'TXL command line: '
-  #print ['txl', '-v', fileName, txlOperator[6], '-', '-outfile', fileNameOnly + txlOperator[0] + fileExtOnly, '-outdir', mutantDir]
+  process = subprocess.Popen(['txl', sourceName, txlOperator[6], '-',
+            '-outfile', sourceNameOnly + sourceExtOnly, '-outdir', txlDestDir], 
+            stdout=outFile, stderr=errFile, cwd=config._PROJECT_DIR, shell=False)
+  process.wait()
 
-  process = subprocess.Popen(['txl', '-v', fileName, txlOperator[6], '-', '-outfile', fileNameOnly + fileExtOnly, '-outdir', mutantDir], stdout=outFile, stderr=errFile, cwd=config._PROJECT_DIR, shell=False)
 
+# Generate the representation for a member.  It is a list of form:
+#     mutation operator: boolean
+# At the same time, generate the dictionary for use here.
 
-# Input : 1, 17, DoSomething.java, ASAS
-# Output: Number of mutations generated by the operator
-def count_mutants(generation, memberNum, fileName, txlOpName):
-  # Look for a /temp/[generation]/[member]/[filename]/[txlopname]
-  # directory.
+def generate_representation(generation, memberNum):
+  rep = {}
+  for mutationOp in config._MUTATIONS:
+    rep[mutationOp[0]] = 0
+  
+  # Recusive dir walk
+  recurDir = config._TMP_DIR + str(generation) + os.sep + str(memberNum) + os.sep
+  for root, dirs, files in os.walk(recurDir):
+    for aDir in dirs:
 
-  pathNoExt = os.path.splitext(fileName)[0]
-  fileNameOnly = os.path.split(pathNoExt)[1]
-  pathNoFileName = os.path.split(pathNoExt)[0]
-  if ((pathNoFileName + '/') != config._PROJECT_SRC_DIR):
-    relPath = pathNoFileName.replace(config._PROJECT_SRC_DIR, '')
-  else:
-    relPath = ''
+      # Count mutant operator if present in dir name
+      for mutationOp in config._MUTATIONS:
 
-  mutantDir = "".join([config._TMP_DIR, str(generation), os.sep, str(memberNum), os.sep, relPath, os.sep, fileNameOnly, os.sep, txlOpName, os.sep])
+        if "{}_".format(mutationOp[0]) in str(aDir):  # TODO more unique match
+          rep[mutationOp[0]] += 1
 
-  # print "count_mutants mutantDir: {}".format(mutantDir)
-
-  if not os.path.exists(mutantDir):
-    return -1
-
-  numDirs = 0
-
-  # Number of subdirectories
-  for aFile in os.listdir(mutantDir):
-    fullPath = os.path.join(mutantDir, aFile)
-    try:
-      if os.path.isdir(fullPath):
-        numDirs = numDirs + 1
-    except Exception, e:
-      print e
-
-  return numDirs
-
-# Input : 1, 17, DoSomething.java
-# Output: List of numer of mutations by type, eg:  [5, 3, 7, ...]
-def generate_representation(generation, memberNum, fileName):
-  rep = []
-  # Loop over the selected operators in the config file
-  for operator in config._MUTATIONS:
-    if operator[1]:
-      rep.append(count_mutants(generation, memberNum, fileName, operator[0]))
+          # Store the unique instance's directory
+          #print '(' + str(generation) + ' ' + str(memberNum) + ' ' + mutationOp[0] + ' ' + str(rep[mutationOp[0]])   + ')' + '->' + root + os.sep + aDir
+          
+          uniqueMutants[(generation, memberNum, mutationOp[0], 
+                        rep[mutationOp[0]])] = root + os.sep + aDir
 
   return rep
 
-# -----------------------------------------------------------------------------------------------
+
+# -----------------------------------------------------------------------------
 #
-# Project related functions 
+# Project related functions
 #
-# -----------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 
 
-# Input : Directory of project to save (Once ARC begins)
-# Output: Remote pristine project is backed up into ARC
-def backup_project(startDir):
+# Back up the remote, pristine projecft
+# This has to be done as we copy mutant files to the project directory and
+# compile them there.  We don't want to damage the original project!
 
-  for root, dirs, files in os.walk(startDir):
-    for aDir in dirs:
-      backup_project(aDir)
-    for aFile in files:
-      fName = os.path.join(root, aFile)
-      pathNoFileName = os.path.split(fName)[0]
-      #print 'bp fName:           ' + fName
-      #print 'bp pathNoFileName   ' + pathNoFileName
-      if ((pathNoFileName + '/') != startDir):
-        relPath = pathNoFileName.replace(startDir, '')
-      else:
-        relPath = ''
-
-      dst = config._PROJECT_BACKUP_DIR + relPath + os.sep
-
-      if not os.path.exists(dst):
-        os.makedirs(dst)
-
-      shutil.copy(fName, dst)
+def backup_project():
+  if os.path.exists(config._PROJECT_BACKUP_DIR):
+    shutil.rmtree(config._PROJECT_BACKUP_DIR)
+  shutil.copytree(config._PROJECT_SRC_DIR, config._PROJECT_BACKUP_DIR)
 
 
-# Input : Directory of project to restore (Once ARC has completed)
-# Output: Pristine project stored in ARC is restored to it's directory
-def restore_project(startDir):
+# At the end of an ARC run, restore the project to it's pristine state
 
-  for root, dirs, files in os.walk(startDir + os.sep):
-    for aDir in dirs:
-      restore_project(aDir)
-    for aFile in files:
-      fName = os.path.join(root, aFile).replace(os.sep + os.sep, os.sep)
-      pathNoFileName = os.path.split(fName)[0]
-      if ((pathNoFileName + os.sep) != startDir):
-        relPath = pathNoFileName.replace(startDir, '') + os.sep
-      else:
-        relPath = ''
-
-      dst = config._PROJECT_DIR + relPath
-
-      #print 'resto_p   root:    ' + root
-      #print 'resto_p   aFile:   ' + aFile
-      #print 'resto_p   fName:   ' + fName
-      #print 'resto_p   relPath: ' + relPath
-      #print 'resto_p   dst:     ' + dst
-
-      if not os.path.exists(dst):
-        os.makedirs(dst)
-
-      shutil.copy(fName, dst)
+def restore_project():
+  if os.path.exists(config._PROJECT_SRC_DIR):
+    shutil.rmtree(config._PROJECT_SRC_DIR)
+  shutil.copytree(config._PROJECT_BACKUP_DIR, config._PROJECT_SRC_DIR)
 
 
-# Input : 1, 16, MyFile.java, ASAS, 2
-# Output: Copy a mutant file in to the local project for this generation and member
-def move_mutant_to_local_project(generation, memberNum, fileName, txlOperator, mutantNum):
+# After mutating the files above, create the local project for a member of
+# a given generation.  The source of the project depends on the generation:
+# Gen 1: Original project
+# Gen >= 2: Source project is from generation - 1, for the same memberNum
+# Note that if it is not possible to mutate a member further, or a member
+# has shown no improvement over a number of generations, we have the option
+# reset (restart) the member by overwriting the mutated project with the
+# pristine original.
 
-  pathNoExt = os.path.splitext(fileName)[0]
-  pathNoFileName = os.path.split(pathNoExt)[0]
-  if ((pathNoFileName + '/') != config._TMP_DIR):
-    relPath = pathNoFileName.replace(config._TMP_DIR, '') + os.sep
+def create_local_project(generation, memberNum, restart):
+  staticPart = os.sep + str(memberNum) + os.sep + 'project' + os.sep
+  # If the indivudal is on the first or restarted, use the original
+  if generation is 1 or restart:
+    srcDir = config._PROJECT_SRC_DIR
   else:
-    relPath = ''
-  fileNameOnly = os.path.split(pathNoExt)[1]
-  fileExtOnly = os.path.splitext(fileName)[1]
+    # Note: generation - 1 vs generation
+    srcDir = config._TMP_DIR + str(generation - 1) + staticPart 
 
-  #projectTitle = os.path.split(config._PROJECT_DIR)[1]
+  destDir = config._TMP_DIR + str(generation) + staticPart
 
-  mutDir = txlOperator + '_' + fileNameOnly + fileExtOnly + '_' + str(mutantNum)
+  # print 'clp srcDir:  ', srcDir, os.path.exists(srcDir)
+  # print 'clp destDir: ', destDir,  os.path.exists(destDir)
 
-  src = "".join([config._TMP_DIR, str(generation), os.sep, str(memberNum), os.sep, relPath, os.sep, fileNameOnly, os.sep, txlOperator, os.sep, mutDir, os.sep, fileNameOnly + fileExtOnly])
+  if os.path.exists(destDir):
+    shutil.rmtree(destDir)
+  shutil.copytree(srcDir, destDir)
 
-  dst = config._TMP_DIR + str(generation) + os.sep + str(memberNum) + os.sep + 'project' + relPath 
 
+# After the files have been mutated and the local project formed (by copying
+# it in), move a mutated file to the local project
+
+def move_mutant_to_local_project(generation, memberNum, txlOperator, mutantNum):
+  # Use the dictionary defined at the top of the file
+  sourceDir = uniqueMutants[(generation, memberNum, txlOperator, mutantNum)]
+
+  pathNoFileName = os.path.split(os.path.split(sourceDir)[0])[0]
+
+  basePath = config._TMP_DIR + str(generation) + os.sep + str(memberNum)
+
+  if (pathNoFileName != basePath):
+    relPath = pathNoFileName.replace(basePath, '')
+    relPath = os.path.split(relPath)[0] + os.sep
+  else:
+    relPath = '/'
+
+  for root, dirs, files in os.walk(sourceDir):
+      for aFile in files:
+        dst = basePath + os.sep + 'project' + relPath + aFile
+        sourceDir += os.sep + aFile
+        break
+
+  # print '---------------------------'
+  # print 'mmtlp txlOperator:    ' + txlOperator
+  # print 'mmtlp pathNoFileName: ' + pathNoFileName
+  # print 'mmtlp relPath:        ' + relPath
+  # print 'mmtlp src:            ' + sourceDir
+  # print 'mmtlp dst:            ' + dst
+ 
   if not os.path.exists(dst):
     os.makedirs(dst)
 
-  dst2 = dst + fileNameOnly + fileExtOnly
-
-  shutil.copy(src, dst2)
+  shutil.copy(sourceDir, dst)
 
 
-# Input : 1, 7, \1\7\project\
-#         (Be sure to back up the original project first!)
-# Output: Files in original project overwritten
-def move_local_project_to_original(generation, memberNum, mutantDir):
+# When the mutants are generated, project assembled and mutant copied in, the final step
+# is to copy the locak project back to the original directory and compile it. (See next.) 
 
+def move_local_project_to_original(generation, memberNum):
   # Check for existence of a backup
-  if len([item for item in os.listdir(config._PROJECT_BACKUP_DIR) if os.path.isfile(item)]) == 0:
-    print '[ERROR] txl_operator.move_local_project_to_original: config._PROJECT_BACKUP_DIR is empty.  No backup means original files could be lost.  Move not completed.'
-    return
+  for root, dirs, files in os.walk(config._PROJECT_BACKUP_DIR):
+    if files == [] and dirs == []:
+      print '[ERROR] txl_operator.move_local_project_to_original: config._PROJECT_BACKUP_DIR is empty.  No backup means original files could be lost.  Move not completed.'
+      return
 
-  #projectTitle = os.path.split(config._PROJECT_DIR)[1]
+  srcDir = config._TMP_DIR + str(generation) + os.sep + str(memberNum) + os.sep + 'project' + os.sep
 
-  for root, dirs, files in os.walk(mutantDir):
-    for aDir in dirs:
-      move_local_project_to_original(generation, memberNum, aDir)
-    for aFile in files:
-      fName = os.path.join(root, aFile)
-      pathNoFileName = os.path.split(fName)[0]
-      if ((pathNoFileName + '/') != mutantDir):
-        relPath = pathNoFileName.replace(mutantDir, '') + os.sep 
-      else:
-        relPath = ''
+  if os.path.exists(config._PROJECT_SRC_DIR):
+    shutil.rmtree(config._PROJECT_SRC_DIR)
+  shutil.copytree(srcDir, config._PROJECT_SRC_DIR)
 
-      dst = config._PROJECT_SRC_DIR + relPath + aFile
 
-      #print 'to_orig   fName:   ' + fName
-      #print 'to_orig   relPath: ' + relPath
-      #print 'to_orig   dst:     ' + dst
+# After the local project is copied back to the original, compile it.
 
-      if not os.path.exists(dst):
-        os.makedirs(dst)
-
-      shutil.copy(fName, dst)
-
-# Input : Look for an Ant build.xml in the project directory (ant.apache.org)
-# Output: Run build.xml if it is found. 'ant compile' and 'ant build' are tried  
 def compile_project():
-
-  os.chdir(config._PROJECT_DIR)
-  
   if not os.path.isfile(config._PROJECT_DIR + 'build.xml'):
     print '[ERROR] txl_operator.compile_project: Ant build.xml not found in root directory.  Project wasn\'t compiled.'
   else:
+    print "[INFO] Compiling new source files"
+
     outFile = tempfile.SpooledTemporaryFile()
     errFile = tempfile.SpooledTemporaryFile()
-    
-    # Hackish: One of these calls should succeed
-    antProcess = subprocess.Popen(['ant', 'compile'], stdout=outFile, stderr=errFile, cwd=config._PROJECT_DIR, shell=False)    
-    antProcess = subprocess.Popen(['ant', 'build'], stdout=outFile, stderr=errFile, cwd=config._PROJECT_DIR, shell=False)    
+
+    # Make an ant call to compile the program
+    antProcess = subprocess.Popen(['ant', 'compile'], stdout=outFile,
+                        stderr=errFile, cwd=config._PROJECT_DIR, shell=False)
+    antProcess.wait()
 
 
-# ------------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 #
 # Main
 #
-# ------------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 
-# Input: None
-# Output: None
 def main():
   gener = 1
   member = 4
-
-  backup_project(config._PROJECT_DIR)
-  restore_project(config._PROJECT_BACKUP_DIR)
-
-  # For generation 1 we take the source from the project directory
-  # afterwards, we draw the mutated source from a local directory.
-  # (We never alter the original source files.)
-  if (gener == 1):
-    testProj = config._PROJECT_SRC_DIR
-  else:
-    testProj = config._TMP_DIR + os.sep + gener + os.sep + member + os.sep + 'src' + os.sep
-
-  mutate_project(testProj, gener, member)
-
   # Create the representation of a file (The array of numbers of mutants by type)
   testFile = config._PROJECT_SRC_DIR + 'DeadlockDemo.java'
   muties = []
-  muties = generate_representation(gener, member, testFile)
+
+  #backup_project()
+  restore_project()
+
+  mutate_project(gener, member)
+  muties = generate_representation(gener, member)
+  create_local_project(gener, member, False)
+  move_mutant_to_local_project(gener, member, 'ASAS', 3)
 
   print 'Mutant numbers:'
   for i, v in enumerate(muties):
-    print v #muties[i]
+    print v
 
-  #move_mutant_to_local_project(1, 4, 'DeadlockDemo.java', 'ASAS', 3)
+  mutate_project(2, member)
+  muties = generate_representation(2, member)
+  create_local_project(2, member, False)
+  move_mutant_to_local_project(2, member, 'ASAS', 1)
 
-  #  mutatedProject = config._TMP_DIR + str(gener) + os.sep + str(member) + os.sep + 'project' + os.sep
-  #move_local_project_to_original(1, 4, mutatedProject)
+  
+  move_local_project_to_original(gener, member)
+
+  compile_project()
 
 if __name__ == "__main__":
   sys.exit(main())
