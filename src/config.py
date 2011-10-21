@@ -5,7 +5,7 @@ variables that are set in this file and are used all throughout ARC.
 """
 
 # System variables
-_ROOT_DIR = "/home/myrikhan/workspace/arc/"
+_ROOT_DIR = "/home/jalbert/workspace/arc/"
 _MAX_MEMORY_MB = 2000
 _MAX_CORES = 2
 _TMP_DIR = _ROOT_DIR + "tmp/"
@@ -27,7 +27,7 @@ _PROJECT_TEST_MB = 2000
 _CONTEST_DIR = _ROOT_DIR + "lib/ConTest/"
 _CONTEST_KINGPROPERTY = _CONTEST_DIR + "KingProperties"
 _CONTEST_JAR = _CONTEST_DIR + "ConTest.jar"
-_CONTEST_RUNS = 2
+_CONTEST_RUNS = 5
 _CONTEST_TIMEOUT_SEC = 2  # Aim for around x2-3 desirable performance
 _TESTSUITE_AVG = 20  # Number of test executions for finding the average time
 
@@ -53,6 +53,12 @@ _MUTATIONS = [_MUTATION_ASAS, _MUTATION_ASAV, _MUTATION_ASM, _MUTATION_CSO,
 _EVOLUTION_GENERATIONS = 3
 _EVOLUTION_POPULATION = 2
 _EVOLUTION_ELITISM = 0
+_EVOLUTION_FUNCTIONAL_PHASE = True  # If false then skip the functional phase
+
+# Fitness evaluation variables
+_SUCCESS_WEIGHT = 100
+_TIMEOUT_WEIGHT = 50
+
 _GENERATIONAL_IMPROVEMENT_WINDOW = 10
 _AVG_FITNESS_UP = 50
 _BEST_FITNESS_UP = 100

@@ -25,13 +25,6 @@ def evaluate(individual):
   print "Evaluating individual {} on generation {}".format(individual.id,
                                                         individual.generation)
 
-  # Move the local project to the target's source
-  txl_operator.move_local_project_to_original(individual.generation,
-                                              individual.id)
-
-  # Compile target's source
-  txl_operator.compile_project()
-
   # ConTest testing
   contest = tester.Tester()
   contest.begin_testing()
@@ -42,8 +35,17 @@ def evaluate(individual):
   deadlock_rate = contest.get_deadlocks() / config._CONTEST_RUNS
   error_rate = contest.get_errors() / config._CONTEST_RUNS
 
-  # TODO Functional fitness
-  # TODO Non-Functional fitness
+  # If we are evaluating the functional fitness
+  if individual.functionalPhase:
+    individual.functionalScore = (contest.get_successes() * \
+                                  config._SUCCESS_WEIGHT) + \
+                                  (contest.get_timeouts() * \
+                                  config._TIMEOUT_WEIGHT)
+  
+  # If we are evaluating the non-functional fitness
+  if not individual.functionalPhase:
+    # TODO individual.nonFunctionalScore = 
+    pass
 
   # Store achieve rates into genome
   individual.successRate.append(success_rate)
@@ -64,10 +66,10 @@ def feedback_selection(individual):
   """
 
   opType = 'race'
+  # candidateChoices is a list of config._MUTATIONS
   candatateChoices = []
 
   # Acquire a random value that is less then the total of the bug rates
-  print individual.generation
   totalBugRate = (individual.deadlockRate[len(individual.deadlockRate) - 1] 
                  + individual.dataraceRate[len(individual.dataraceRate) - 1])
   choice = uniform(0, totalBugRate)
@@ -107,41 +109,78 @@ def mutation(individual):
   # Repopulate the individual's genome with new possible mutation locations
   individual.repopulateGenome()
 
-  # Pick a mutation operator to apply
-  index = -1
-  limit = 100
-  while index is -1 and limit is not 0:
+  # Definite check to see if ANY mutants exists for an individual
+  checkInd = -1
+  mutantsExist = False
+  for mutationOp in config._MUTATIONS:
+    if mutationOp[1]: 
+      checkInd += 1
+      if len(individual.genome[checkInd]) != 0:
+        mutantsExist = True
 
-    # Acquire operator and the index of that operator
+  # IF no mutants exist, reset and return
+  if not mutantsExist:
+    txl_operator.create_local_project(individual.generation, individual.id,
+                                      True)
+    return
+
+  # Pick a mutation operator to apply
+  limit = 100  # Number of attempts to find a valid mutation
+  successfulCompile = False
+  
+  # Keep trying to find a successful mutant within the retry limits
+  while limit is not 0 and not successfulCompile:
+
+    # Acquire operator, one of config._MUTATIONS
     selectedOperator = feedback_selection(individual)
+
+    # Find the integer index of the selectedOperator
     operatorIndex = -1
     for mutationOp in config._MUTATIONS:
       if mutationOp[1]:
         operatorIndex += 1
         if mutationOp is selectedOperator:
-          break;
+          break
 
-    # Check if there are possible mutant instances
+    # Check if there are instances of the selected mutationOp
     if len(individual.genome[operatorIndex]) == 0:
       # print "Cannot mutate using this operator, trying again"
-      limit -= 1;  
+      limit -= 1
     else:
+
+      # Represents the index of the mutation instance to work on
       index = randint(0, len(individual.genome[operatorIndex]) - 1)
 
-  # If there 
-  if limit is not 0:
-    # Update individual
-    individual.lastOperator = selectedOperator
-    individual.appliedOperators.append(selectedOperator[0])
-    individual.genome[operatorIndex][index] = 1
+      # Create local project then apply mutation
+      # TODO: Doing this for every compile attempt is inefficient.
+      #       Ideally we should create_local_project only once
+      txl_operator.create_local_project(individual.generation, 
+                                        individual.id, False)
+      txl_operator.move_mutant_to_local_project(individual.generation,
+                                                individual.id, 
+                                                selectedOperator[0], index + 1)
 
-    # Create local project then apply mutation
-    txl_operator.create_local_project(individual.generation, 
-                                      individual.id, False)
-    txl_operator.move_mutant_to_local_project(individual.generation,
-                                              individual.id, 
-                                              selectedOperator[0], index + 1)
-  else:
+      # Move the local project to the target's source
+      txl_operator.move_local_project_to_original(individual.generation,
+                                                  individual.id)
+
+      # Compile target's source
+      if txl_operator.compile_project():
+        successfulCompile = True
+
+        # Update individual
+        individual.lastOperator = selectedOperator
+        individual.appliedOperators.append(selectedOperator[0])
+
+        # Switch the appropriate bit to 1 to record which instance is used
+        individual.genome[operatorIndex][index] = 1
+      else:
+        limit -= 1
+        print "[ERROR] Compiling failed, retrying another mutation"
+
+  if not successfulCompile:
+    # If not mutant was found we reset the project to it's pristine state
+    # and start over
     txl_operator.create_local_project(individual.generation, individual.id, 
                                       True)
 
@@ -160,6 +199,12 @@ def initialize():
   for i in xrange(1, config._EVOLUTION_POPULATION + 1):
     print "Creating individual {}".format(i)
     individual = Individual(mutationOperators, i)
+
+    # Set the initial phase to consider
+    # (true => functional then non-functional)
+    # (false => non-functional only)
+    individual.functionalPhase = config._EVOLUTION_FUNCTIONAL_PHASE
+
     population.append(individual)
 
   return population
@@ -193,9 +238,9 @@ def start():
     highestID = -1
     runningSum = 0
     for individual in population:
-      runningSum += individual.fitness
-      if individual.fitness > highestSoFar:
-        highestSoFar = individual.fitness
+      runningSum += individual.getFitness()
+      if individual.getFitness() > highestSoFar:
+        highestSoFar = individual.getFitness()
         highestID = individual.id
 
     averageFitness.append(runningSum / config._EVOLUTION_POPULATION)
@@ -203,7 +248,7 @@ def start():
 
     # Check for terminating conditions
     for individual in population:
-      if individual.lastSuccessRate == 1:
+      if individual.successRate[-1] == 1:
         print "Found best individual", individual.id
         done = True
         break
@@ -221,25 +266,25 @@ def start():
     if generation >= config._GENERATIONAL_IMPROVEMENT_WINDOW + 1:
       for i in xrange(generation - 
           config._GENERATIONAL_IMPROVEMENT_WINDOW + 1, generation):
-        if (math.fabs(individual.averageFitness[i] - individual.averageFitness[i - 1]) >
+        if (math.fabs(averageFitness[i] - averageFitness[i - 1]) >
            config._AVG_FITNESS_UP):
           avgFitTest = True 
-        if (math.abs(individual.bestFitness[i] - individual.bestFitness[i - 1]) >
+        if (math.abs(bestFitness[i] - bestFitness[i - 1]) >
            config._BEST_FITNESS_UP):
           maxFitTest = True 
 
-    if not avgFitTest:
-      print ("Average fitness hasn't increased by {} in {} generations".
-            format(config._AVG_FITNESS_UP,
-            config._GENERATIONAL_IMPROVEMENT_WINDOW))
-      done = True
-      break
-    if not maxFitTest:
-      print ("Maximum fitness hasn't increased by {} in {} generations".
-            format(config._BEST_FITNESS_UP,
-            config._GENERATIONAL_IMPROVEMENT_WINDOW))
-      done = True
-      break
+      if not avgFitTest:
+        print ("Average fitness hasn't increased by {} in {} generations".
+              format(config._AVG_FITNESS_UP,
+              config._GENERATIONAL_IMPROVEMENT_WINDOW))
+        done = True
+        break
+      if not maxFitTest:
+        print ("Maximum fitness hasn't increased by {} in {} generations".
+              format(config._BEST_FITNESS_UP,
+              config._GENERATIONAL_IMPROVEMENT_WINDOW))
+        done = True
+        break
           
   print population
 

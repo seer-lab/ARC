@@ -49,8 +49,16 @@ class Individual():
     self.deadlockRate = [0]
     self.errorRate = [0]
 
-    self.averageFitness = []
-    self.bestFitness = []
+    self.functionalScore = 0.0
+    self.nonFunctionalScore = 0.0
+    self.functionalPhase = True
+
+  def getFitness(self):
+
+    if self.functionalPhase:
+      return self.functionalScore
+    else:
+      return self.nonFunctionalScore
 
   def repopulateGenome(self):
     """This function will re-populate the genome with location values.
@@ -93,9 +101,10 @@ class Individual():
     ret += " Generation: {}\n".format(self.generation)
     ret += " Last Operator: {}\n".format(self.lastOperator)
     ret += " Applied Operators: {}\n".format(self.appliedOperators)
-    ret += " Last Success Rate: {}\n".format(self.lastSuccessRate)
-    ret += " Last Timeout Rate: {}\n".format(self.lastTimeoutRate)
-    ret += " Last Datarace Rate: {}\n".format(self.lastDataraceRate)
-    ret += " Last Deadlock Rate: {}\n".format(self.lastDeadlockRate)
-    ret += " Last Error Rate: {}\n".format(self.lastErrorRate)
+    # TODO Fix me
+    # ret += " Last Success Rate: {}\n".format(self.lastSuccessRate)
+    # ret += " Last Timeout Rate: {}\n".format(self.lastTimeoutRate)
+    # ret += " Last Datarace Rate: {}\n".format(self.lastDataraceRate)
+    # ret += " Last Deadlock Rate: {}\n".format(self.lastDeadlockRate)
+    # ret += " Last Error Rate: {}\n".format(self.lastErrorRate)
     return ret
