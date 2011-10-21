@@ -5,11 +5,16 @@ from random import randint
 from random import uniform
 import sys
 from individual import Individual
+import math
 
 sys.path.append("..")  # To allow importing parent directory module
 import config
 from _contest import tester
 from _txl import txl_operator
+
+# For each generation, record the average and best fitness
+averageFitness = []
+bestFitness = []
 
 def evaluate(individual):
   """Perform the actual evaluation of said individual using ConTest testing.
@@ -180,6 +185,17 @@ def start():
     for individual in population:
       evaluate(individual)
 
+    # Calculate average and best fitness
+    highestSoFar = 0
+    runningSum = 0
+    for individual in population:
+      runningSum += individual.fitness
+      if individual.fitness > highestSoFar:
+        highestSoFar = individual.fitness
+
+    averageFitness.append(runningSum / config._EVOLUTION_POPULATION)
+    bestFitness.append(highestSoFar)
+
     # Check for terminating conditions
     for individual in population:
       if individual.lastSuccessRate == 1:
@@ -191,7 +207,35 @@ def start():
         done = True
         break
 
+    # Alternate termination criteria
+    # - If average improvement in fitness is less than 
+    # _MINIMAL_FITNESS_IMPROVEMENT over 
+    # _GENERATIONAL_IMPROVEMENT_WINDOW
+    avgFitTest = False
+    maxFitTest = False
+    if generation >= config._GENERATIONAL_IMPROVEMENT_WINDOW + 1:
+      for i in xrange(generation - 
+          config._GENERATIONAL_IMPROVEMENT_WINDOW + 1, generation):
+        if (math.fabs(averageFitness[i] - averageFitness[i - 1]) >
+           config._AVG_FITNESS_UP):
+          avgFitTest = True 
+        if (math.abs(bestFitness[i] - bestFitness[i - 1]) >
+           config._BEST_FITNESS_UP):
+          maxFitTest = True 
 
+    if not avgFitTest:
+      print ("Average fitness hasn't increased by {} in {} generations".
+            format(config._AVG_FITNESS_UP,
+            config._GENERATIONAL_IMPROVEMENT_WINDOW))
+      done = True
+      break
+    if not maxFitTest:
+      print ("Maximum fitness hasn't increased by {} in {} generations".
+            format(config._BEST_FITNESS_UP,
+            config._GENERATIONAL_IMPROVEMENT_WINDOW))
+      done = True
+      break
+          
   print population
 
   # Restore project to original
