@@ -105,36 +105,36 @@ def mutation(individual):
         mutantsExist = True
 
   # IF no mutants exist, reset and return
-  # TODO: Is this good?
   if not mutantsExist:
-    txl_operator.create_local_project(individual.generation, individual.id, 
+    txl_operator.create_local_project(individual.generation, individual.id,
                                       True)
     return
 
   # Pick a mutation operator to apply
-  index = -1
-  limit = 100
+  limit = 100  # Number of attempts to find a valid mutation
   successfulCompile = False
-  #while index is -1 and limit is not 0:
+  
+  # Keep trying to find a successful mutant within the retry limits
   while limit is not 0 and not successfulCompile:
 
     # Acquire operator, one of config._MUTATIONS
     selectedOperator = feedback_selection(individual)
+
     # Find the integer index of the selectedOperator
     operatorIndex = -1
     for mutationOp in config._MUTATIONS:
       if mutationOp[1]:
         operatorIndex += 1
         if mutationOp is selectedOperator:
-          break;
+          break
 
     # Check if there are instances of the selected mutationOp
     if len(individual.genome[operatorIndex]) == 0:
       # print "Cannot mutate using this operator, trying again"
-      limit -= 1;  
+      limit -= 1
     else:
-      # Mutation instance found, so set index and break out of the
-      # while statement
+
+      # Represents the index of the mutation instance to work on
       index = randint(0, len(individual.genome[operatorIndex]) - 1)
 
       # Create local project then apply mutation
@@ -152,16 +152,17 @@ def mutation(individual):
 
       # Compile target's source
       if txl_operator.compile_project():
-        successfulCompile = True                                              
+        successfulCompile = True
+
         # Update individual
         individual.lastOperator = selectedOperator
         individual.appliedOperators.append(selectedOperator[0])
-        # Switch the appropriate bit to 1 to record which instance of the 
-        # mutation operator was selected
+
+        # Switch the appropriate bit to 1 to record which instance is used
         individual.genome[operatorIndex][index] = 1
       else:
         limit -= 1
-        index = -1
+        print "[ERROR] Compiling failed, retrying another mutation"
 
   if not successfulCompile:
     # If not mutant was found we reset the project to it's pristine state
