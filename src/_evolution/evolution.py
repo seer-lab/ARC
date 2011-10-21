@@ -20,13 +20,6 @@ def evaluate(individual):
   print "Evaluating individual {} on generation {}".format(individual.id,
                                                         individual.generation)
 
-  # Move the local project to the target's source
-  txl_operator.move_local_project_to_original(individual.generation,
-                                              individual.id)
-
-  # Compile target's source
-  txl_operator.compile_project()
-
   # ConTest testing
   contest = tester.Tester()
   contest.begin_testing()
@@ -59,13 +52,14 @@ def feedback_selection(individual):
   """
 
   opType = 'race'
+  # candidateChoices is a list of config._MUTATIONS
   candatateChoices = []
 
   # Acquire a random value that is less then the total of the bug rates
   totalBugRate = individual.lastDeadlockRate + individual.lastDataraceRate
   choice = uniform(0, totalBugRate)
 
-  # Determine which it bug type to use
+  # Determine which bug type to use
   if individual.lastDataraceRate > individual.lastDeadlockRate:
     # If choice falls past the datarace range then type is lock
     if choice >= individual.lastDataraceRate:
@@ -84,9 +78,10 @@ def feedback_selection(individual):
     for operator in config._MUTATIONS:
       if operator[1] and operator[3] and operator[4]:
         candatateChoices.append(operator)
-
+  
   selectedOperator = candatateChoices[randint(0, len(candatateChoices) - 1)]
 
+  # Return type is a config._MUTATIONS
   return selectedOperator
 
 
@@ -96,44 +91,82 @@ def mutation(individual):
   print "Mutating individual {} on generation {}".format(individual.id, 
                                                          individual.generation)
 
-  # Repopulate the individual's genome with new possible mutation locations
+  # Repopulate the individual's genome with a list of numbers of mutations 
+  # by type
   individual.repopulateGenome()
 
-  # Pick a mutation operator to apply
-  index = -1
-  limit = 100
-  while index is -1 and limit is not 0:
+  # Definite check to see if ANY mutants exists for an individual
+  checkInd = -1
+  mutantsExist = False
+  for mutationOp in config._MUTATIONS:
+    if mutationOp[1]: 
+      checkInd += 1
+      if len(individual.genome[checkInd]) != 0:
+        mutantsExist = True
 
-    # Acquire operator and the index of that operator
+  # IF no mutants exist, reset and return
+  if not mutantsExist:
+    txl_operator.create_local_project(individual.generation, individual.id,
+                                      True)
+    return
+
+  # Pick a mutation operator to apply
+  limit = 100  # Number of attempts to find a valid mutation
+  successfulCompile = False
+  
+  # Keep trying to find a successful mutant within the retry limits
+  while limit is not 0 and not successfulCompile:
+
+    # Acquire operator, one of config._MUTATIONS
     selectedOperator = feedback_selection(individual)
+
+    # Find the integer index of the selectedOperator
     operatorIndex = -1
     for mutationOp in config._MUTATIONS:
       if mutationOp[1]:
         operatorIndex += 1
         if mutationOp is selectedOperator:
-          break;
+          break
 
-    # Check if there are possible mutant instances
+    # Check if there are instances of the selected mutationOp
     if len(individual.genome[operatorIndex]) == 0:
       # print "Cannot mutate using this operator, trying again"
-      limit -= 1;  
+      limit -= 1
     else:
+
+      # Represents the index of the mutation instance to work on
       index = randint(0, len(individual.genome[operatorIndex]) - 1)
 
-  # If there 
-  if limit is not 0:
-    # Update individual
-    individual.lastOperator = selectedOperator
-    individual.appliedOperators.append(selectedOperator[0])
-    individual.genome[operatorIndex][index] = 1
+      # Create local project then apply mutation
+      # TODO: Doing this for every compile attempt is inefficient.
+      #       Ideally we should create_local_project only once
+      txl_operator.create_local_project(individual.generation, 
+                                        individual.id, False)
+      txl_operator.move_mutant_to_local_project(individual.generation,
+                                                individual.id, 
+                                                selectedOperator[0], index + 1)
 
-    # Create local project then apply mutation
-    txl_operator.create_local_project(individual.generation, 
-                                      individual.id, False)
-    txl_operator.move_mutant_to_local_project(individual.generation,
-                                              individual.id, 
-                                              selectedOperator[0], index + 1)
-  else:
+      # Move the local project to the target's source
+      txl_operator.move_local_project_to_original(individual.generation,
+                                                  individual.id)
+
+      # Compile target's source
+      if txl_operator.compile_project():
+        successfulCompile = True
+
+        # Update individual
+        individual.lastOperator = selectedOperator
+        individual.appliedOperators.append(selectedOperator[0])
+
+        # Switch the appropriate bit to 1 to record which instance is used
+        individual.genome[operatorIndex][index] = 1
+      else:
+        limit -= 1
+        print "[ERROR] Compiling failed, retrying another mutation"
+
+  if not successfulCompile:
+    # If not mutant was found we reset the project to it's pristine state
+    # and start over
     txl_operator.create_local_project(individual.generation, individual.id, 
                                       True)
 
@@ -190,7 +223,6 @@ def start():
         print "Exhausted all generations"
         done = True
         break
-
 
   print population
 
