@@ -42,11 +42,15 @@ class Individual():
     self.generation = 0
     self.lastOperator = ""
     self.appliedOperators = []
-    self.lastSuccessRate = 0.0
-    self.lastTimeoutRate = 0.0
-    self.lastDataraceRate = 0.0
-    self.lastDeadlockRate = 0.0
-    self.lastErrorRate = 0.0
+
+    self.successRate = [0]
+    self.timeoutRate = [0]
+    self.dataraceRate = [0]
+    self.deadlockRate = [0]
+    self.errorRate = [0]
+
+    self.averageFitness = []
+    self.bestFitness = []
 
   def repopulateGenome(self):
     """This function will re-populate the genome with location values.

@@ -46,11 +46,11 @@ def evaluate(individual):
   # TODO Non-Functional fitness
 
   # Store achieve rates into genome
-  individual.lastSuccessRate = success_rate
-  individual.lastTimeoutRate = timeout_rate
-  individual.lastDataraceRate = datarace_rate
-  individual.lastDeadlockRate = deadlock_rate
-  individual.lastErrorRate = error_rate
+  individual.successRate.append(success_rate)
+  individual.timeoutRate.append(timeout_rate)
+  individual.dataraceRate.append(datarace_rate)
+  individual.deadlockRate.append(deadlock_rate)
+  individual.errorRate.append(error_rate)
 
   contest.clear_results()
 
@@ -67,17 +67,20 @@ def feedback_selection(individual):
   candatateChoices = []
 
   # Acquire a random value that is less then the total of the bug rates
-  totalBugRate = individual.lastDeadlockRate + individual.lastDataraceRate
+  print individual.generation
+  totalBugRate = (individual.deadlockRate[len(individual.deadlockRate) - 1] 
+                 + individual.dataraceRate[len(individual.dataraceRate) - 1])
   choice = uniform(0, totalBugRate)
 
   # Determine which it bug type to use
-  if individual.lastDataraceRate > individual.lastDeadlockRate:
+  if (individual.dataraceRate[len(individual.dataraceRate) - 1] > 
+     individual.deadlockRate[len(individual.deadlockRate) - 1]):
     # If choice falls past the datarace range then type is lock
-    if choice >= individual.lastDataraceRate:
+    if choice >= individual.dataraceRate[len(individual.dataraceRate) - 1]:
       opType = 'lock'
   else:
     # If choice falls under the deadlock range then type is lock
-    if choice <= individual.lastDeadlockRate:
+    if choice <= individual.deadlockRate[len(individual.deadlockRate) - 1]:
       opType = 'lock'
 
   # Select the appropriate operator based on enable/type/functional
@@ -186,15 +189,17 @@ def start():
       evaluate(individual)
 
     # Calculate average and best fitness
-    highestSoFar = 0
+    highestSoFar = -1
+    highestID = -1
     runningSum = 0
     for individual in population:
       runningSum += individual.fitness
       if individual.fitness > highestSoFar:
         highestSoFar = individual.fitness
+        highestID = individual.id
 
     averageFitness.append(runningSum / config._EVOLUTION_POPULATION)
-    bestFitness.append(highestSoFar)
+    bestFitness.append((highestSoFar, highestID))
 
     # Check for terminating conditions
     for individual in population:
@@ -216,10 +221,10 @@ def start():
     if generation >= config._GENERATIONAL_IMPROVEMENT_WINDOW + 1:
       for i in xrange(generation - 
           config._GENERATIONAL_IMPROVEMENT_WINDOW + 1, generation):
-        if (math.fabs(averageFitness[i] - averageFitness[i - 1]) >
+        if (math.fabs(individual.averageFitness[i] - individual.averageFitness[i - 1]) >
            config._AVG_FITNESS_UP):
           avgFitTest = True 
-        if (math.abs(bestFitness[i] - bestFitness[i - 1]) >
+        if (math.abs(individual.bestFitness[i] - individual.bestFitness[i - 1]) >
            config._BEST_FITNESS_UP):
           maxFitTest = True 
 
