@@ -47,6 +47,9 @@ class Individual():
     self.lastDataraceRate = 0.0
     self.lastDeadlockRate = 0.0
     self.lastErrorRate = 0.0
+    self.functionalScore = 0.0
+    self.nonFunctionalScore = 0.0
+    self.functionalPhase = True
 
   def repopulateGenome(self):
     """This function will re-populate the genome with location values.

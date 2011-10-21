@@ -11,6 +11,7 @@ import config
 from _contest import tester
 from _txl import txl_operator
 
+
 def evaluate(individual):
   """Perform the actual evaluation of said individual using ConTest testing.
 
@@ -24,21 +25,26 @@ def evaluate(individual):
   contest = tester.Tester()
   contest.begin_testing()
 
-  success_rate = contest.get_successes() / config._CONTEST_RUNS
-  timeout_rate = contest.get_timeouts() / config._CONTEST_RUNS
-  datarace_rate = contest.get_dataraces() / config._CONTEST_RUNS
-  deadlock_rate = contest.get_deadlocks() / config._CONTEST_RUNS
-  error_rate = contest.get_errors() / config._CONTEST_RUNS
 
-  # TODO Functional fitness
-  # TODO Non-Functional fitness
+  # If we are evaluating the functional fitness
+  if individual.functionalPhase:
+    individual.functionalScore = (contest.get_successes() * \
+                                  config._SUCCESS_WEIGHT) + \
+                                  (contest.get_timeouts() * \
+                                  config._TIMEOUT_WEIGHT)
+  
+  # If we are evaluating the non-functional fitness
+  if not individual.functionalPhase:
+    # TODO individual.nonFunctionalScore = 
+    sys.exit()
+    pass
 
   # Store achieve rates into genome
-  individual.lastSuccessRate = success_rate
-  individual.lastTimeoutRate = timeout_rate
-  individual.lastDataraceRate = datarace_rate
-  individual.lastDeadlockRate = deadlock_rate
-  individual.lastErrorRate = error_rate
+  individual.lastSuccessRate = contest.get_successes() / config._CONTEST_RUNS
+  individual.lastTimeoutRate = contest.get_timeouts() / config._CONTEST_RUNS
+  individual.lastDataraceRate = contest.get_dataraces() / config._CONTEST_RUNS
+  individual.lastDeadlockRate = contest.get_deadlocks() / config._CONTEST_RUNS
+  individual.lastErrorRate = contest.get_errors() / config._CONTEST_RUNS
 
   contest.clear_results()
 
@@ -185,6 +191,12 @@ def initialize():
   for i in xrange(1, config._EVOLUTION_POPULATION + 1):
     print "Creating individual {}".format(i)
     individual = Individual(mutationOperators, i)
+
+    # Set the initial phase to consider
+    # (true => functional then non-functional)
+    # (false => non-functional only)
+    individual.functionalPhase = config._EVOLUTION_FUNCTIONAL_PHASE
+
     population.append(individual)
 
   return population
