@@ -5,7 +5,7 @@ variables that are set in this file and are used all throughout ARC.
 """
 
 # System variables
-_ROOT_DIR = "/home/myrikhan/workspace/arc/"
+_ROOT_DIR = "/home/jalbert/workspace/arc/"
 _MAX_MEMORY_MB = 2000
 _MAX_CORES = 2
 _TMP_DIR = _ROOT_DIR + "tmp/"
@@ -58,3 +58,7 @@ _EVOLUTION_FUNCTIONAL_PHASE = True  # If false then skip the functional phase
 # Fitness evaluation variables
 _SUCCESS_WEIGHT = 100
 _TIMEOUT_WEIGHT = 50
+
+_GENERATIONAL_IMPROVEMENT_WINDOW = 10
+_AVG_FITNESS_UP = 50
+_BEST_FITNESS_UP = 100
