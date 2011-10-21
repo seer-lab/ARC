@@ -5,12 +5,16 @@ from random import randint
 from random import uniform
 import sys
 from individual import Individual
+import math
 
 sys.path.append("..")  # To allow importing parent directory module
 import config
 from _contest import tester
 from _txl import txl_operator
 
+# For each generation, record the average and best fitness
+averageFitness = []
+bestFitness = []
 
 def evaluate(individual):
   """Perform the actual evaluation of said individual using ConTest testing.
@@ -25,6 +29,11 @@ def evaluate(individual):
   contest = tester.Tester()
   contest.begin_testing()
 
+  success_rate = contest.get_successes() / config._CONTEST_RUNS
+  timeout_rate = contest.get_timeouts() / config._CONTEST_RUNS
+  datarace_rate = contest.get_dataraces() / config._CONTEST_RUNS
+  deadlock_rate = contest.get_deadlocks() / config._CONTEST_RUNS
+  error_rate = contest.get_errors() / config._CONTEST_RUNS
 
   # If we are evaluating the functional fitness
   if individual.functionalPhase:
@@ -36,15 +45,14 @@ def evaluate(individual):
   # If we are evaluating the non-functional fitness
   if not individual.functionalPhase:
     # TODO individual.nonFunctionalScore = 
-    sys.exit()
     pass
 
   # Store achieve rates into genome
-  individual.lastSuccessRate = contest.get_successes() / config._CONTEST_RUNS
-  individual.lastTimeoutRate = contest.get_timeouts() / config._CONTEST_RUNS
-  individual.lastDataraceRate = contest.get_dataraces() / config._CONTEST_RUNS
-  individual.lastDeadlockRate = contest.get_deadlocks() / config._CONTEST_RUNS
-  individual.lastErrorRate = contest.get_errors() / config._CONTEST_RUNS
+  individual.successRate.append(success_rate)
+  individual.timeoutRate.append(timeout_rate)
+  individual.dataraceRate.append(datarace_rate)
+  individual.deadlockRate.append(deadlock_rate)
+  individual.errorRate.append(error_rate)
 
   contest.clear_results()
 
@@ -62,17 +70,19 @@ def feedback_selection(individual):
   candatateChoices = []
 
   # Acquire a random value that is less then the total of the bug rates
-  totalBugRate = individual.lastDeadlockRate + individual.lastDataraceRate
+  totalBugRate = (individual.deadlockRate[len(individual.deadlockRate) - 1] 
+                 + individual.dataraceRate[len(individual.dataraceRate) - 1])
   choice = uniform(0, totalBugRate)
 
-  # Determine which bug type to use
-  if individual.lastDataraceRate > individual.lastDeadlockRate:
+  # Determine which it bug type to use
+  if (individual.dataraceRate[len(individual.dataraceRate) - 1] > 
+     individual.deadlockRate[len(individual.deadlockRate) - 1]):
     # If choice falls past the datarace range then type is lock
-    if choice >= individual.lastDataraceRate:
+    if choice >= individual.dataraceRate[len(individual.dataraceRate) - 1]:
       opType = 'lock'
   else:
     # If choice falls under the deadlock range then type is lock
-    if choice <= individual.lastDeadlockRate:
+    if choice <= individual.deadlockRate[len(individual.deadlockRate) - 1]:
       opType = 'lock'
 
   # Select the appropriate operator based on enable/type/functional
@@ -84,10 +94,9 @@ def feedback_selection(individual):
     for operator in config._MUTATIONS:
       if operator[1] and operator[3] and operator[4]:
         candatateChoices.append(operator)
-  
+
   selectedOperator = candatateChoices[randint(0, len(candatateChoices) - 1)]
 
-  # Return type is a config._MUTATIONS
   return selectedOperator
 
 
@@ -97,8 +106,7 @@ def mutation(individual):
   print "Mutating individual {} on generation {}".format(individual.id, 
                                                          individual.generation)
 
-  # Repopulate the individual's genome with a list of numbers of mutations 
-  # by type
+  # Repopulate the individual's genome with new possible mutation locations
   individual.repopulateGenome()
 
   # Definite check to see if ANY mutants exists for an individual
@@ -225,9 +233,22 @@ def start():
     for individual in population:
       evaluate(individual)
 
+    # Calculate average and best fitness
+    highestSoFar = -1
+    highestID = -1
+    runningSum = 0
+    for individual in population:
+      runningSum += individual.getFitness()
+      if individual.getFitness() > highestSoFar:
+        highestSoFar = individual.getFitness()
+        highestID = individual.id
+
+    averageFitness.append(runningSum / config._EVOLUTION_POPULATION)
+    bestFitness.append((highestSoFar, highestID))
+
     # Check for terminating conditions
     for individual in population:
-      if individual.lastSuccessRate == 1:
+      if individual.successRate[-1] == 1:
         print "Found best individual", individual.id
         done = True
         break
@@ -236,6 +257,35 @@ def start():
         done = True
         break
 
+    # Alternate termination criteria
+    # - If average improvement in fitness is less than 
+    # _MINIMAL_FITNESS_IMPROVEMENT over 
+    # _GENERATIONAL_IMPROVEMENT_WINDOW
+    avgFitTest = False
+    maxFitTest = False
+    if generation >= config._GENERATIONAL_IMPROVEMENT_WINDOW + 1:
+      for i in xrange(generation - 
+          config._GENERATIONAL_IMPROVEMENT_WINDOW + 1, generation):
+        if (math.fabs(averageFitness[i] - averageFitness[i - 1]) >
+           config._AVG_FITNESS_UP):
+          avgFitTest = True 
+        if (math.abs(bestFitness[i] - bestFitness[i - 1]) >
+           config._BEST_FITNESS_UP):
+          maxFitTest = True 
+
+      if not avgFitTest:
+        print ("Average fitness hasn't increased by {} in {} generations".
+              format(config._AVG_FITNESS_UP,
+              config._GENERATIONAL_IMPROVEMENT_WINDOW))
+        done = True
+        break
+      if not maxFitTest:
+        print ("Maximum fitness hasn't increased by {} in {} generations".
+              format(config._BEST_FITNESS_UP,
+              config._GENERATIONAL_IMPROVEMENT_WINDOW))
+        done = True
+        break
+          
   print population
 
   # Restore project to original
