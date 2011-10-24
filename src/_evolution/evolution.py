@@ -6,6 +6,7 @@ from random import uniform
 import sys
 from individual import Individual
 import math
+import traceback
 
 sys.path.append("..")  # To allow importing parent directory module
 import config
@@ -35,17 +36,13 @@ def evaluate(individual):
   deadlock_rate = contest.get_deadlocks() / config._CONTEST_RUNS
   error_rate = contest.get_errors() / config._CONTEST_RUNS
 
-  # If we are evaluating the functional fitness
-  if individual.functionalPhase:
-    individual.functionalScore = (contest.get_successes() * \
-                                  config._SUCCESS_WEIGHT) + \
-                                  (contest.get_timeouts() * \
-                                  config._TIMEOUT_WEIGHT)
-  
-  # If we are evaluating the non-functional fitness
-  if not individual.functionalPhase:
-    # TODO individual.nonFunctionalScore = 
-    pass
+  individual.functionalScore.append((contest.get_successes() * \
+                                config._SUCCESS_WEIGHT) + \
+                                (contest.get_timeouts() * \
+                                config._TIMEOUT_WEIGHT))
+
+  # TODO (Less time and CPU == greater score)
+  individual.nonFunctionalScore.append(randint(0,100))
 
   # Store achieve rates into genome
   individual.successRate.append(success_rate)
@@ -185,9 +182,9 @@ def mutation(individual):
                                       True)
 
 
-def initialize():
-  """Initialize the population of individuals with and id and values."""
-  
+def initialize(bestIndividual=None):
+  """Initialize the population of individuals."""
+
   # The number of enabled mutation operators
   mutationOperators = 0
   for operator in config._MUTATIONS:
@@ -197,14 +194,14 @@ def initialize():
   # Create and initialize the population of individuals
   population = []
   for i in xrange(1, config._EVOLUTION_POPULATION + 1):
-    print "Creating individual {}".format(i)
-    individual = Individual(mutationOperators, i)
 
-    # Set the initial phase to consider
-    # (true => functional then non-functional)
-    # (false => non-functional only)
-    individual.functionalPhase = config._EVOLUTION_FUNCTIONAL_PHASE
-
+    if bestIndividual is None:
+      print "Creating individual {}".format(i)
+      individual = Individual(mutationOperators, i)
+    else:
+      print "Cloning best functional individual {} into individual {}".format(
+                                                          bestIndividual.id, i)
+      individual = bestIndividual.clone(i)
     population.append(individual)
 
   return population
@@ -215,15 +212,41 @@ def start():
   # Backup project
   txl_operator.backup_project()
 
-  # Initialize the population
-  population = initialize()
+  try:
+    # Initialize the population
+    population = initialize()
 
-  # Evolve the population for the required generations
+    # Evolve the population to find the best functional individual
+    if config._EVOLUTION_FUNCTIONAL_PHASE:
+      print "Evolving population towards functional correctness"
+      bestFunctional = evolve(population, True)
+      
+      # Reinitialize the population with the best functional individual
+      print "Repopulating population with best individual ({})".format(
+                                                            bestFunctional.id)
+      population = initialize(bestFunctional)
+
+    print "Evolving population towards non-functional performance"
+    # Evolve the population to find the best non-functional individual
+    bestNonFunctional = evolve(population, False)
+
+
+
+    # print population
+
+    # Restore project to original
+  except:
+    print "Unexpected error:\n", traceback.print_exc(file=sys.stdout)
+    txl_operator.restore_project()
+  else:
+    txl_operator.restore_project()
+
+
+def evolve(population, functionalPhase):
   generation = 0
-  done = False
-  while not done:
-
+  while True:
     generation += 1
+
     # Mutate each individual
     for individual in population:
       individual.generation = generation
@@ -238,24 +261,13 @@ def start():
     highestID = -1
     runningSum = 0
     for individual in population:
-      runningSum += individual.getFitness()
-      if individual.getFitness() > highestSoFar:
-        highestSoFar = individual.getFitness()
+      runningSum += individual.getFitness(functionalPhase)
+      if individual.getFitness(functionalPhase) > highestSoFar:
+        highestSoFar = individual.getFitness(functionalPhase)
         highestID = individual.id
 
     averageFitness.append(runningSum / config._EVOLUTION_POPULATION)
     bestFitness.append((highestSoFar, highestID))
-
-    # Check for terminating conditions
-    for individual in population:
-      if individual.successRate[-1] == 1:
-        print "Found best individual", individual.id
-        done = True
-        break
-      if generation == config._EVOLUTION_GENERATIONS:
-        print "Exhausted all generations"
-        done = True
-        break
 
     # Alternate termination criteria
     # - If average improvement in fitness is less than 
@@ -277,16 +289,24 @@ def start():
         print ("Average fitness hasn't increased by {} in {} generations".
               format(config._AVG_FITNESS_UP,
               config._GENERATIONAL_IMPROVEMENT_WINDOW))
-        done = True
-        break
+        return get_best_individual(population, bestFitness[-1][1])
       if not maxFitTest:
         print ("Maximum fitness hasn't increased by {} in {} generations".
               format(config._BEST_FITNESS_UP,
               config._GENERATIONAL_IMPROVEMENT_WINDOW))
-        done = True
-        break
+        return get_best_individual(population, bestFitness[-1][1])
           
-  print population
+    # Check for terminating conditions
+    for individual in population:
+      if functionalPhase and individual.successRate[-1] == 1:
+        print "Found best individual", individual.id
+        return get_best_individual(population, bestFitness[-1][1])
+      if generation == config._EVOLUTION_GENERATIONS:
+        print "Exhausted all generations"
+        return get_best_individual(population, bestFitness[-1][1])
 
-  # Restore project to original
-  txl_operator.restore_project()
+
+def get_best_individual(population, bestID):
+  for individual in population:
+    if individual.id == bestID:
+      return individual
