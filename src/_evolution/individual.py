@@ -116,8 +116,8 @@ class Individual():
 
 
   def clone(self, height, i):
-    newIndividual = Individual(0, 0)
-    newIndividual.height = height
+    print height
+    newIndividual = Individual(height, 0)
     newIndividual.id = i
     newIndividual.generation = self.generation
     newIndividual.lastOperator = self.lastOperator

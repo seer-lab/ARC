@@ -194,12 +194,12 @@ def mutation(individual, functionalPhase):
                                       True)
 
 
-def initialize(bestIndividual=None):
+def initialize(functionalPhase, bestIndividual=None):
   """Initialize the population of individuals."""
 
   # The number of enabled mutation operators
   mutationOperators = 0
-  if bestIndividual is None:
+  if functionalPhase:
     for operator in config._FUNCTIONAL_MUTATIONS:
       if operator[1]:
         mutationOperators += 1
@@ -229,24 +229,27 @@ def start():
   # Backup project
   txl_operator.backup_project()
 
+  functionalPhase = config._EVOLUTION_FUNCTIONAL_PHASE
+
   try:
     # Initialize the population
-    population = initialize()
+    population = initialize(functionalPhase)
 
     # Evolve the population to find the best functional individual
-    if config._EVOLUTION_FUNCTIONAL_PHASE:
+    if functionalPhase:
       print "Evolving population towards functional correctness"
-      bestFunctional = evolve(population, True)
+      bestFunctional = evolve(population, functionalPhase)
+      functionalPhase = False
       print population
 
       # Reinitialize the population with the best functional individual
       print "Repopulating population with best individual ({})".format(
                                                             bestFunctional.id)
-      population = initialize(bestFunctional)
+      population = initialize(functionalPhase, bestFunctional)
 
     print "Evolving population towards non-functional performance"
     # Evolve the population to find the best non-functional individual
-    bestNonFunctional = evolve(population, False)
+    bestNonFunctional = evolve(population, functionalPhase)
     print population
 
     # Restore project to original
