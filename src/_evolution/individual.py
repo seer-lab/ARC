@@ -58,26 +58,33 @@ class Individual():
     else:
       return self.nonFunctionalScore[-1]
 
-  def repopulateGenome(self):
+  def repopulateGenome(self, functionalPhase):
     """This function will re-populate the genome with location values.
 
     The values are all zero, though the number of values per row indicates
     the number of possible mutations that can occur for that operator (row).
     """
 
+    # Acquire set of operators to use
+    if functionalPhase:
+      mutationOperators = config._FUNCTIONAL_MUTATIONS
+    else:
+      mutationOperators = config._NONFUNCTIONAL_MUTATIONS
+
     # Delete old genome and recreate an empty one
     del self.genome[:]
     self.genome = [None] * self.height
 
     # Figure out the number of new possible mutation operator locations
-    txl_operator.mutate_project(self.generation, self.id)
-    hits = txl_operator.generate_representation(self.generation, self.id)
+    txl_operator.mutate_project(self.generation, self.id, mutationOperators)
+    hits = txl_operator.generate_representation(self.generation, self.id,
+                                                mutationOperators)
 
     # Populate the genome string with the number of hits
     # for i in xrange(len(hits)):
     #    self.genome[i] = [0] * hits[i]
     i = 0
-    for mutationOp in config._MUTATIONS:
+    for mutationOp in mutationOperators:
       if mutationOp[1]:
         self.genome[i] = [0] * hits[mutationOp[0]]
         i += 1
@@ -108,20 +115,18 @@ class Individual():
     return ret
 
 
-  def clone(self, id):
+  def clone(self, height, i):
     newIndividual = Individual(0, 0)
-    newIndividual.height = self.height
-    newIndividual.id = id
+    newIndividual.height = height
+    newIndividual.id = i
     newIndividual.generation = self.generation
     newIndividual.lastOperator = self.lastOperator
-    newIndividual.appliedOperators = self.appliedOperators
-    newIndividual.successRate = self.successRate
-    newIndividual.timeoutRate = self.timeoutRate
-    newIndividual.dataraceRate = self.dataraceRate
-    newIndividual.deadlockRate = self.deadlockRate
-    newIndividual.errorRate = self.errorRate
-    newIndividual.functionalScore = self.functionalScore
-    newIndividual.nonFunctionalScore = self.nonFunctionalScore
+    newIndividual.appliedOperators = self.appliedOperators[:]
+    newIndividual.successRate = self.successRate[:]
+    newIndividual.timeoutRate = self.timeoutRate[:]
+    newIndividual.dataraceRate = self.dataraceRate[:]
+    newIndividual.deadlockRate = self.deadlockRate[:]
+    newIndividual.errorRate = self.errorRate[:]
+    newIndividual.functionalScore = self.functionalScore[:]
+    newIndividual.nonFunctionalScore = self.nonFunctionalScore[:]
     return newIndividual
-
-  

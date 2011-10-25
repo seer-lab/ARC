@@ -54,7 +54,7 @@ def evaluate(individual):
   contest.clear_results()
 
 
-def feedback_selection(individual):
+def feedback_selection(individual, functionalPhase):
   """Given the individual this function will find the next operator to apply.
 
   The selection of the next operator takes into account the individual's last
@@ -62,6 +62,12 @@ def feedback_selection(individual):
   mutation operator to apply next.
   """
 
+  # Acquire set of operators to use
+  if functionalPhase:
+    mutationOperators = config._FUNCTIONAL_MUTATIONS
+  else:
+    mutationOperators = config._NONFUNCTIONAL_MUTATIONS
+    
   opType = 'race'
   # candidateChoices is a list of config._MUTATIONS
   candatateChoices = []
@@ -84,12 +90,12 @@ def feedback_selection(individual):
 
   # Select the appropriate operator based on enable/type/functional
   if opType is 'race':
-    for operator in config._MUTATIONS:
-      if operator[1] and operator[2] and operator[4]:
+    for operator in mutationOperators:
+      if operator[1] and operator[2]:
         candatateChoices.append(operator)
   elif opType is 'lock':
-    for operator in config._MUTATIONS:
-      if operator[1] and operator[3] and operator[4]:
+    for operator in mutationOperators:
+      if operator[1] and operator[3]:
         candatateChoices.append(operator)
 
   selectedOperator = candatateChoices[randint(0, len(candatateChoices) - 1)]
@@ -97,20 +103,26 @@ def feedback_selection(individual):
   return selectedOperator
 
 
-def mutation(individual):
+def mutation(individual, functionalPhase):
   """A mutator for the individual using single mutation with feedback."""
 
-  print "Mutating individual {} on generation {}".format(individual.id, 
+  print "Mutating individual {} on generation {}".format(individual.id,
                                                          individual.generation)
 
+  # Acquire set of operators to use
+  if functionalPhase:
+    mutationOperators = config._FUNCTIONAL_MUTATIONS
+  else:
+    mutationOperators = config._NONFUNCTIONAL_MUTATIONS
+
   # Repopulate the individual's genome with new possible mutation locations
-  individual.repopulateGenome()
+  individual.repopulateGenome(functionalPhase)
 
   # Definite check to see if ANY mutants exists for an individual
   checkInd = -1
   mutantsExist = False
-  for mutationOp in config._MUTATIONS:
-    if mutationOp[1]: 
+  for mutationOp in mutationOperators:
+    if mutationOp[1]:
       checkInd += 1
       if len(individual.genome[checkInd]) != 0:
         mutantsExist = True
@@ -129,11 +141,11 @@ def mutation(individual):
   while limit is not 0 and not successfulCompile:
 
     # Acquire operator, one of config._MUTATIONS
-    selectedOperator = feedback_selection(individual)
+    selectedOperator = feedback_selection(individual, functionalPhase)
 
     # Find the integer index of the selectedOperator
     operatorIndex = -1
-    for mutationOp in config._MUTATIONS:
+    for mutationOp in mutationOperators:
       if mutationOp[1]:
         operatorIndex += 1
         if mutationOp is selectedOperator:
@@ -187,9 +199,14 @@ def initialize(bestIndividual=None):
 
   # The number of enabled mutation operators
   mutationOperators = 0
-  for operator in config._MUTATIONS:
-    if operator[1]:
-      mutationOperators += 1
+  if bestIndividual is None:
+    for operator in config._FUNCTIONAL_MUTATIONS:
+      if operator[1]:
+        mutationOperators += 1
+  else:
+    for operator in config._NONFUNCTIONAL_MUTATIONS:
+      if operator[1]:
+        mutationOperators += 1
 
   # Create and initialize the population of individuals
   population = []
@@ -201,7 +218,7 @@ def initialize(bestIndividual=None):
     else:
       print "Cloning best functional individual {} into individual {}".format(
                                                           bestIndividual.id, i)
-      individual = bestIndividual.clone(i)
+      individual = bestIndividual.clone(mutationOperators, i)
     population.append(individual)
 
   return population
@@ -220,7 +237,8 @@ def start():
     if config._EVOLUTION_FUNCTIONAL_PHASE:
       print "Evolving population towards functional correctness"
       bestFunctional = evolve(population, True)
-      
+      print population
+
       # Reinitialize the population with the best functional individual
       print "Repopulating population with best individual ({})".format(
                                                             bestFunctional.id)
@@ -229,10 +247,7 @@ def start():
     print "Evolving population towards non-functional performance"
     # Evolve the population to find the best non-functional individual
     bestNonFunctional = evolve(population, False)
-
-
-
-    # print population
+    print population
 
     # Restore project to original
   except:
@@ -250,7 +265,7 @@ def evolve(population, functionalPhase):
     # Mutate each individual
     for individual in population:
       individual.generation = generation
-      mutation(individual)
+      mutation(individual, functionalPhase)
 
     # Evaluate each individual
     for individual in population:
@@ -270,8 +285,8 @@ def evolve(population, functionalPhase):
     bestFitness.append((highestSoFar, highestID))
 
     # Alternate termination criteria
-    # - If average improvement in fitness is less than 
-    # _MINIMAL_FITNESS_IMPROVEMENT over 
+    # - If average improvement in fitness is less than
+    # _MINIMAL_FITNESS_IMPROVEMENT over
     # _GENERATIONAL_IMPROVEMENT_WINDOW
     avgFitTest = False
     maxFitTest = False
@@ -295,7 +310,7 @@ def evolve(population, functionalPhase):
               format(config._BEST_FITNESS_UP,
               config._GENERATIONAL_IMPROVEMENT_WINDOW))
         return get_best_individual(population, bestFitness[-1][1])
-          
+
     # Check for terminating conditions
     for individual in population:
       if functionalPhase and individual.successRate[-1] == 1:

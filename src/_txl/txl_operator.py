@@ -32,15 +32,16 @@ uniqueMutants = {}
 # projects are stored by generation and member
 
 # Returns nothing
-def mutate_project(generation, memberNum):   
+def mutate_project(generation, memberNum, mutationOperators):   
   destDir = config._TMP_DIR + str(generation) + os.sep + str(memberNum) + os.sep
 
   if generation == 1:
     sourceDir = config._PROJECT_SRC_DIR
   else:
     sourceDir = config._TMP_DIR + str(generation - 1) + os.sep + str(memberNum) + os.sep + 'project' + os.sep
- 
-  recursively_mutate_project(generation, memberNum, sourceDir, destDir)
+
+  recursively_mutate_project(generation, memberNum, sourceDir, destDir, 
+                             mutationOperators)
 
 
 # For a given member and generation, generate all of the mutants for a
@@ -49,30 +50,35 @@ def mutate_project(generation, memberNum):
 # Gen >= 2: Source project is from generation -1, for the same memberNum
 
 # Returns nothing
-def recursively_mutate_project(generation, memberNum, sourceDir, destDir):
+def recursively_mutate_project(generation, memberNum, sourceDir, destDir,
+                               mutationOperators):
   for root, dirs, files in os.walk(sourceDir):
     for sourceSubDir in dirs:
-      
+
       # Check to ensure the root is still within the dest dir
       # Weird error that occurs only on 1+ generations (root sometimes lies
       # outside of the actual sourceDir)
       if destDir in str(sourceDir) and generation is not 1:
-        recursively_mutate_project(generation, memberNum, sourceSubDir, destDir)
+        recursively_mutate_project(generation, memberNum, sourceSubDir,
+                                   destDir, mutationOperators)
       elif generation is 1:
-        recursively_mutate_project(generation, memberNum, sourceSubDir, destDir)
+        recursively_mutate_project(generation, memberNum, sourceSubDir,
+                                   destDir, mutationOperators)
 
     for aFile in files:
       if ("." in aFile and aFile.split(".")[1] == "java"):
         sourceFile = os.path.join(root, aFile)
-        generate_all_mutants(generation, memberNum, sourceFile, destDir)
+        generate_all_mutants(generation, memberNum, sourceFile, destDir,
+                             mutationOperators)
 
 
 # See comment for recursively_mutate_project
 
 # Returns nothing
-def generate_all_mutants(generation, memberNum, sourceFile, destDir):
-  # Loop over the selected operators in the config file
-  for operator in config._MUTATIONS:
+def generate_all_mutants(generation, memberNum, sourceFile, destDir,
+                         mutationOperators):
+  # Loop over the selected operators
+  for operator in mutationOperators:
     if operator[1]:
       generate_mutants(generation, memberNum, operator, sourceFile, destDir)
 
@@ -124,8 +130,8 @@ def generate_mutants(generation, memberNum, txlOperator, sourceName, destDir):
   outFile = tempfile.SpooledTemporaryFile()
   errFile = tempfile.SpooledTemporaryFile()
 
-  process = subprocess.Popen(['txl', sourceName, txlOperator[6], '-',
-            '-outfile', sourceNameOnly + sourceExtOnly, '-outdir', txlDestDir], 
+  process = subprocess.Popen(['txl', sourceName, txlOperator[4], '-',
+            '-outfile', sourceNameOnly + sourceExtOnly, '-outdir', txlDestDir],
             stdout=outFile, stderr=errFile, cwd=config._PROJECT_DIR, shell=False)
   process.wait()
 
@@ -136,18 +142,18 @@ def generate_mutants(generation, memberNum, txlOperator, sourceName, destDir):
 # Returns a list ints where each int corresponds to the number of mutations
 # of one type.  eg: {5, 7, 3, ...} = 5 of type ASAS, 7 of type ASAV
 # The order of the mutation types is the same as that in config._MUTATIONS.
-def generate_representation(generation, memberNum):
+def generate_representation(generation, memberNum, mutationOperators):
   rep = {}
-  for mutationOp in config._MUTATIONS:
+  for mutationOp in mutationOperators:
     rep[mutationOp[0]] = 0
-  
+
   # Recusive dir walk
   recurDir = config._TMP_DIR + str(generation) + os.sep + str(memberNum) + os.sep
   for root, dirs, files in os.walk(recurDir):
     for aDir in dirs:
 
       # Count mutant operator if present in dir name
-      for mutationOp in config._MUTATIONS:
+      for mutationOp in mutationOperators:
 
         if "{}_".format(mutationOp[0]) in str(aDir):  # TODO more unique match
           rep[mutationOp[0]] += 1
@@ -310,8 +316,8 @@ def main():
   #backup_project()
   restore_project()
 
-  mutate_project(gener, member)
-  muties = generate_representation(gener, member)
+  mutate_project(gener, member, config._FUNCTIONAL_MUTATIONS)
+  muties = generate_representation(gener, member, config._FUNCTIONAL_MUTATIONS)
   create_local_project(gener, member, False)
   move_mutant_to_local_project(gener, member, 'ASAS', 3)
 
