@@ -5,7 +5,7 @@ variables that are set in this file and are used all throughout ARC.
 """
 
 # System variables
-_ROOT_DIR = "/home/jalbert/workspace/arc/"
+_ROOT_DIR = "/home/myrikhan/workspace/arc/"
 _MAX_MEMORY_MB = 2000
 _MAX_CORES = 2
 _TMP_DIR = _ROOT_DIR + "tmp/"
@@ -27,16 +27,16 @@ _PROJECT_TEST_MB = 2000
 _CONTEST_DIR = _ROOT_DIR + "lib/ConTest/"
 _CONTEST_KINGPROPERTY = _CONTEST_DIR + "KingProperties"
 _CONTEST_JAR = _CONTEST_DIR + "ConTest.jar"
-_CONTEST_RUNS = 5
+_CONTEST_RUNS = 2
 _CONTEST_TIMEOUT_SEC = 2  # Aim for around x2-3 desirable performance
 _TESTSUITE_AVG = 20  # Number of test executions for finding the average time
 
 # Mutation operator variables
 # [0]Name  [1]Enable  [2]DataRace  [3]Deadlock  [4]Funct  [5]Non-Funct  [6]File
-_MUTATION_ASAS = ['ASAS', True, True, True, True, False, _TXL_DIR + "ASAS.Txl"]
+_MUTATION_ASAS = ['ASAS', False, True, True, True, False, _TXL_DIR + "ASAS.Txl"]
 _MUTATION_ASAV = ['ASAV', True, True, True, True, False, _TXL_DIR + "ASAV.Txl"]
 _MUTATION_ASM  = ['ASM', True, True, True, True, False, _TXL_DIR + "ASM.Txl"]
-_MUTATION_CSO  = ['CSO', True, False, True, True, False, _TXL_DIR + "CSO.Txl"]
+_MUTATION_CSO  = ['CSO', False, False, True, True, False, _TXL_DIR + "CSO.Txl"]
 _MUTATION_EXCR = ['EXCR', True, True, True, True, False, _TXL_DIR + "EXCR.Txl"]
 _MUTATION_EXSA = ['EXSA', True, True, True, True, False, _TXL_DIR + "EXSA.Txl"]
 _MUTATION_RSAS = ['RSAS', True, True, True, False, True, _TXL_DIR + "RSAS.Txl"]
@@ -50,9 +50,11 @@ _MUTATIONS = [_MUTATION_ASAS, _MUTATION_ASAV, _MUTATION_ASM, _MUTATION_CSO,
               _MUTATION_RSB, _MUTATION_RSM, _MUTATION_SHSA, _MUTATION_SHSB]
 
 # Evolution variables
-_EVOLUTION_GENERATIONS = 3
-_EVOLUTION_POPULATION = 2
-_EVOLUTION_ELITISM = 0
+_EVOLUTION_GENERATIONS = 10
+_EVOLUTION_POPULATION = 10
+_EVOLUTION_REPLACE_LOWEST_PERCENT = 10
+_EVOLUTION_REPLACE_AFTER_TURNS = 2
+_EVOLUTION_REPLACE_WITH_BEST_PERCENT = 80
 _EVOLUTION_FUNCTIONAL_PHASE = True  # If false then skip the functional phase
 
 # Fitness evaluation variables

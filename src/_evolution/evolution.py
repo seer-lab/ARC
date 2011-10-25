@@ -6,6 +6,7 @@ from random import uniform
 import sys
 from individual import Individual
 import math
+import copy
 
 sys.path.append("..")  # To allow importing parent directory module
 import config
@@ -70,19 +71,17 @@ def feedback_selection(individual):
   candatateChoices = []
 
   # Acquire a random value that is less then the total of the bug rates
-  totalBugRate = (individual.deadlockRate[len(individual.deadlockRate) - 1] 
-                 + individual.dataraceRate[len(individual.dataraceRate) - 1])
+  totalBugRate = (individual.deadlockRate[-1] + individual.dataraceRate[-1])
   choice = uniform(0, totalBugRate)
 
   # Determine which it bug type to use
-  if (individual.dataraceRate[len(individual.dataraceRate) - 1] > 
-     individual.deadlockRate[len(individual.deadlockRate) - 1]):
+  if (individual.dataraceRate[-1] > individual.deadlockRate[-1]):
     # If choice falls past the datarace range then type is lock
-    if choice >= individual.dataraceRate[len(individual.dataraceRate) - 1]:
+    if choice >= individual.dataraceRate[-1]:
       opType = 'lock'
   else:
     # If choice falls under the deadlock range then type is lock
-    if choice <= individual.deadlockRate[len(individual.deadlockRate) - 1]:
+    if choice <= individual.deadlockRate[-1]:
       opType = 'lock'
 
   # Select the appropriate operator based on enable/type/functional
@@ -209,6 +208,7 @@ def initialize():
 
   return population
 
+
 def start():
   """The actual starting process for ARC's evolutionary process."""
 
@@ -285,8 +285,79 @@ def start():
               config._GENERATIONAL_IMPROVEMENT_WINDOW))
         done = True
         break
-          
+        
+    print "             [INFO] Calling replace lowest"
+    replace_lowest(population)
+        
   print population
 
   # Restore project to original
   txl_operator.restore_project()
+
+
+def replace_lowest(population):
+  """Replace underperforming members with high-performing members or the original 
+  buggy program.
+  """  
+ 
+  # Determine the number of members to look at for underperforming
+  numUnder = int((config._EVOLUTION_POPULATION * config._EVOLUTION_REPLACE_LOWEST_PERCENT)/100)
+  if numUnder < 1:
+    numUnder = 1
+
+  # Sort population by fitness
+  sortedMembers = sorted(population, key=lambda individual: individual.getFitness())
+
+  # The first numUnder members have their turnsUnderperforming variable incremented
+  # as they are the worst performing
+  for i in xrange(0, numUnder):
+    sortedMembers[i].turnsUnderperforming += 1
+ 
+  # Replace or restart members who have underperformed for too long
+  for i in xrange(0, numUnder):
+    if (sortedMembers[i].turnsUnderperforming < 
+        config._EVOLUTION_REPLACE_AFTER_TURNS):
+      continue
+
+    randomNum = randint(1, 100)
+
+    # Case 1: Replace an underperforming member with a fit member
+    if randomNum <= config._EVOLUTION_REPLACE_WITH_BEST_PERCENT:
+      # Take a member from the top 10% of the population
+      highMember =  int(randint(config._EVOLUTION_POPULATION * 0.9,
+                        config._EVOLUTION_POPULATION)) - 1
+      # Keep the id of the original member  
+      lowId = sortedMembers[i].id
+      print "             [INFO] Replacing ID: {} with {}".format(lowId,
+        sortedMembers[highMember].id) 
+      sortedMembers[i] = copy.deepcopy(sortedMembers[highMember])
+      sortedMembers[i].id = lowId
+    
+      txl_operator.copy_local_project_a_to_b(sortedMembers[i].generation, 
+                                             sortedMembers[highMember].id, 
+                                             sortedMembers[i].id)
+
+    # Case 2: Restart the member
+    # Code copy-pasted from initialize()
+    else:
+      # The number of enabled mutation operators
+      mutationOperators = 0
+      for operator in config._MUTATIONS:
+        if operator[1]:
+          mutationOperators += 1
+
+      print "             [INFO] Restarting underperforming member ID: {}".format(
+        sortedMembers[i].id)
+      individual = Individual(mutationOperators, i)
+
+      # Set the initial phase to consider
+      # (true => functional then non-functional)
+      # (false => non-functional only)
+      individual.functionalPhase = config._EVOLUTION_FUNCTIONAL_PHASE
+
+      # Reset the local project
+      txl_operator.create_local_project(individual.generation, individual.id, True)
+      sortedMembers[i] = individual
+
+    # Resort the population by ID and reassign it to the original variable
+    population = sorted(sortedMembers, key=lambda individual: individual.id)

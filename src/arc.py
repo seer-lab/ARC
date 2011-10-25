@@ -1,5 +1,5 @@
 """This module is responsible for starting the Automatic Concurrency Repair.
-
+ 
 The entry point for ARC is found in this module. The configurations are held
 within the config.py module.
 """
