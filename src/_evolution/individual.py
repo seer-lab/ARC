@@ -53,6 +53,8 @@ class Individual():
     self.nonFunctionalScore = 0.0
     self.functionalPhase = True
 
+    self.turnsUnderperforming = 0
+    
   def getFitness(self):
 
     if self.functionalPhase:
