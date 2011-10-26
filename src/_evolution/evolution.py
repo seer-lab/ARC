@@ -6,6 +6,7 @@ from random import uniform
 import sys
 from individual import Individual
 import math
+import traceback
 import copy
 
 sys.path.append("..")  # To allow importing parent directory module
@@ -15,7 +16,7 @@ from _txl import txl_operator
 
 # For each generation, record the average and best fitness
 averageFitness = []
-bestFitness = []
+bestFitness = []  # (score, id)
 
 def evaluate(individual):
   """Perform the actual evaluation of said individual using ConTest testing.
@@ -36,17 +37,13 @@ def evaluate(individual):
   deadlock_rate = contest.get_deadlocks() / config._CONTEST_RUNS
   error_rate = contest.get_errors() / config._CONTEST_RUNS
 
-  # If we are evaluating the functional fitness
-  if individual.functionalPhase:
-    individual.functionalScore = (contest.get_successes() * \
-                                  config._SUCCESS_WEIGHT) + \
-                                  (contest.get_timeouts() * \
-                                  config._TIMEOUT_WEIGHT)
-  
-  # If we are evaluating the non-functional fitness
-  if not individual.functionalPhase:
-    # TODO individual.nonFunctionalScore = 
-    pass
+  individual.functionalScore.append((contest.get_successes() * \
+                                config._SUCCESS_WEIGHT) + \
+                                (contest.get_timeouts() * \
+                                config._TIMEOUT_WEIGHT))
+
+  # TODO (Less time and CPU == greater score)
+  individual.nonFunctionalScore.append(randint(0,100))
 
   # Store achieve rates into genome
   individual.successRate.append(success_rate)
@@ -58,7 +55,7 @@ def evaluate(individual):
   contest.clear_results()
 
 
-def feedback_selection(individual):
+def feedback_selection(individual, functionalPhase):
   """Given the individual this function will find the next operator to apply.
 
   The selection of the next operator takes into account the individual's last
@@ -66,6 +63,12 @@ def feedback_selection(individual):
   mutation operator to apply next.
   """
 
+  # Acquire set of operators to use
+  if functionalPhase:
+    mutationOperators = config._FUNCTIONAL_MUTATIONS
+  else:
+    mutationOperators = config._NONFUNCTIONAL_MUTATIONS
+    
   opType = 'race'
   # candidateChoices is a list of config._MUTATIONS
   candatateChoices = []
@@ -86,12 +89,12 @@ def feedback_selection(individual):
 
   # Select the appropriate operator based on enable/type/functional
   if opType is 'race':
-    for operator in config._MUTATIONS:
-      if operator[1] and operator[2] and operator[4]:
+    for operator in mutationOperators:
+      if operator[1] and operator[2]:
         candatateChoices.append(operator)
   elif opType is 'lock':
-    for operator in config._MUTATIONS:
-      if operator[1] and operator[3] and operator[4]:
+    for operator in mutationOperators:
+      if operator[1] and operator[3]:
         candatateChoices.append(operator)
 
   selectedOperator = candatateChoices[randint(0, len(candatateChoices) - 1)]
@@ -99,20 +102,26 @@ def feedback_selection(individual):
   return selectedOperator
 
 
-def mutation(individual):
+def mutation(individual, functionalPhase):
   """A mutator for the individual using single mutation with feedback."""
 
-  print "Mutating individual {} on generation {}".format(individual.id, 
+  print "Mutating individual {} on generation {}".format(individual.id,
                                                          individual.generation)
 
+  # Acquire set of operators to use
+  if functionalPhase:
+    mutationOperators = config._FUNCTIONAL_MUTATIONS
+  else:
+    mutationOperators = config._NONFUNCTIONAL_MUTATIONS
+
   # Repopulate the individual's genome with new possible mutation locations
-  individual.repopulateGenome()
+  individual.repopulateGenome(functionalPhase)
 
   # Definite check to see if ANY mutants exists for an individual
   checkInd = -1
   mutantsExist = False
-  for mutationOp in config._MUTATIONS:
-    if mutationOp[1]: 
+  for mutationOp in mutationOperators:
+    if mutationOp[1]:
       checkInd += 1
       if len(individual.genome[checkInd]) != 0:
         mutantsExist = True
@@ -131,11 +140,11 @@ def mutation(individual):
   while limit is not 0 and not successfulCompile:
 
     # Acquire operator, one of config._MUTATIONS
-    selectedOperator = feedback_selection(individual)
+    selectedOperator = feedback_selection(individual, functionalPhase)
 
     # Find the integer index of the selectedOperator
     operatorIndex = -1
-    for mutationOp in config._MUTATIONS:
+    for mutationOp in mutationOperators:
       if mutationOp[1]:
         operatorIndex += 1
         if mutationOp is selectedOperator:
@@ -184,26 +193,31 @@ def mutation(individual):
                                       True)
 
 
-def initialize():
-  """Initialize the population of individuals with and id and values."""
-  
+def initialize(functionalPhase, bestIndividual=None):
+  """Initialize the population of individuals."""
+
   # The number of enabled mutation operators
   mutationOperators = 0
-  for operator in config._MUTATIONS:
-    if operator[1]:
-      mutationOperators += 1
+  if functionalPhase:
+    for operator in config._FUNCTIONAL_MUTATIONS:
+      if operator[1]:
+        mutationOperators += 1
+  else:
+    for operator in config._NONFUNCTIONAL_MUTATIONS:
+      if operator[1]:
+        mutationOperators += 1
 
   # Create and initialize the population of individuals
   population = []
   for i in xrange(1, config._EVOLUTION_POPULATION + 1):
-    print "Creating individual {}".format(i)
-    individual = Individual(mutationOperators, i)
 
-    # Set the initial phase to consider
-    # (true => functional then non-functional)
-    # (false => non-functional only)
-    individual.functionalPhase = config._EVOLUTION_FUNCTIONAL_PHASE
-
+    if bestIndividual is None:
+      print "Creating individual {}".format(i)
+      individual = Individual(mutationOperators, i)
+    else:
+      print "Cloning best functional individual {} into individual {}".format(
+                                                          bestIndividual.id, i)
+      individual = bestIndividual.clone(mutationOperators, i)
     population.append(individual)
 
   return population
@@ -215,19 +229,61 @@ def start():
   # Backup project
   txl_operator.backup_project()
 
-  # Initialize the population
-  population = initialize()
+  functionalPhase = config._EVOLUTION_FUNCTIONAL_PHASE
 
-  # Evolve the population for the required generations
-  generation = 0
-  done = False
-  while not done:
+  try:
+    # Initialize the population
+    population = initialize(functionalPhase)
 
+    # Evolve the population to find the best functional individual
+    if functionalPhase:
+      print "Evolving population towards functional correctness"
+      bestFunctional = evolve(population, functionalPhase)
+      functionalPhase = False
+      print population
+
+      # Reinitialize the population with the best functional individual
+      print "Repopulating with best individual {} at generation {}".format(
+                                  bestFunctional.id, bestFunctional.generation)
+      population = initialize(functionalPhase, bestFunctional)
+      for individual in population:
+        if individual.id is not bestFunctional.id:
+          txl_operator.copy_local_project_a_to_b(bestFunctional.generation,
+                                              bestFunctional.id, individual.id)
+    
+      # Evolve the population to find the best non-functional individual
+      print "Evolving population towards non-functional performance"
+      bestNonFunctional = evolve(population, functionalPhase,
+                                 bestFunctional.generation)
+    else:
+      print "Evolving population towards non-functional performance"
+      # Evolve the population to find the best non-functional individual
+      bestNonFunctional = evolve(population, functionalPhase)
+    print population
+
+    # Restore project to original
+  except:
+    print "Unexpected error:\n", traceback.print_exc(file=sys.stdout)
+    txl_operator.restore_project()
+  else:
+    txl_operator.restore_project()
+
+
+def evolve(population, functionalPhase, generation=0):
+
+  # Accounts for the possibility of spilling over the limit in the second phase
+  if generation is 0:
+    generationLimit = config._EVOLUTION_GENERATIONS
+  else:
+    generationLimit = config._EVOLUTION_GENERATIONS + generation
+
+  while True:
     generation += 1
+
     # Mutate each individual
     for individual in population:
       individual.generation = generation
-      mutation(individual)
+      mutation(individual, functionalPhase)
 
     # Evaluate each individual
     for individual in population:
@@ -238,28 +294,17 @@ def start():
     highestID = -1
     runningSum = 0
     for individual in population:
-      runningSum += individual.getFitness()
-      if individual.getFitness() > highestSoFar:
-        highestSoFar = individual.getFitness()
+      runningSum += individual.getFitness(functionalPhase)
+      if individual.getFitness(functionalPhase) > highestSoFar:
+        highestSoFar = individual.getFitness(functionalPhase)
         highestID = individual.id
 
     averageFitness.append(runningSum / config._EVOLUTION_POPULATION)
     bestFitness.append((highestSoFar, highestID))
 
-    # Check for terminating conditions
-    for individual in population:
-      if individual.successRate[-1] == 1:
-        print "Found best individual", individual.id
-        done = True
-        break
-      if generation == config._EVOLUTION_GENERATIONS:
-        print "Exhausted all generations"
-        done = True
-        break
-
     # Alternate termination criteria
-    # - If average improvement in fitness is less than 
-    # _MINIMAL_FITNESS_IMPROVEMENT over 
+    # - If average improvement in fitness is less than
+    # _MINIMAL_FITNESS_IMPROVEMENT over
     # _GENERATIONAL_IMPROVEMENT_WINDOW
     avgFitTest = False
     maxFitTest = False
@@ -277,36 +322,58 @@ def start():
         print ("Average fitness hasn't increased by {} in {} generations".
               format(config._AVG_FITNESS_UP,
               config._GENERATIONAL_IMPROVEMENT_WINDOW))
-        done = True
-        break
+        return get_best_individual(population, bestFitness)
       if not maxFitTest:
         print ("Maximum fitness hasn't increased by {} in {} generations".
               format(config._BEST_FITNESS_UP,
               config._GENERATIONAL_IMPROVEMENT_WINDOW))
-        done = True
-        break
-        
-    print "             [INFO] Calling replace lowest"
-    replace_lowest(population)
-        
-  print population
+        return get_best_individual(population, bestFitness)
 
-  # Restore project to original
-  txl_operator.restore_project()
+    # Check for terminating conditions
+    for individual in population:
+      if functionalPhase and individual.successRate[-1] == 1:
+        print "Found best individual", individual.id
+        return get_best_individual(population, bestFitness)
+      if generation == generationLimit:
+        print "Exhausted all generations"
+        return get_best_individual(population, bestFitness)
+
+    # print "[INFO] Calling replace lowest"
+    replace_lowest(population, functionalPhase)
 
 
-def replace_lowest(population):
-  """Replace underperforming members with high-performing members or the original 
-  buggy program.
-  """  
+def get_best_individual(population, bestFitness):
+  
+  # Acquire the pair with the highest fitness
+  bestID = -1
+  highestScore = -1
+  for score, id_ in bestFitness:
+    if score >= highestScore:
+      bestID = id_
+      highestScore = score
+
+  for individual in population:
+    if individual.id == bestID:
+      return individual
+
+def replace_lowest(population, functionalPhase):
+  """Replace underperforming members with high-performing members or the 
+  original buggy program.
+  """
  
+  # Acquire set of operators to use
+  if functionalPhase:
+    mutationOperators = config._FUNCTIONAL_MUTATIONS
+  else:
+    mutationOperators = config._NONFUNCTIONAL_MUTATIONS
+
   # Determine the number of members to look at for underperforming
   numUnder = int((config._EVOLUTION_POPULATION * config._EVOLUTION_REPLACE_LOWEST_PERCENT)/100)
   if numUnder < 1:
     numUnder = 1
 
   # Sort population by fitness
-  sortedMembers = sorted(population, key=lambda individual: individual.getFitness())
+  sortedMembers = sorted(population, key=lambda individual: individual.getFitness(functionalPhase))
 
   # The first numUnder members have their turnsUnderperforming variable incremented
   # as they are the worst performing
@@ -324,12 +391,11 @@ def replace_lowest(population):
     # Case 1: Replace an underperforming member with a fit member
     if randomNum <= config._EVOLUTION_REPLACE_WITH_BEST_PERCENT:
       # Take a member from the top 10% of the population
-      highMember =  int(randint(config._EVOLUTION_POPULATION * 0.9,
-                        config._EVOLUTION_POPULATION)) - 1
+      highMember =  randint(int(config._EVOLUTION_POPULATION * 0.9),
+                        config._EVOLUTION_POPULATION) - 1
       # Keep the id of the original member  
       lowId = sortedMembers[i].id
-      print "             [INFO] Replacing ID: {} with {}".format(lowId,
-        sortedMembers[highMember].id) 
+      # print "[INFO] Replacing ID: {} with {}".format(lowId, sortedMembers[highMember].id) 
       sortedMembers[i] = copy.deepcopy(sortedMembers[highMember])
       sortedMembers[i].id = lowId
     
@@ -341,14 +407,13 @@ def replace_lowest(population):
     # Code copy-pasted from initialize()
     else:
       # The number of enabled mutation operators
-      mutationOperators = 0
-      for operator in config._MUTATIONS:
+      numOfOperators = 0
+      for operator in mutationOperators:
         if operator[1]:
-          mutationOperators += 1
+          numOfOperators += 1
 
-      print "             [INFO] Restarting underperforming member ID: {}".format(
-        sortedMembers[i].id)
-      individual = Individual(mutationOperators, i)
+      # print "[INFO] Restarting underperforming member ID: {}".format(sortedMembers[i].id)
+      individual = Individual(numOfOperators, i)
 
       # Set the initial phase to consider
       # (true => functional then non-functional)

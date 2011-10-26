@@ -27,9 +27,9 @@ uniqueMutants = {}
 #
 # -----------------------------------------------------------------------------
 
-def mutate_project(generation, memberNum):   
+def mutate_project(generation, memberNum, mutationOperators):
   """Create all of the mutants for a member of the genetic pool.  Mutants and
-  projects are stored by generation and member
+  projects are stored by generation and member.
   """
 
   destDir = config._TMP_DIR + str(generation) + os.sep + str(memberNum) + os.sep
@@ -38,10 +38,12 @@ def mutate_project(generation, memberNum):
     sourceDir = config._PROJECT_SRC_DIR
   else:
     sourceDir = config._TMP_DIR + str(generation - 1) + os.sep + str(memberNum) + os.sep + 'project' + os.sep
- 
-  recursively_mutate_project(generation, memberNum, sourceDir, destDir)
 
-def recursively_mutate_project(generation, memberNum, sourceDir, destDir):
+  recursively_mutate_project(generation, memberNum, sourceDir, destDir,
+                             mutationOperators)
+
+def recursively_mutate_project(generation, memberNum, sourceDir, destDir,
+                               mutationOperators):
   """For a given member and generation, generate all of the mutants for a
   project.  The source project depends on the generation:
   Gen 1: The source project is the original project
@@ -50,35 +52,39 @@ def recursively_mutate_project(generation, memberNum, sourceDir, destDir):
 
   for root, dirs, files in os.walk(sourceDir):
     for sourceSubDir in dirs:
-      
+
       # Check to ensure the root is still within the dest dir
       # Weird error that occurs only on 1+ generations (root sometimes lies
       # outside of the actual sourceDir)
       if destDir in str(sourceDir) and generation is not 1:
-        recursively_mutate_project(generation, memberNum, sourceSubDir, destDir)
+        recursively_mutate_project(generation, memberNum, sourceSubDir,
+                                   destDir, mutationOperators)
       elif generation is 1:
-        recursively_mutate_project(generation, memberNum, sourceSubDir, destDir)
+        recursively_mutate_project(generation, memberNum, sourceSubDir,
+                                   destDir, mutationOperators)
 
     for aFile in files:
       if ("." in aFile and aFile.split(".")[1] == "java"):
         sourceFile = os.path.join(root, aFile)
-        generate_all_mutants(generation, memberNum, sourceFile, destDir)
+        generate_all_mutants(generation, memberNum, sourceFile, destDir,
+                             mutationOperators)
 
 
+def generate_all_mutants(generation, memberNum, sourceFile, destDir,
+                         mutationOperators):
+  """See comment for recursively_mutate_project."""
 
-def generate_all_mutants(generation, memberNum, sourceFile, destDir):
-  """See comment for recursively_mutate_project
-  """
-
-  # Loop over the selected operators in the config file
-  for operator in config._MUTATIONS:
+  # Loop over the selected operators
+  for operator in mutationOperators:
     if operator[1]:
-      generate_mutants(generation, memberNum, operator, sourceFile, destDir)
+      generate_mutants(generation, memberNum, operator, sourceFile, destDir,
+                       mutationOperators)
 
 
-def generate_mutants(generation, memberNum, txlOperator, sourceName, destDir):
+def generate_mutants(generation, memberNum, txlOperator, sourceName, destDir,
+                     mutationOperators):
   """See comment for recursively_mutate_project.  The only new parameter here
-  is the txlOperator to apply to a file
+  is the txlOperator to apply to a file.
   """
 
   sourceNoExt = os.path.splitext(sourceName)[0]
@@ -123,32 +129,31 @@ def generate_mutants(generation, memberNum, txlOperator, sourceName, destDir):
   outFile = tempfile.SpooledTemporaryFile()
   errFile = tempfile.SpooledTemporaryFile()
 
-  process = subprocess.Popen(['txl', sourceName, txlOperator[6], '-',
-            '-outfile', sourceNameOnly + sourceExtOnly, '-outdir', txlDestDir], 
+  process = subprocess.Popen(['txl', sourceName, txlOperator[4], '-',
+            '-outfile', sourceNameOnly + sourceExtOnly, '-outdir', txlDestDir],
             stdout=outFile, stderr=errFile, cwd=config._PROJECT_DIR, shell=False)
   process.wait()
 
 
-def generate_representation(generation, memberNum):
+def generate_representation(generation, memberNum, mutationOperators):
   """Generate the representation for a member.  
   Generate the dictionary for use here.
-
   Returns a list ints where each int corresponds to the number of mutations
   of one type.  eg: {5, 7, 3, ...} = 5 of type ASAS, 7 of type ASAV
   The order of the mutation types is the same as that in config._MUTATIONS.
   """
 
   rep = {}
-  for mutationOp in config._MUTATIONS:
+  for mutationOp in mutationOperators:
     rep[mutationOp[0]] = 0
-  
+
   # Recusive dir walk
   recurDir = config._TMP_DIR + str(generation) + os.sep + str(memberNum) + os.sep
   for root, dirs, files in os.walk(recurDir):
     for aDir in dirs:
 
       # Count mutant operator if present in dir name
-      for mutationOp in config._MUTATIONS:
+      for mutationOp in mutationOperators:
 
         if "{}_".format(mutationOp[0]) in str(aDir):  # TODO more unique match
           rep[mutationOp[0]] += 1
@@ -181,8 +186,7 @@ def backup_project():
 
 
 def restore_project():
-  """At the end of an ARC run, restore the project to it's pristine state
-  """
+  """At the end of an ARC run, restore the project to it's pristine state."""
 
   if os.path.exists(config._PROJECT_SRC_DIR):
     shutil.rmtree(config._PROJECT_SRC_DIR)
@@ -278,13 +282,12 @@ def move_local_project_to_original(generation, memberNum):
   in, the final step is to copy the locak project back to the original 
   directory and compile it. (See next.) 
   """
-
   # Check for existence of a backup
   for root, dirs, files in os.walk(config._PROJECT_BACKUP_DIR):
     if files == [] and dirs == []:
       print ('[ERROR] txl_operator.move_local_project_to_original: \
-             config._PROJECT_BACKUP_DIR is empty.  No backup means \
-             original files could be lost.  Move not completed.')
+             config._PROJECT_BACKUP_DIR is empty. No backup means \
+             original files could be lost.Move not completed.')
       return
 
   srcDir = config._TMP_DIR + str(generation) + os.sep + str(memberNum) + os.sep + 'project' + os.sep
@@ -295,12 +298,11 @@ def move_local_project_to_original(generation, memberNum):
 
 
 def compile_project():
-  """After the local project is copied back to the original, compile it.
-  """
+  """After the local project is copied back to the original, compile it."""
 
   if not os.path.isfile(config._PROJECT_DIR + 'build.xml'):
     print ('[ERROR] txl_operator.compile_project: Ant build.xml not \
-           found in root directory.  Project wasn\'t compiled.')
+           found in root directory. Project wasn\'t compiled.')
   else:
     print "[INFO] Compiling new source files"
 
@@ -339,8 +341,8 @@ def main():
   #backup_project()
   restore_project()
 
-  mutate_project(gener, member)
-  muties = generate_representation(gener, member)
+  mutate_project(gener, member, config._FUNCTIONAL_MUTATIONS)
+  muties = generate_representation(gener, member, config._FUNCTIONAL_MUTATIONS)
   create_local_project(gener, member, False)
   move_mutant_to_local_project(gener, member, 'ASAS', 3)
 
