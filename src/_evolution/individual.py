@@ -52,6 +52,8 @@ class Individual():
     self.functionalScore = [0]
     self.nonFunctionalScore = [0]
 
+    self.turnsUnderperforming = 0
+
   def getFitness(self, functionalPhase):
     if functionalPhase:
       return self.functionalScore[-1]
