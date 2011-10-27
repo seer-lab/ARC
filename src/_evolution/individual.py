@@ -48,17 +48,16 @@ class Individual():
     self.dataraceRate = [0]
     self.deadlockRate = [0]
     self.errorRate = [0]
-
-    self.functionalScore = [0]
-    self.nonFunctionalScore = [0]
+    self.realTime = []
+    self.wallTime = []
+    self.voluntarySwitches = []
+    self.involuntarySwitches = []
+    self.percentCPU = []
+    self.goodRuns = []  # True || False
+    
+    self.score = []
 
     self.turnsUnderperforming = 0
-
-  def getFitness(self, functionalPhase):
-    if functionalPhase:
-      return self.functionalScore[-1]
-    else:
-      return self.nonFunctionalScore[-1]
 
   def repopulateGenome(self, functionalPhase):
     """This function will re-populate the genome with location values.
@@ -108,12 +107,13 @@ class Individual():
     ret += " Generation: {}\n".format(self.generation)
     ret += " Last Operator: {}\n".format(self.lastOperator)
     ret += " Applied Operators: {}\n".format(self.appliedOperators)
-    # TODO Fix me
-    # ret += " Last Success Rate: {}\n".format(self.lastSuccessRate)
-    # ret += " Last Timeout Rate: {}\n".format(self.lastTimeoutRate)
-    # ret += " Last Datarace Rate: {}\n".format(self.lastDataraceRate)
-    # ret += " Last Deadlock Rate: {}\n".format(self.lastDeadlockRate)
-    # ret += " Last Error Rate: {}\n".format(self.lastErrorRate)
+    ret += " Successes: {}\n".format(self.successRate)
+    ret += " Real Time: {}\n".format(self.realTime)
+    ret += " Wall Time: {}\n".format(self.wallTime)
+    ret += " Voluntary Switches: {}\n".format(self.voluntarySwitches)
+    ret += " Involuntary Switches: {}\n".format(self.involuntarySwitches)
+    ret += " Percent CPU {}\n".format(self.percentCPU)
+    ret += " Score: {}\n".format(self.score)
     return ret
 
 
@@ -129,6 +129,11 @@ class Individual():
     newIndividual.dataraceRate = self.dataraceRate[:]
     newIndividual.deadlockRate = self.deadlockRate[:]
     newIndividual.errorRate = self.errorRate[:]
-    newIndividual.functionalScore = self.functionalScore[:]
-    newIndividual.nonFunctionalScore = self.nonFunctionalScore[:]
+    newIndividual.realTime = self.realTime[:]
+    newIndividual.wallTime = self.wallTime[:]
+    newIndividual.voluntarySwitches = self.voluntarySwitches[:]
+    newIndividual.involuntarySwitches = self.involuntarySwitches[:]
+    newIndividual.percentCPU = self.percentCPU[:]
+    newIndividual.goodRuns = self.goodRuns[:]
+    newIndividual.score = self.score[:]
     return newIndividual

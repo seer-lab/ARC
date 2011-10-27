@@ -222,17 +222,18 @@ def create_local_project(generation, memberNum, restart):
   shutil.copytree(srcDir, destDir)
 
 
-def copy_local_project_a_to_b(generation, memberNumSrc, memberNumDst):
+def copy_local_project_a_to_b(generationSrc, memberNumSrc, generationDst, 
+                              memberNumDst):
   """When an underperforming member is replaced by a higher performing one
   we have to replace their local project with the higher performing project
   """
 
   staticPart = os.sep + 'project' + os.sep
 
-  srcDir = (config._TMP_DIR + str(generation) + os.sep + str(memberNumSrc) 
-            + staticPart) 
+  srcDir = (config._TMP_DIR + str(generationSrc) + os.sep + str(memberNumSrc) 
+            + staticPart)
 
-  destDir = (config._TMP_DIR + str(generation) + os.sep + str(memberNumDst) 
+  destDir = (config._TMP_DIR + str(generationDst) + os.sep + str(memberNumDst) 
             + staticPart)
 
   if os.path.exists(destDir):
