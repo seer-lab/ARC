@@ -54,8 +54,9 @@ class Individual():
     self.involuntarySwitches = []
     self.percentCPU = []
     self.goodRuns = []  # True || False
-    
+
     self.score = []
+    self.switchGeneration = 0
 
     self.turnsUnderperforming = 0
 
@@ -105,6 +106,7 @@ class Individual():
     ret += "\n"
     ret += " Id: {}\n".format(self.id)
     ret += " Generation: {}\n".format(self.generation)
+    ret += " Switch Generation: {}\n".format(self.switchGeneration)
     ret += " Last Operator: {}\n".format(self.lastOperator)
     ret += " Applied Operators: {}\n".format(self.appliedOperators)
     ret += " Successes: {}\n".format(self.successRate)
@@ -118,7 +120,6 @@ class Individual():
 
 
   def clone(self, height, i):
-    print height
     newIndividual = Individual(height, 0)
     newIndividual.id = i
     newIndividual.generation = self.generation
@@ -136,4 +137,5 @@ class Individual():
     newIndividual.percentCPU = self.percentCPU[:]
     newIndividual.goodRuns = self.goodRuns[:]
     newIndividual.score = self.score[:]
+    newIndividual.switchGeneration = self.switchGeneration
     return newIndividual

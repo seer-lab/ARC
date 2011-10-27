@@ -45,11 +45,12 @@ class Tester():
   percentCPU = []
   goodRuns = []  # True || False
 
-  def begin_testing(self, functional, nonFunctional=False):
+  def begin_testing(self, functional, nonFunctional=False,
+                    runs=config._CONTEST_RUNS):
     """Begins the testing phase by creating the test processes."""
 
-    print "[INFO] Performing {} Test Runs...".format(config._CONTEST_RUNS)
-    for i in range(1, config._CONTEST_RUNS + 1):
+    print "[INFO] Performing {} Test Runs...".format(runs)
+    for i in range(1, runs + 1):
 
       # To ensure stdout doesn't overflow because .poll() can deadlock
       outFile = tempfile.SpooledTemporaryFile()

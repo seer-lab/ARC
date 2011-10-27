@@ -14,11 +14,8 @@ import config
 from _contest import tester
 from _txl import txl_operator
 
-# For each generation, record the average and best fitness
-averageFitness = []
-bestFitness = []  # (score, id)
 
-def evaluate(individual, functionalPhase):
+def evaluate(individual, functionalPhase, worstScore):
   """Perform the actual evaluation of said individual using ConTest testing.
 
   The fitness is determined using functional and non-functional fitness values.
@@ -60,9 +57,9 @@ def evaluate(individual, functionalPhase):
       individual.voluntarySwitches.append(float(sum(contest.voluntarySwitches)) / len(contest.voluntarySwitches))
       individual.involuntarySwitches.append(float(sum(contest.involuntarySwitches)) / len(contest.involuntarySwitches))
       individual.percentCPU.append(float(sum(contest.percentCPU)) / len(contest.percentCPU))
-     
-      # TODO Need to come up with a value  (worst / new)
-      individual.score.append(contest.realTime[-1] + contest.wallTime[-1] + contest.voluntarySwitches[-1] + contest.involuntarySwitches[-1] + contest.percentCPU[-1])
+
+      # TODO Need proper equation
+      individual.score.append(worstScore / (contest.realTime[-1] + contest.wallTime[-1] + contest.voluntarySwitches[-1] + contest.involuntarySwitches[-1] + contest.percentCPU[-1]))
     else:
       print "[INFO] Functionality was broken by change"
       individual.score.append(-1)
@@ -247,52 +244,64 @@ def initialize(functionalPhase, bestIndividual=None):
   return population
 
 
+def get_worst_non_functional_score(individual):
+
+  # This individual's best generation should be the last one compiled
+  contest = tester.Tester()
+  contest.begin_testing(False, False, 20)  # Measure performance
+
+  # TODO Still need appropriate equation
+  worstScore = (max(contest.realTime) + max(contest.wallTime) + max(contest.voluntarySwitches) + max(contest.involuntarySwitches) + max(contest.percentCPU))
+  contest.clear_results()
+  return worstScore
+
+
 def start():
   """The actual starting process for ARC's evolutionary process."""
 
   # Backup project
   txl_operator.backup_project()
 
-  functionalPhase = config._EVOLUTION_FUNCTIONAL_PHASE
+  functionalPhase = True
 
   try:
     # Initialize the population
     population = initialize(functionalPhase)
 
     # Evolve the population to find the best functional individual
-    if functionalPhase:
-      print "Evolving population towards functional correctness"
-      bestFunctional = evolve(population, functionalPhase)
+    print "Evolving population towards functional correctness"
+    bestFunctional = evolve(population, functionalPhase, 0)
 
-      # Check to see if bestFunctional is valid for progress to next phase
-      if bestFunctional.successRate[-1] == 1.0:
+    # Check to see if bestFunctional is valid for progress to next phase
+    if bestFunctional.successRate[-1] == 1.0:
 
-        functionalPhase = False
-        print population
+      functionalPhase = False
+      bestFunctional.switchGeneration = bestFunctional.generation
+      print population
 
-        # Reinitialize the population with the best functional individual
-        print "Repopulating with best individual {} at generation {}".format(
-                                    bestFunctional.id, bestFunctional.generation)
-        population = initialize(functionalPhase, bestFunctional)
-        for individual in population:
-          if individual.id is not bestFunctional.id:
-            txl_operator.copy_local_project_a_to_b(bestFunctional.generation,
-                                                bestFunctional.id,
-                                                bestFunctional.generation,
-                                                individual.id)
-      
-        # Evolve the population to find the best non-functional individual
-        print "Evolving population towards non-functional performance"
-        bestNonFunctional = evolve(population, functionalPhase,
-                                   bestFunctional.generation)
-      else:
-        print "[INFO] No individual was found that functions correctly"
+      # Reinitialize the population with the best functional individual
+      print "Repopulating with best individual {} at generation {}".format(
+                                  bestFunctional.id, bestFunctional.generation)
+      population = initialize(functionalPhase, bestFunctional)
+      for individual in population:
+        if individual.id is not bestFunctional.id:
+          txl_operator.copy_local_project_a_to_b(bestFunctional.generation,
+                                              bestFunctional.id,
+                                              bestFunctional.generation,
+                                              individual.id)
+    
+      # Acquire worst possible non-functional score for best individual
+      worstScore = get_worst_non_functional_score(bestFunctional)
 
-    else:
-      print "Evolving population towards non-functional performance"
       # Evolve the population to find the best non-functional individual
-      bestNonFunctional = evolve(population, functionalPhase)
-    print population
+      print "Evolving population towards non-functional performance"
+      bestNonFunctional = evolve(population, functionalPhase,
+                                 bestFunctional.generation, worstScore)
+      print population
+      print "\nBest Individual\n"
+      print bestNonFunctional
+    else:
+      print "[INFO] No individual was found that functions correctly"
 
     # Restore project to original
   except:
@@ -302,7 +311,11 @@ def start():
     txl_operator.restore_project()
 
 
-def evolve(population, functionalPhase, generation=0):
+def evolve(population, functionalPhase, generation=0, worstScore=0):
+
+  # For each generation, record the average and best fitness
+  averageFitness = []
+  bestFitness = []  # (score, id)
 
   # Accounts for the possibility of spilling over the limit in the second phase
   if generation is 0:
@@ -320,7 +333,7 @@ def evolve(population, functionalPhase, generation=0):
 
     # Evaluate each individual
     for individual in population:
-      evaluate(individual, functionalPhase)
+      evaluate(individual, functionalPhase, worstScore)
 
     # Calculate average and best fitness
     highestSoFar = -1
@@ -365,8 +378,12 @@ def evolve(population, functionalPhase, generation=0):
     # Check for terminating conditions
     for individual in population:
       if functionalPhase and individual.successRate[-1] == 1:
-        print "Found best individual", individual.id
-        return get_best_individual(population, bestFitness)
+        print "Found potential best individual", individual.id
+        if tester.Tester().begin_testing(True, True, config._CONTEST_RUNS * 2):
+          print "Found best individual", individual.id
+          return get_best_individual(population, bestFitness)
+        else:
+          print "Potential best individual still has errors"
       if generation == generationLimit:
         print "Exhausted all generations"
         return get_best_individual(population, bestFitness)
@@ -448,16 +465,18 @@ def replace_lowest(population, functionalPhase):
           numOfOperators += 1
 
       # print "[INFO] Restarting underperforming member ID: {}".format(sortedMembers[i].id)
-      individual = Individual(numOfOperators, i)
-
-      # Set the initial phase to consider
-      # (true => functional then non-functional)
-      # (false => non-functional only)
-      individual.functionalPhase = config._EVOLUTION_FUNCTIONAL_PHASE
-
-      # Reset the local project
-      txl_operator.create_local_project(individual.generation, individual.id, True)
-      sortedMembers[i] = individual
+      # TODO We don't know in the timeline, when an individual is restarted
+      # If in functional restart off of local, otherwise off of best individual
+      if functionalPhase:
+        # Reset the local project
+        txl_operator.create_local_project(sortedMembers[i].generation, sortedMembers[i].id, True)
+      else:
+        # Reset to best individual
+        print "Reseting Ind{}.{} back to Ind{}.{}".format(sortedMembers[i].id, sortedMembers[i].generation, sortedMembers[i].id, sortedMembers[i].switchGeneration )
+        txl_operator.copy_local_project_a_to_b(sortedMembers[i].switchGeneration,
+                                              sortedMembers[i].id,
+                                              sortedMembers[i].generation,
+                                              sortedMembers[i].id)
 
     # Resort the population by ID and reassign it to the original variable
     population = sorted(sortedMembers, key=lambda individual: individual.id)
