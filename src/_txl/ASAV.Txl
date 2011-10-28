@@ -80,7 +80,7 @@ end redefine
 
 define asgn_stmt
     % Assignment expression (From Java.grm)
-    [unary_expression] [assignment_operator] [assignment_expression]
+    [unary_expression] [assignment_operator] [assignment_expression] ';
 end define
 
 % How it looks after
@@ -89,7 +89,7 @@ define sync_asgn_stmt
     /* 'MUTANT: [stringlit] */ 	[NL]	
     'synchronized '( [expression] ')
     '{ [NL][IN]    
-	[unary_expression] [assignment_operator] [assignment_expression]
+	[unary_expression] [assignment_operator] [assignment_expression] '; [NL][EX]
     '}   [NL]
     /* 'MUTANT: [stringlit] */ 	[NL]	
 end define
@@ -163,17 +163,7 @@ function doSynchronizedInsertMutation
 	deconstruct AsgnStatement
     		UA [unary_expression] 
 		AO [assignment_operator] 
-		AE [assignment_expression]
-
-	deconstruct UA 
-		PostF [postfix_expression]
-
-	deconstruct PostF
-		PR [primary] 
-		RPID [repeat post_inc_dec]
-
-	deconstruct PR
-		REF [reference]
+		AE [assignment_expression] ';
 
 	% export the old synchronized expression and reinsert it 
 	% once the mutant has been created and saved
@@ -191,7 +181,7 @@ function doSynchronizedInsertMutation
   		/* 'MUTANT: MutantString */
 		'synchronized '( ThisExpr ')
     		'{
-			UA AO AE
+			UA AO AE ';
     		'}
 		/* 'MUTANT: MutantString */
 end function
@@ -218,7 +208,7 @@ function undoSynchronizedInsertMutation
     		'{  
     			UA [unary_expression] 
 			AO [assignment_operator] 
-			AE [assignment_expression]
+			AE [assignment_expression] ';
     		'}
     		/* 'MUTANT: MutantStr2 [stringlit] */ 	
 
