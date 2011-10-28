@@ -12,6 +12,9 @@ import shutil
 sys.path.append("..")  # To allow importing parent directory module
 import config
 
+import logging
+logger = logging.getLogger('arc')
+
 # A dictionary to hold the path of unique mutations by individual's and
 # generation. The mapping is:
 # (generation, memberNum, txlOperator, mutantNum) => directory path
@@ -286,9 +289,7 @@ def move_local_project_to_original(generation, memberNum):
   # Check for existence of a backup
   for root, dirs, files in os.walk(config._PROJECT_BACKUP_DIR):
     if files == [] and dirs == []:
-      print ('[ERROR] txl_operator.move_local_project_to_original: \
-             config._PROJECT_BACKUP_DIR is empty. No backup means \
-             original files could be lost.Move not completed.')
+      logger.error("No backup for original project found")
       return
 
   srcDir = config._TMP_DIR + str(generation) + os.sep + str(memberNum) + os.sep + 'project' + os.sep
@@ -302,10 +303,9 @@ def compile_project():
   """After the local project is copied back to the original, compile it."""
 
   if not os.path.isfile(config._PROJECT_DIR + 'build.xml'):
-    print ('[ERROR] txl_operator.compile_project: Ant build.xml not \
-           found in root directory. Project wasn\'t compiled.')
+    logger.error("No ant build.xml file found in project under test's directory")
   else:
-    print "[INFO] Compiling new source files"
+    logger.debug("Compiling new source files")
 
     outFile = tempfile.SpooledTemporaryFile()
     errFile = tempfile.SpooledTemporaryFile()
@@ -321,7 +321,7 @@ def compile_project():
     errFile.close()
 
     if (errorText.find(b"BUILD FAILED") >= 0):
-      print "[INFO] txl_operator.compile_project():  ANT build failed."
+      logger.error("ant 'compile' command failed, could not compile project")
       return False
     else:
       return True

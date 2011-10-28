@@ -4,12 +4,16 @@ There are system, target project, ConTest, mutation operator and evolution
 variables that are set in this file and are used all throughout ARC.
 """
 
+import logging
+
 # System variables
 _ROOT_DIR = "/home/jalbert/workspace/arc/"
 _MAX_MEMORY_MB = 2000
 _MAX_CORES = 2
 _TMP_DIR = _ROOT_DIR + "tmp/"
 _TXL_DIR = _ROOT_DIR + "src/_txl/"
+_JUNIT_JAR = _ROOT_DIR + "lib/junit-4.8.1.jar"
+_VERBOSE = True
 
 # Target project variables
 _PROJECT_DIR = _ROOT_DIR + "input/"
@@ -66,3 +70,16 @@ _TIMEOUT_WEIGHT = 50
 _GENERATIONAL_IMPROVEMENT_WINDOW = 10
 _AVG_FITNESS_UP = 50
 _BEST_FITNESS_UP = 100
+
+# Create logger
+logger = logging.getLogger('arc')
+handler = logging.StreamHandler()
+
+if _VERBOSE:
+    logger.setLevel(logging.DEBUG)
+else:
+    logger.setLevel(logging.INFO)
+
+formatter = logging.Formatter('%(relativeCreated)d %(levelname)s [%(module)s.%(funcName)s] %(message)s')
+handler.setFormatter(formatter)
+logger.addHandler(handler)

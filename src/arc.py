@@ -8,6 +8,9 @@ import argparse
 from _contest import contester
 from _evolution import evolution
 
+import logging
+logger = logging.getLogger('arc')
+
 def main():
   """The entry point to ARC, to start the evolutionary approach."""
 

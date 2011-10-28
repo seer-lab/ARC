@@ -14,6 +14,9 @@ import re
 sys.path.append("..")  # To allow importing parent directory module
 import config
 
+import logging
+logger = logging.getLogger('arc')
+
 
 class Tester():
   """Class that drives the process of running the testsuite a number of times.
@@ -49,7 +52,7 @@ class Tester():
                     runs=config._CONTEST_RUNS):
     """Begins the testing phase by creating the test processes."""
 
-    print "[INFO] Performing {} Test Runs...".format(runs)
+    logger.debug("Performing {} Test Runs...".format(runs))
     for i in range(1, runs + 1):
 
       # To ensure stdout doesn't overflow because .poll() can deadlock
@@ -60,36 +63,36 @@ class Tester():
       if functional:
         process = subprocess.Popen(['java',
                           '-Xmx{}m'.format(config._PROJECT_TEST_MB), '-cp',
-                          config._PROJECT_CLASSPATH, '-javaagent:' +
-                          config._CONTEST_JAR, '-Dcontest.verbose=0',
+                          config._PROJECT_CLASSPATH + ':{}'.format(config._JUNIT_JAR),'-javaagent:' +
+                          config._CONTEST_JAR, '-Dcontest.verbose=0', 'org.junit.runner.JUnitCore',
                           config._PROJECT_TESTSUITE], stdout=outFile,
                           stderr=errFile, cwd=config._PROJECT_DIR, shell=False)
       else:
         process = subprocess.Popen(['/usr/bin/time', '-v', 'java',
                           '-Xmx{}m'.format(config._PROJECT_TEST_MB), '-cp',
-                          config._PROJECT_CLASSPATH,
+                          config._PROJECT_CLASSPATH + ':{}'.format(config._JUNIT_JAR), 'org.junit.runner.JUnitCore',
                           config._PROJECT_TESTSUITE], stdout=outFile,
                           stderr=errFile, cwd=config._PROJECT_DIR, shell=False)
-      
+
       success = self.run_test(process, outFile, errFile, i, functional)
-      
+
       # If last run was unsuccessful and we are in the non-functional, exit
       if nonFunctional and not self.goodRuns[-1]:
-        print "Last run was unsuccesful functionally"
+        logger.debug("Last run was unsuccesful functionally")
         return False
 
-    print "[INFO] Test Runs Results..."
-    print "[INFO] Successes ", self.successes
-    print "[INFO] Timeouts ", self.timeouts
-    print "[INFO] Dataraces ", self.dataraces
-    print "[INFO] Deadlock ", self.deadlocks
-    print "[INFO] Errors ", self.errors
-    print "[INFO] Real Time ", self.realTime
-    print "[INFO] Wall Time ", self.wallTime
-    print "[INFO] Voluntary Switches ", self.voluntarySwitches
-    print "[INFO] Involuntary Switches ", self.involuntarySwitches 
-    print "[INFO] Percent CPU ", self.percentCPU
-    print "[INFO] Good Runs ", self.goodRuns
+    logger.debug("Test Runs Results...")
+    logger.debug("Successes: {}".format(self.successes))
+    logger.debug("Timeouts: {}".format(self.timeouts))
+    logger.debug("Dataraces: {}".format(self.dataraces))
+    logger.debug("Deadlock: {}".format(self.deadlocks))
+    logger.debug("Errors: {}".format(self.errors))
+    logger.debug("Real Time: {}".format(self.realTime))
+    logger.debug("Wall Time: {}".format(self.wallTime))
+    logger.debug("Voluntary Switches: {}".format(self.voluntarySwitches))
+    logger.debug("Involuntary Switches: {}".format(self.involuntarySwitches ))
+    logger.debug("Percent CPU: {}".format(self.percentCPU))
+    logger.debug("Good Runs: {}".format(self.goodRuns))
     return True
 
   def run_test(self, process, outFile, errFile, i, functional):
@@ -137,15 +140,15 @@ class Tester():
 
         # Check if there is any deadlock using "Java-level deadlock:"
         if (output.find(b"Java-level deadlock:") >= 0):
-          print "[INFO] Test {} - Deadlock Encountered".format(i)
+          logger.debug("Test {} - Deadlock Encountered".format(i))
           self.deadlocks += 1
         else:
           if functional:
-            print "[INFO] Test {} - Timeout Encountered".format(i)
+            logger.debug("Test {} - Timeout Encountered".format(i))
             self.timeouts += 1
           else:
             # If on non-functional, we cannot tell when deadlock thus assume it
-            print "[INFO] Test {} - Deadlock/Timeout Encountered".format(i)
+            logger.info("Test {} - Deadlock/Timeout Encountered".format(i))
             self.deadlocks += 1
         self.goodRuns.append(False)
 
@@ -161,23 +164,23 @@ class Tester():
         errFile.close()
 
         # Acquire the number of faults (accoring to ant test)
-        faults = re.search("Tests run: \d+,  Failures: (\d+),  Errors: (\d+)", output)
+        faults = re.search("Tests run: \d+,  Failures: (\d+)", output)
 
         if faults is not None:
           # Check to see if any tests failed, and if so how many?
-          totalFaults = int(faults.groups()[0]) + int(faults.groups()[1])
-          print "[INFO] Test {} - Datarace Encountered ({} errors)".format(i,
-                totalFaults)
+          totalFaults = int(faults.groups()[0])
+          logger.debug("Test {} - Datarace Encountered ({} errors)".format(i, 
+                                                                  totalFaults))
           self.dataraces += 1
           self.goodRuns.append(False)
         else:
           # Check to see if ant test was successful
-          if re.search("OK \((\d+) tests\)", output) is not None:
-            print "[INFO] Test {} - Error in Execution".format(i)
+          if re.search("OK \((\d+) test", output) is None:
+            logger.debug("Test {} - Error in Execution".format(i))
             self.errors += 1
             self.goodRuns.append(False)
           else:
-            print "[INFO] Test {} - Successful Execution".format(i)
+            logger.debug("Test {} - Successful Execution".format(i))
             self.successes += 1
             self.goodRuns.append(True)
 
@@ -185,12 +188,12 @@ class Tester():
               # Take the performance measures of exection
               userTime = re.search("User time \(seconds\): (\d+\.\d+)", error).groups()[0]
               systemTime = re.search("System time \(seconds\): (\d+\.\d+)", error).groups()[0]
-              wallTime = 0  # TODO
+              wallTime = re.search("\(h:mm:ss or m:ss\): (\d+):(\d+).(\d+)", error).groups()
               voluntarySwitches = re.search("Voluntary context switches: (\d+)", error).groups()[0]
               involuntarySwitches = re.search("Involuntary context switches: (\d+)", error).groups()[0]
               percentCPU = re.search("this job got: (\d+)%", error).groups()[0]
               self.realTime.append(float(userTime) + float(systemTime))
-              self.wallTime.append(float(wallTime))
+              self.wallTime.append((((float(wallTime[0]) * 60) + float(wallTime[1])) * 60) + (float(wallTime[2])/100))
               self.voluntarySwitches.append(float(voluntarySwitches))
               self.involuntarySwitches.append(float(involuntarySwitches))
               self.percentCPU.append(float(percentCPU))
