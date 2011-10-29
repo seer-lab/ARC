@@ -207,6 +207,8 @@ def create_local_project(generation, memberNum, restart):
   pristine original.  This is the 'restart' parameter - a boolean.
   """
 
+  logger.debug("Create I_{} G_{} Restart_{}".format(generation, memberNum, restart))
+
   staticPart = os.sep + str(memberNum) + os.sep + 'project' + os.sep
   # If the indivudal is on the first or restarted, use the original
   if generation is 1 or restart:
@@ -231,12 +233,15 @@ def copy_local_project_a_to_b(generationSrc, memberNumSrc, generationDst,
   we have to replace their local project with the higher performing project
   """
 
+  logger.debug("I_{} G_{} -> I_{} G_{}".format(generationSrc, memberNumSrc,
+                                               generationDst, memberNumDst))
+
   staticPart = os.sep + 'project' + os.sep
 
-  srcDir = (config._TMP_DIR + str(generationSrc) + os.sep + str(memberNumSrc) 
+  srcDir = (config._TMP_DIR + str(generationSrc) + os.sep + str(memberNumSrc)
             + staticPart)
 
-  destDir = (config._TMP_DIR + str(generationDst) + os.sep + str(memberNumDst) 
+  destDir = (config._TMP_DIR + str(generationDst) + os.sep + str(memberNumDst)
             + staticPart)
 
   if os.path.exists(destDir):
@@ -248,6 +253,8 @@ def move_mutant_to_local_project(generation, memberNum, txlOperator, mutantNum):
   """After the files have been mutated and the local project formed (by copying
   it in), move a mutated file to the local project
   """
+
+  logger.debug("{} -> I_{} G_{}".format(txlOperator, generation, memberNum))
 
   # Use the dictionary defined at the top of the file
   sourceDir = uniqueMutants[(generation, memberNum, txlOperator, mutantNum)]
@@ -282,10 +289,12 @@ def move_mutant_to_local_project(generation, memberNum, txlOperator, mutantNum):
 
 
 def move_local_project_to_original(generation, memberNum):
-  """When the mutants are generated, project assembled and mutant copied 
-  in, the final step is to copy the locak project back to the original 
-  directory and compile it. (See next.) 
+  """When the mutants are generated, project assembled and mutant copied
+  in, the final step is to copy the locak project back to the original
+  directory and compile it. (See next.)
   """
+
+  logger.debug("I_{} G_{} -> original".format(generation, memberNum))
   # Check for existence of a backup
   for root, dirs, files in os.walk(config._PROJECT_BACKUP_DIR):
     if files == [] and dirs == []:

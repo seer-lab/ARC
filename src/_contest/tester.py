@@ -206,7 +206,7 @@ class Tester():
     self.dataraces = 0
     self.deadlocks = 0
     self.errors = 0
-    del self.realTime[:]
+    del self.realTime [:]
     del self.wallTime [:]
     del self.voluntarySwitches [:]
     del self.involuntarySwitches [:]

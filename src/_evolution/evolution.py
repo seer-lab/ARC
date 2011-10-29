@@ -353,52 +353,60 @@ def evolve(population, functionalPhase, generation=0, worstScore=0):
     averageFitness.append(runningSum / config._EVOLUTION_POPULATION)
     bestFitness.append((highestSoFar, highestID))
 
-    # Alternate termination criteria
-    # - If average improvement in fitness is less than
-    # _MINIMAL_FITNESS_IMPROVEMENT over
-    # _GENERATIONAL_IMPROVEMENT_WINDOW
-    avgFitTest = False
-    maxFitTest = False
-    if generation >= config._GENERATIONAL_IMPROVEMENT_WINDOW + 1:
-      for i in xrange(generation -
-          config._GENERATIONAL_IMPROVEMENT_WINDOW + 1, generation):
-        if (math.fabs(averageFitness[i] - averageFitness[i - 1]) >
-            config._AVG_FITNESS_UP):
-          avgFitTest = True
-        if (math.fabs(bestFitness[i][0] - bestFitness[i - 1][0]) >
-            config._BEST_FITNESS_UP):
-          maxFitTest = True
+    # Check the terminating conditions
+    if convergence(generation, bestFitness, averageFitness):
+      return get_best_individual(population, bestFitness)
+    if terminate(population, generation, generationLimit, functionalPhase):
+      return get_best_individual(population, bestFitness)
 
-      if not avgFitTest:
-        logger.debug("Average fitness hasn't increased by {} in {} generations".
-              format(config._AVG_FITNESS_UP,
-              config._GENERATIONAL_IMPROVEMENT_WINDOW))
-        return get_best_individual(population, bestFitness)
-      if not maxFitTest:
-        logger.debug("Maximum fitness hasn't increased by {} in {} generations".
-              format(config._BEST_FITNESS_UP,
-              config._GENERATIONAL_IMPROVEMENT_WINDOW))
-        return get_best_individual(population, bestFitness)
-
-    # Check for terminating conditions
-    for individual in population:
-      if functionalPhase and individual.successRate[-1] == 1:
-        logger.info("Found potential best individual {}".format(individual.id))
-        if tester.Tester().begin_testing(True, True, config._CONTEST_RUNS * 2):
-          logger.info("Found best individual {}".format(individual.id))
-          return get_best_individual(population, bestFitness)
-        else:
-          logger.info("Potential best individual still has errors")
-      if generation == generationLimit:
-        logger.info("Exhausted all generations")
-        return get_best_individual(population, bestFitness)
-
-    # print "[INFO] Calling replace lowest"
+    # Check to see if we can replace the weakest individuals
     replace_lowest(population, functionalPhase)
+
+def convergence(generation, bestFitness, averageFitness):
+
+  # Alternate termination criteria to check for convergence
+  avgFitTest = False
+  maxFitTest = False
+  if generation >= config._GENERATIONAL_IMPROVEMENT_WINDOW + 1:
+    if max(averageFitness) - min(averageFitness) > config._AVG_FITNESS_MIN_DELTA:
+      avgFitTest = True
+    if max(bestFitness, key=lambda x:x[0])[0] - min(bestFitness,
+        key=lambda x:x[0])[0] > config._BEST_FITNESS_MIN_DELTA:
+      maxFitTest = True
+
+    if not avgFitTest:
+      logger.info("Average fitness hasn't moved by {} in {} generations".
+            format(config._AVG_FITNESS_MIN_DELTA,
+            config._GENERATIONAL_IMPROVEMENT_WINDOW))
+      return True
+    if not maxFitTest:
+      logger.info("Maximum fitness hasn't moved by {} in {} generations".
+            format(config._BEST_FITNESS_MIN_DELTA,
+            config._GENERATIONAL_IMPROVEMENT_WINDOW))
+      return True
+  return False
+
+def terminate(population, generation, generationLimit, functionalPhase):
+
+  # Check for terminating conditions
+  for individual in population:
+    if functionalPhase and individual.successRate[-1] == 1:
+      logger.info("Found potential best individual {}".format(individual.id))
+
+      if tester.Tester().begin_testing(True, True, config._CONTEST_RUNS * 2):
+        tester.Tester().clear_results()
+        logger.info("Found best individual {}".format(individual.id))
+        return True
+      else:
+        logger.info("Potential best individual still has errors")
+    if generation == generationLimit:
+      logger.info("Exhausted all generations")
+      return True
+  return False
 
 
 def get_best_individual(population, bestFitness):
-  
+
   # Acquire the pair with the highest fitness
   bestID = -1
   highestScore = -1

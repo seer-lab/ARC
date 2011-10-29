@@ -67,9 +67,11 @@ _EVOLUTION_REPLACE_WITH_BEST_PERCENT = 0
 _SUCCESS_WEIGHT = 100
 _TIMEOUT_WEIGHT = 50
 
-_GENERATIONAL_IMPROVEMENT_WINDOW = 10
-_AVG_FITNESS_UP = 50
-_BEST_FITNESS_UP = 100
+# Convergence criteria, considering the window size ensure there is at least 
+# a fitness score movement of delta
+_GENERATIONAL_IMPROVEMENT_WINDOW = 5
+_AVG_FITNESS_MIN_DELTA = 0.01
+_BEST_FITNESS_MIN_DELTA = 0.01
 
 # Create logger
 logger = logging.getLogger('arc')
