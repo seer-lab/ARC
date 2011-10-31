@@ -35,10 +35,12 @@ def mutate_project(generation, memberNum, mutationOperators):
   projects are stored by generation and member.
   """
 
+  logger.debug("Arguments received: {} {}".format(generation, memberNum))
+  
   destDir = config._TMP_DIR + str(generation) + os.sep + str(memberNum) + os.sep
 
   if generation == 1:
-    sourceDir = config._PROJECT_SRC_DIR
+    sourceDir = config._PROJECT_BACKUP_DIR
   else:
     sourceDir = config._TMP_DIR + str(generation - 1) + os.sep + str(memberNum) + os.sep + 'project' + os.sep
 
@@ -97,7 +99,7 @@ def generate_mutants(generation, memberNum, txlOperator, sourceName, destDir,
 
   sourceRelPath = ''
   if (generation == 1):
-    sourceRelPath = sourceNoFileName.replace(config._PROJECT_SRC_DIR, '')
+    sourceRelPath = sourceNoFileName.replace(config._PROJECT_BACKUP_DIR, '')
   else:
     sourceRelPath = sourceNoFileName.replace(config._TMP_DIR +
                     str(generation - 1) + os.sep + str(memberNum) + os.sep +
@@ -143,8 +145,11 @@ def generate_representation(generation, memberNum, mutationOperators):
   Generate the dictionary for use here.
   Returns a list ints where each int corresponds to the number of mutations
   of one type.  eg: {5, 7, 3, ...} = 5 of type ASAS, 7 of type ASAV
-  The order of the mutation types is the same as that in config._MUTATIONS.
+  The order of the mutation types is the same as that in the two 
+  config.**_MUTATIONS.
   """
+
+  logger.debug("Arguments received: {} {}".format(generation, memberNum))
 
   rep = {}
   for mutationOp in mutationOperators:
@@ -154,18 +159,18 @@ def generate_representation(generation, memberNum, mutationOperators):
   recurDir = config._TMP_DIR + str(generation) + os.sep + str(memberNum) + os.sep
   for root, dirs, files in os.walk(recurDir):
     for aDir in dirs:
-
+      #if (aDir == str('project'))
+        # continue;
       # Count mutant operator if present in dir name
       for mutationOp in mutationOperators:
 
         if "{}_".format(mutationOp[0]) in str(aDir):  # TODO more unique match
           rep[mutationOp[0]] += 1
 
-          # Store the unique instance's directory
-          #print '(' + str(generation) + ' ' + str(memberNum) + ' ' + mutationOp[0] + ' ' + str(rep[mutationOp[0]])   + ')' + '->' + root + os.sep + aDir
-          
-          uniqueMutants[(generation, memberNum, mutationOp[0], 
-                        rep[mutationOp[0]])] = root + os.sep + aDir
+          #logger.debug("uniqueMutants at {}, {}, {}, {} = {}".format(generation,
+          #           memberNum, mutationOp[0], rep[mutationOp[0]], root + os.sep + aDir))
+          uniqueMutants[(generation, memberNum, mutationOp[0],
+                      rep[mutationOp[0]])] = root + os.sep + aDir
 
   return rep
 
@@ -183,6 +188,9 @@ def backup_project():
   compile them there.  We don't want to damage the original project!
   """
 
+  logger.debug("Backing up (global) project:")
+  logger.debug("\nSrc: {} \nDst: {}".format(config._PROJECT_SRC_DIR, config._PROJECT_BACKUP_DIR))
+
   if os.path.exists(config._PROJECT_BACKUP_DIR):
     shutil.rmtree(config._PROJECT_BACKUP_DIR)
   shutil.copytree(config._PROJECT_SRC_DIR, config._PROJECT_BACKUP_DIR)
@@ -190,6 +198,9 @@ def backup_project():
 
 def restore_project():
   """At the end of an ARC run, restore the project to it's pristine state."""
+
+  logger.debug("Restoring (global) project:")
+  logger.debug("\nSrc: {} \nDst: {}".format(config._PROJECT_BACKUP_DIR, config._PROJECT_SRC_DIR))
 
   if os.path.exists(config._PROJECT_SRC_DIR):
     shutil.rmtree(config._PROJECT_SRC_DIR)
@@ -212,15 +223,18 @@ def create_local_project(generation, memberNum, restart):
   staticPart = os.sep + str(memberNum) + os.sep + 'project' + os.sep
   # If the indivudal is on the first or restarted, use the original
   if generation is 1 or restart:
-    srcDir = config._PROJECT_SRC_DIR
+    srcDir = config._PROJECT_BACKUP_DIR
   else:
     # Note: generation - 1 vs generation
-    srcDir = config._TMP_DIR + str(generation - 1) + staticPart 
+    srcDir = config._TMP_DIR + str(generation - 1) + staticPart
 
   destDir = config._TMP_DIR + str(generation) + staticPart
 
   # print 'clp srcDir:  ', srcDir, os.path.exists(srcDir)
   # print 'clp destDir: ', destDir,  os.path.exists(destDir)
+
+  logger.debug("Creating local project:")
+  logger.debug("\nSrc: {}\nDst: {}".format(srcDir, destDir))
 
   if os.path.exists(destDir):
     shutil.rmtree(destDir)
@@ -243,6 +257,9 @@ def copy_local_project_a_to_b(generationSrc, memberNumSrc, generationDst,
 
   destDir = (config._TMP_DIR + str(generationDst) + os.sep + str(memberNumDst)
             + staticPart)
+
+  logger.debug("Copying a local project from A to B:")
+  logger.debug("\nSrc: {}\nDst: {}".format(srcDir, destDir))
 
   if os.path.exists(destDir):
     shutil.rmtree(destDir)
@@ -285,6 +302,9 @@ def move_mutant_to_local_project(generation, memberNum, txlOperator, mutantNum):
   if not os.path.exists(dst):
     os.makedirs(dst)
 
+  logger.debug("Moving mutant to local project:")
+  logger.debug("\nSrc: {} \nDst: {}".format(sourceDir, dst))
+
   shutil.copy(sourceDir, dst)
 
 
@@ -303,6 +323,10 @@ def move_local_project_to_original(generation, memberNum):
 
   srcDir = config._TMP_DIR + str(generation) + os.sep + str(memberNum) + os.sep + 'project' + os.sep
 
+  logger.debug("Moving local project to original:")
+  logger.debug("\nSrc: {}\nDst: {}".format(srcDir, config._PROJECT_SRC_DIR))
+
+
   if os.path.exists(config._PROJECT_SRC_DIR):
     shutil.rmtree(config._PROJECT_SRC_DIR)
   shutil.copytree(srcDir, config._PROJECT_SRC_DIR)
@@ -314,12 +338,13 @@ def compile_project():
   if not os.path.isfile(config._PROJECT_DIR + 'build.xml'):
     logger.error("No ant build.xml file found in project under test's directory")
   else:
-    logger.debug("Compiling new source files")
+    logger.debug("Compiling (global project) new source files")
 
     outFile = tempfile.SpooledTemporaryFile()
     errFile = tempfile.SpooledTemporaryFile()
 
     # Make an ant call to compile the program
+    #os.chdir(config._PROJECT_DIR)
     antProcess = subprocess.Popen(['ant', 'compile'], stdout=outFile,
                         stderr=errFile, cwd=config._PROJECT_DIR, shell=False)
     antProcess.wait()
@@ -330,7 +355,7 @@ def compile_project():
     errFile.close()
 
     if (errorText.find(b"BUILD FAILED") >= 0):
-      logger.error("ant 'compile' command failed, could not compile project")
+      logger.error("ant 'compile' command failed, could not compile (global) project")
       return False
     else:
       return True
@@ -341,34 +366,33 @@ def compile_project():
 #
 # -----------------------------------------------------------------------------
 
-def main():
-  gener = 1
-  member = 4
-  # Create the representation of a file (The array of numbers of mutants by type)
-  testFile = config._PROJECT_SRC_DIR + 'DeadlockDemo.java'
-  muties = []
+# def main():
+#   gener = 1
+#   member = 4
+#   # Create the representation of a file (The array of numbers of mutants by type)
+#   testFile = config._PROJECT_SRC_DIR + 'DeadlockDemo.java'
+#   muties = []
 
-  #backup_project()
-  restore_project()
+#   #backup_project()
+#   restore_project()
 
-  mutate_project(gener, member, config._FUNCTIONAL_MUTATIONS)
-  muties = generate_representation(gener, member, config._FUNCTIONAL_MUTATIONS)
-  create_local_project(gener, member, False)
-  move_mutant_to_local_project(gener, member, 'ASAS', 3)
+#   mutate_project(gener, member, config._FUNCTIONAL_MUTATIONS)
+#   muties = generate_representation(gener, member, config._FUNCTIONAL_MUTATIONS)
+#   create_local_project(gener, member, False)
+#   move_mutant_to_local_project(gener, member, 'ASAS', 3)
 
-  print 'Mutant numbers:'
-  for i, v in enumerate(muties):
-    print v
+#   print 'Mutant numbers:'
+#   for i, v in enumerate(muties):
+#     print v
 
-  mutate_project(2, member)
-  muties = generate_representation(2, member)
-  create_local_project(2, member, False)
-  move_mutant_to_local_project(2, member, 'ASAS', 1)
+#   mutate_project(2, member)
+#   muties = generate_representation(2, member)
+#   create_local_project(2, member, False)
+#   move_mutant_to_local_project(2, member, 'ASAS', 1)
 
-  
-  move_local_project_to_original(gener, member)
+#   move_local_project_to_original(gener, member)
 
-  compile_project()
+#   compile_project()
 
-if __name__ == "__main__":
-  sys.exit(main())
+# if __name__ == "__main__":
+#   sys.exit(main())

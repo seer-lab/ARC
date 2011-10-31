@@ -62,24 +62,25 @@ class Tester():
       # Start a test process
       if functional:
         process = subprocess.Popen(['java',
-                          '-Xmx{}m'.format(config._PROJECT_TEST_MB), '-cp',
-                          config._PROJECT_CLASSPATH + ':{}'.format(config._JUNIT_JAR),'-javaagent:' +
-                          config._CONTEST_JAR, '-Dcontest.verbose=0', 'org.junit.runner.JUnitCore',
-                          config._PROJECT_TESTSUITE], stdout=outFile,
-                          stderr=errFile, cwd=config._PROJECT_DIR, shell=False)
+                    '-Xmx{}m'.format(config._PROJECT_TEST_MB), '-cp',
+                    config._PROJECT_CLASSPATH + ':{}'.format(config._JUNIT_JAR), '-javaagent:' +
+                    config._CONTEST_JAR, '-Dcontest.verbose=0', 'org.junit.runner.JUnitCore',
+                    config._PROJECT_TESTSUITE], stdout=outFile,
+                    stderr=errFile, cwd=config._PROJECT_DIR, shell=False)
       else:
         process = subprocess.Popen(['/usr/bin/time', '-v', 'java',
-                          '-Xmx{}m'.format(config._PROJECT_TEST_MB), '-cp',
-                          config._PROJECT_CLASSPATH + ':{}'.format(config._JUNIT_JAR), 'org.junit.runner.JUnitCore',
-                          config._PROJECT_TESTSUITE], stdout=outFile,
-                          stderr=errFile, cwd=config._PROJECT_DIR, shell=False)
+                    '-Xmx{}m'.format(config._PROJECT_TEST_MB), '-cp',
+                    config._PROJECT_CLASSPATH + ':{}'.format(config._JUNIT_JAR), 'org.junit.runner.JUnitCore',
+                    config._PROJECT_TESTSUITE], stdout=outFile,
+                    stderr=errFile, cwd=config._PROJECT_DIR, shell=False)
 
       success = self.run_test(process, outFile, errFile, i, functional)
 
       # If last run was unsuccessful and we are in the non-functional, exit
-      if nonFunctional and not self.goodRuns[-1]:
-        logger.debug("Last run was unsuccesful functionally")
-        return False
+      if len(self.goodRuns) > 0:
+        if nonFunctional and not self.goodRuns[-1]:
+          logger.debug("Last run was unsuccesful functionally")
+          return False
 
     logger.debug("Test Runs Results...")
     logger.debug("Successes: {}".format(self.successes))
