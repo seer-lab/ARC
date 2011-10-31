@@ -15,6 +15,9 @@ import tempfile
 sys.path.append("..")  # To allow importing parent directory module
 import config
 
+import logging
+logger = logging.getLogger('arc')
+
 
 def test_execution(runs):
   """Test the testsuite to ensure it can run successfully at least once.
@@ -27,11 +30,13 @@ def test_execution(runs):
   """
 
   testRunner = tester.Tester()
-  print "[INFO] Check if testsuite runs with ConTest (will retry if needed)"
+  logger.info("Check if testsuite runs with ConTest (will retry if needed)")
   try:
     for i in range(1, runs + 1):
 
       # Testsuite with ConTest noise (to ensure timeout parameter is alright)
+      
+
       outFile = tempfile.SpooledTemporaryFile()
       errFile = tempfile.SpooledTemporaryFile()
       testSuite = subprocess.Popen(['java',
@@ -43,19 +48,19 @@ def test_execution(runs):
 
       testRunner.run_test(testSuite, outFile, errFile, i)
 
-    print "[INFO] Testing Runs Results..."
-    print "[INFO] Successes ", testRunner.get_successes()
-    print "[INFO] Timeouts ", testRunner.get_timeouts()
-    print "[INFO] Dataraces ", testRunner.get_dataraces()
-    print "[INFO] Deadlock ", testRunner.get_deadlocks()
-    print "[INFO] Errors ", testRunner.get_errors()
+    logger.info("Testing Runs Results...")
+    logger.info("Successes ", testRunner.get_successes())
+    logger.info("Timeouts ", testRunner.get_timeouts())
+    logger.info("Dataraces ", testRunner.get_dataraces())
+    logger.info("Deadlock ", testRunner.get_deadlocks())
+    logger.info("Errors ", testRunner.get_errors())
 
     if (testRunner.get_errors() >= 1):
       raise Exception('ERROR', 'testsuite')
     elif (testRunner.get_timeouts() >= 1):
       raise Exception('ERROR', 'config._CONTEST_TIMEOUT_SEC is too low')
     elif (testRunner.get_successes() >= 1):
-      print "[INFO] Capable of a successful execution of the testsuite"
+      logger.info("Capable of a successful execution of the testsuite")
     else:
       raise Exception('ERROR', 'No successful runs, try again or fix code')
 
@@ -75,12 +80,12 @@ def setup():
     sys.exit()
 
   # Check if the testsuite can successfully execute with the set parameters
-  print "[INFO] Practice testsuite run {} times".format(config._TESTSUITE_AVG)
+  logger.debug("Practice testsuite run {} times".format(config._TESTSUITE_AVG))
   cmd = "test_execution({})".format(config._TESTSUITE_AVG)
   timer = timeit.Timer(cmd, "from _contest.contester import test_execution")
 
   averageTime = timer.timeit(1) / config._TESTSUITE_AVG
-  print "[INFO] Practice testsuite runs took {}s as an AVG".format(averageTime)
+  logger.debug("Practice testsuite runs took {}s as an AVG".format(averageTime))
 
 
 def run_contest():
@@ -96,21 +101,21 @@ def _check_tools():
     bool: if the tools are present, then True
   """
 
-  print "[INFO] Checking if txl is present"
+  logger.info("Checking if txl is present")
   try:
     subprocess.check_call(["which", "txl"])
   except subprocess.CalledProcessError:
     raise Exception('ERROR MISSING TOOL', 'txl')
 
-  print "[INFO] Checking if ConTest is present"
+  logger.info("Checking if ConTest is present")
   if (not os.path.exists(config._CONTEST_JAR)):
     raise Exception('ERROR MISSING TOOL', 'ConTest')
 
-  print "[INFO] Checking if ConTest's KingProperties is present"
+  logger.info("Checking if ConTest's KingProperties is present")
   if (not os.path.exists(config._CONTEST_KINGPROPERTY)):
     raise Exception('ERROR MISSING CONFIGURATION', 'KingProperties')
 
-  print "[INFO] All Pass"
+  logger.info("All Pass")
   return True
 
 
