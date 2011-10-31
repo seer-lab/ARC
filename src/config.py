@@ -7,7 +7,7 @@ variables that are set in this file and are used all throughout ARC.
 import logging
 
 # System variables
-_ROOT_DIR = "/home/jalbert/workspace/arc/"
+_ROOT_DIR = "/Users/kelk/workspace/arc/"
 _MAX_MEMORY_MB = 2000
 _MAX_CORES = 2
 _TMP_DIR = _ROOT_DIR + "tmp/"
@@ -18,11 +18,11 @@ _VERBOSE = True
 # Target project variables
 _PROJECT_DIR = _ROOT_DIR + "input/"
 _PROJECT_SRC_DIR = _PROJECT_DIR + "source/"
-_PROJECT_TEST_DIR = _PROJECT_DIR + "source/"
+_PROJECT_TEST_DIR = _PROJECT_DIR + "test/"
 _PROJECT_CLASS_DIR = _PROJECT_DIR + "class/"
 _PROJECT_BACKUP_DIR = _ROOT_DIR + "project_backup/"
 _PROJECT_PREFIX = ""
-_PROJECT_TESTSUITE = "Deadlock2"
+_PROJECT_TESTSUITE = "AirlineTest"
 _PROJECT_CLASSPATH = _PROJECT_CLASS_DIR
 _PROJECT_TEST_MB = 2000
 # TODO Consider some automatic way to figure classpath if Ant or MVN exist
@@ -73,7 +73,8 @@ _BEST_FITNESS_UP = 100
 
 # Create logger
 logger = logging.getLogger('arc')
-handler = logging.StreamHandler()
+#handler = logging.StreamHandler()
+handler = logging.FileHandler("log.txt", "w");
 
 if _VERBOSE:
     logger.setLevel(logging.DEBUG)

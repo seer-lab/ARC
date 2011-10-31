@@ -10,6 +10,7 @@ import time
 import subprocess
 import tempfile
 import re
+import os
 
 sys.path.append("..")  # To allow importing parent directory module
 import config
@@ -48,6 +49,7 @@ class Tester():
   percentCPU = []
   goodRuns = []  # True || False
 
+
   def begin_testing(self, functional, nonFunctional=False,
                     runs=config._CONTEST_RUNS):
     """Begins the testing phase by creating the test processes."""
@@ -60,26 +62,33 @@ class Tester():
       errFile = tempfile.SpooledTemporaryFile()
 
       # Start a test process
+      # Note: 1. Chdir to project dir, 2. Expanded classpath
+      os.chdir(config._PROJECT_DIR)
       if functional:
         process = subprocess.Popen(['java',
                           '-Xmx{}m'.format(config._PROJECT_TEST_MB), '-cp',
-                          config._PROJECT_CLASSPATH + ':{}'.format(config._JUNIT_JAR),'-javaagent:' +
+                          config._PROJECT_CLASSPATH + ':{}:{}:{}:{}:{}:.'.format(config._JUNIT_JAR, 
+                          os.path.split(config._JUNIT_JAR)[0],
+                          config._PROJECT_SRC_DIR, config._PROJECT_TEST_DIR, config._PROJECT_CLASS_DIR), '-javaagent:' +
                           config._CONTEST_JAR, '-Dcontest.verbose=0', 'org.junit.runner.JUnitCore',
                           config._PROJECT_TESTSUITE], stdout=outFile,
                           stderr=errFile, cwd=config._PROJECT_DIR, shell=False)
       else:
         process = subprocess.Popen(['/usr/bin/time', '-v', 'java',
                           '-Xmx{}m'.format(config._PROJECT_TEST_MB), '-cp',
-                          config._PROJECT_CLASSPATH + ':{}'.format(config._JUNIT_JAR), 'org.junit.runner.JUnitCore',
+                          config._PROJECT_CLASSPATH + ':{}:{}:{}:{}:{}:.'.format(config._JUNIT_JAR, 
+                          os.path.split(config._JUNIT_JAR)[0],
+                          config._PROJECT_SRC_DIR, config._PROJECT_TEST_DIR, config._PROJECT_CLASS_DIR), 'org.junit.runner.JUnitCore',
                           config._PROJECT_TESTSUITE], stdout=outFile,
                           stderr=errFile, cwd=config._PROJECT_DIR, shell=False)
 
       success = self.run_test(process, outFile, errFile, i, functional)
 
       # If last run was unsuccessful and we are in the non-functional, exit
-      if nonFunctional and not self.goodRuns[-1]:
-        logger.debug("Last run was unsuccesful functionally")
-        return False
+      if len(self.goodRuns) > 0:  # DK: Trying to fix project issues
+        if nonFunctional and not self.goodRuns[-1]:
+          logger.debug("Last run was unsuccesful functionally")
+          return False
 
     logger.debug("Test Runs Results...")
     logger.debug("Successes: {}".format(self.successes))
@@ -92,7 +101,7 @@ class Tester():
     logger.debug("Voluntary Switches: {}".format(self.voluntarySwitches))
     logger.debug("Involuntary Switches: {}".format(self.involuntarySwitches ))
     logger.debug("Percent CPU: {}".format(self.percentCPU))
-    logger.debug("Good Runs: {}".format(self.goodRuns))
+    logger.debug("Good Runs: {}\n".format(self.goodRuns))
     return True
 
   def run_test(self, process, outFile, errFile, i, functional):
@@ -134,7 +143,9 @@ class Tester():
         outFile.seek(0)
         errFile.seek(0)
         output = outFile.read()
+        #logger.debug("Output text: {}".format(output))
         error = errFile.read()
+        #logger.debug("Error text: {}".format(error))
         outFile.close()
         errFile.close()
 
@@ -159,7 +170,9 @@ class Tester():
         outFile.seek(0)
         errFile.seek(0)
         output = outFile.read()
+        #logger.debug("Output text: {}".format(output))
         error = errFile.read()
+        #logger.debug("Error text: {}".format(error))
         outFile.close()
         errFile.close()
 

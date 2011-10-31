@@ -70,8 +70,10 @@ def evaluate(individual, functionalPhase, worstScore):
       # Need to ensure that the project from the last generation is used again
       if individual.generation-1 is 0:
         # Restarting the mutant if at 0th generation
+        logger.debug("Resetting back to pristine")
         txl_operator.create_local_project(individual.generation, individual.id, True)
       else:
+        logger.debug("Resetting back to an earlier generation")
         txl_operator.copy_local_project_a_to_b(individual.generation-1,
                                               individual.id,
                                               individual.generation,
@@ -85,6 +87,8 @@ def feedback_selection(individual, functionalPhase):
   The selection of the next operator takes into account the individual's last
   test execution as feedback. The feedback is used to heuristically guide what
   mutation operator to apply next.
+
+  Returns one of ASAV, ...
   """
 
   # Acquire set of operators to use
@@ -123,6 +127,8 @@ def feedback_selection(individual, functionalPhase):
 
   selectedOperator = candatateChoices[randint(0, len(candatateChoices) - 1)]
 
+  logger.debug("selectedOperator: {}".format(selectedOperator))
+
   return selectedOperator
 
 
@@ -138,82 +144,67 @@ def mutation(individual, functionalPhase):
   else:
     mutationOperators = config._NONFUNCTIONAL_MUTATIONS
 
-  # Repopulate the individual's genome with new possible mutation locations
-  individual.repopulateGenome(functionalPhase)
-
-  # Definite check to see if ANY mutants exists for an individual
-  checkInd = -1
-  mutantsExist = False
-  for mutationOp in mutationOperators:
-    if mutationOp[1]:
-      checkInd += 1
-      if len(individual.genome[checkInd]) != 0:
-        mutantsExist = True
-
-  # IF no mutants exist, reset and return
-  if not mutantsExist:
-    logger.debug("No possible mutations for individual")
-    txl_operator.create_local_project(individual.generation, individual.id,
-                                      True)
-    return
-
   # Pick a mutation operator to apply
   limit = 100  # Number of attempts to find a valid mutation
   successfulCompile = False
   
-  # Keep trying to find a successful mutant within the retry limits
-  while limit is not 0 and not successfulCompile:
+  # Only needs to be done once
+  individual.repopulateGenome(functionalPhase)
+  logger.debug("Representation: " + repr(individual.genome))
 
-    # Acquire operator, one of config._MUTATIONS
+  # Keep trying to find a successful mutant within the retry limits
+  while limit is not 0 and not successfulCompile:   
+    # Acquire operator, one of config._MUTATIONS (ASAV, ...)
     selectedOperator = feedback_selection(individual, functionalPhase)
 
     # Find the integer index of the selectedOperator
-    operatorIndex = -1
+    # That is, the index of ASAV, ASM, ...
+    operatorIndex = -1   
     for mutationOp in mutationOperators:
       if mutationOp[1]:
         operatorIndex += 1
         if mutationOp is selectedOperator:
           break
 
-    # Check if there are instances of the selected mutationOp
+    # The continue here is for efficiency sake
     if len(individual.genome[operatorIndex]) == 0:
-      # print "Cannot mutate using this operator, trying again"
+      logger.debug("No mutations at operatorIndex {}".format(operatorIndex))
       limit -= 1
+      continue
+
+    txl_operator.create_local_project(individual.generation, 
+                                      individual.id, False)
+
+    randomMutant = randint(0, len(individual.genome[operatorIndex]) - 1)                                   
+
+    txl_operator.move_mutant_to_local_project(individual.generation,
+                                              individual.id, 
+                                              selectedOperator[0], randomMutant + 1)
+
+    # Move the local project to the target's source
+    txl_operator.move_local_project_to_original(individual.generation,
+                                                individual.id)
+
+    logger.debug("Attempting to compile...")
+
+    # Compile target's source
+    if txl_operator.compile_project():
+      successfulCompile = True
+      logger.debug("  Success!\n")
+      # Update individual
+      individual.lastOperator = selectedOperator
+      individual.appliedOperators.append(selectedOperator[0])
+
+      # Switch the appropriate bit to 1 to record which instance is used
+      individual.genome[operatorIndex][randomMutant] = 1
     else:
-
-      # Represents the index of the mutation instance to work on
-      index = randint(0, len(individual.genome[operatorIndex]) - 1)
-
-      # Create local project then apply mutation
-      # TODO: Doing this for every compile attempt is inefficient.
-      #       Ideally we should create_local_project only once
-      txl_operator.create_local_project(individual.generation, 
-                                        individual.id, False)
-      txl_operator.move_mutant_to_local_project(individual.generation,
-                                                individual.id, 
-                                                selectedOperator[0], index + 1)
-
-      # Move the local project to the target's source
-      txl_operator.move_local_project_to_original(individual.generation,
-                                                  individual.id)
-
-      # Compile target's source
-      if txl_operator.compile_project():
-        successfulCompile = True
-
-        # Update individual
-        individual.lastOperator = selectedOperator
-        individual.appliedOperators.append(selectedOperator[0])
-
-        # Switch the appropriate bit to 1 to record which instance is used
-        individual.genome[operatorIndex][index] = 1
-      else:
-        limit -= 1
-        logger.error("Compiling failed, retrying another mutation")
+      limit -= 1
+      logger.error("  Compiling failed, retrying another mutation")
 
   if not successfulCompile:
     # If not mutant was found we reset the project to it's pristine state
     # and start over
+    logger.error("Couldn't create a compilable mutant project.  Resetting to pristine project.")
     txl_operator.create_local_project(individual.generation, individual.id, 
                                       True)
 
@@ -255,7 +246,18 @@ def get_worst_non_functional_score(individual):
   contest.begin_testing(False, False, config._CONTEST_RUNS * 3)  # Measure performance
 
   # TODO Still need appropriate equation
-  worstScore = (max(contest.realTime) + max(contest.wallTime) + max(contest.voluntarySwitches) + max(contest.involuntarySwitches) + max(contest.percentCPU))
+  worstScore = 0
+  # DK: Trying to bugfix caused these to be empty and error out
+  if len(contest.realTime) > 0:
+    worstScore = max(contest.realTime) 
+  if len(contest.wallTime) > 0:
+    worstScore += max(contest.wallTime) 
+  if len(contest.voluntarySwitches) > 0:  
+    worstScore += max(contest.voluntarySwitches) 
+  if len(contest.involuntarySwitches) > 0:   
+    worstScore += max(contest.involuntarySwitches) 
+  if len(contest.percentCPU) > 0:  
+    worstScore += max(contest.percentCPU)
   contest.clear_results()
   return worstScore
 
@@ -274,7 +276,7 @@ def start():
     population = initialize(functionalPhase)
 
     # Evolve the population to find the best functional individual
-    logger.info("Evolving population towards functional correctness")
+    logger.info("Evolving population towards functional correctness\n")
     bestFunctional = evolve(population, functionalPhase, 0)
 
     # Check to see if bestFunctional is valid for progress to next phase
@@ -454,7 +456,7 @@ def replace_lowest(population, functionalPhase):
       # print "[INFO] Replacing ID: {} with {}".format(lowId, sortedMembers[highMember].id)
       sortedMembers[i] = copy.deepcopy(sortedMembers[highMember])
       sortedMembers[i].id = lowId
-
+      logger.debug("Case 1: Replacing a low performer with a high performer")
       txl_operator.copy_local_project_a_to_b(sortedMembers[i].generation,
                                              sortedMembers[highMember].id,
                                              sortedMembers[i].generation,
@@ -473,11 +475,12 @@ def replace_lowest(population, functionalPhase):
       # TODO We don't know in the timeline, when an individual is restarted
       # If in functional restart off of local, otherwise off of best individual
       if functionalPhase:
-        # Reset the local project
+        # Reset the local project to it's pristine state
+        logger.debug("Case 2: Reseting ID {} generation {} back to the pristine project".format(sortedMembers[i].id, sortedMembers[i].generation))
         txl_operator.create_local_project(sortedMembers[i].generation, sortedMembers[i].id, True)
       else:
         # Reset to best individual
-        logger.debug("Reseting Ind{}.{} back to Ind{}.{}".format(sortedMembers[i].id, sortedMembers[i].generation, sortedMembers[i].id, sortedMembers[i].switchGeneration))
+        logger.debug("Case 3: Replacing a low performer with a high performer")
         txl_operator.copy_local_project_a_to_b(sortedMembers[i].switchGeneration,
                                               sortedMembers[i].id,
                                               sortedMembers[i].generation,

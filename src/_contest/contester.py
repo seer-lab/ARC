@@ -35,6 +35,8 @@ def test_execution(runs):
     for i in range(1, runs + 1):
 
       # Testsuite with ConTest noise (to ensure timeout parameter is alright)
+      
+
       outFile = tempfile.SpooledTemporaryFile()
       errFile = tempfile.SpooledTemporaryFile()
       testSuite = subprocess.Popen(['java',
