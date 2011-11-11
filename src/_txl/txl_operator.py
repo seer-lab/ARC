@@ -1,6 +1,14 @@
-"""Run TXL to create the mutant programs.  Count the number of instances of
-each and return the count in a list.
+"""txl_operator.py contains functions related to:
+- Generating mutants
+- Backing up and restoring the pristine project
+- Creating local projects and copying mutants to them
+- Resetting underperforming local projects by:
+  - Copying the pristine project over of it
+  - Copying a high-performing project over it
+- Copying local projects to the global one
+- Compiling (global) projects
 """
+
 import sys
 import subprocess
 import os
@@ -33,6 +41,12 @@ uniqueMutants = {}
 def mutate_project(generation, memberNum, mutationOperators):
   """Create all of the mutants for a member of the genetic pool.  Mutants and
   projects are stored by generation and member.
+
+  Attributes:
+  generation (int): Current generation of the evolutionary strategy
+  memberNum (int): Which member of the population we are mutating 
+  mutationOperators ([list]): one of {config._FUNCTIONAL_MUTATIONS, 
+    config._NONFUNCTIONAL_MUTATIONS}
   """
 
   logger.debug("Arguments received: {} {}".format(generation, memberNum))
@@ -42,7 +56,8 @@ def mutate_project(generation, memberNum, mutationOperators):
   if generation == 1:
     sourceDir = config._PROJECT_BACKUP_DIR
   else:
-    sourceDir = config._TMP_DIR + str(generation - 1) + os.sep + str(memberNum) + os.sep + 'project' + os.sep
+    sourceDir = (config._TMP_DIR + str(generation - 1) + os.sep + str(memberNum) \
+                + os.sep + 'project' + os.sep)
 
   recursively_mutate_project(generation, memberNum, sourceDir, destDir,
                              mutationOperators)
@@ -53,6 +68,16 @@ def recursively_mutate_project(generation, memberNum, sourceDir, destDir,
   project.  The source project depends on the generation:
   Gen 1: The source project is the original project
   Gen >= 2: Source project is from generation -1, for the same memberNum
+  Most of the work is farmed out to the generate_all_mutants function.
+  These function exists for future flexibility.
+
+  Attributes:
+  generation (int): Current generation of the evolutionary strategy
+  memberNum (int): Which member of the population we are mutating 
+  sourceDir (string): Where the project is coming from, depends on the generation
+  destDir (string): Where the project is being copied to
+  mutationOperators ([list]): one of {config._FUNCTIONAL_MUTATIONS, 
+    config._NONFUNCTIONAL_MUTATIONS}
   """
 
   for root, dirs, files in os.walk(sourceDir):
@@ -86,16 +111,25 @@ def generate_all_mutants(generation, memberNum, sourceFile, destDir,
                        mutationOperators)
 
 
-def generate_mutants(generation, memberNum, txlOperator, sourceName, destDir,
+def generate_mutants(generation, memberNum, txlOperator, sourceFile, destDir,
                      mutationOperators):
   """See comment for recursively_mutate_project.  The only new parameter here
   is the txlOperator to apply to a file.
+
+  Attributes:
+  generation (int): Current generation of the evolutionary strategy
+  memberNum (int): Which member of the population we are mutating 
+  txlOperator (string): One of _MUTATION_ASAS, etc... from config.py
+  sourceFile (string): The specific file from the source project we are mutating
+  destDir (string): Where the project is being copied to
+  mutationOperators ([list]): one of {config._FUNCTIONAL_MUTATIONS, 
+    config._NONFUNCTIONAL_MUTATIONS}
   """
 
-  sourceNoExt = os.path.splitext(sourceName)[0]
+  sourceNoExt = os.path.splitext(sourceFile)[0]
   sourceNoFileName = os.path.split(sourceNoExt)[0] + os.sep
   sourceNameOnly = os.path.split(sourceNoExt)[1]
-  sourceExtOnly = os.path.splitext(sourceName)[1]
+  sourceExtOnly = os.path.splitext(sourceFile)[1]
 
   sourceRelPath = ''
   if (generation == 1):
@@ -134,7 +168,7 @@ def generate_mutants(generation, memberNum, txlOperator, sourceName, destDir,
   outFile = tempfile.SpooledTemporaryFile()
   errFile = tempfile.SpooledTemporaryFile()
 
-  process = subprocess.Popen(['txl', sourceName, txlOperator[4], '-',
+  process = subprocess.Popen(['txl', sourceFile, txlOperator[4], '-',
             '-outfile', sourceNameOnly + sourceExtOnly, '-outdir', txlDestDir],
             stdout=outFile, stderr=errFile, cwd=config._PROJECT_DIR, shell=False)
   process.wait()
@@ -147,6 +181,12 @@ def generate_representation(generation, memberNum, mutationOperators):
   of one type.  eg: {5, 7, 3, ...} = 5 of type ASAS, 7 of type ASAV
   The order of the mutation types is the same as that in the two 
   config.**_MUTATIONS.
+
+  Attributes:
+  generation (int): Current generation of the evolutionary strategy
+  memberNum (int): Which member of the population we are mutating 
+  mutationOperators ([list]): one of {config._FUNCTIONAL_MUTATIONS, 
+    config._NONFUNCTIONAL_MUTATIONS}  
   """
 
   logger.debug("Arguments received: {} {}".format(generation, memberNum))
@@ -181,15 +221,17 @@ def generate_representation(generation, memberNum, mutationOperators):
 #
 # -----------------------------------------------------------------------------
 
+# TODO: Split the project related functions into a separate file?
 
 def backup_project():
-  """Back up the remote, pristine projecft
+  """Back up the remote, pristine project.
   This has to be done as we copy mutant files to the project directory and
   compile them there.  We don't want to damage the original project!
   """
 
   logger.debug("Backing up (global) project:")
-  logger.debug("\nSrc: {} \nDst: {}".format(config._PROJECT_SRC_DIR, config._PROJECT_BACKUP_DIR))
+  logger.debug("\nSrc: {} \nDst: {}".format(config._PROJECT_SRC_DIR, 
+    config._PROJECT_BACKUP_DIR))
 
   if os.path.exists(config._PROJECT_BACKUP_DIR):
     shutil.rmtree(config._PROJECT_BACKUP_DIR)
@@ -200,7 +242,8 @@ def restore_project():
   """At the end of an ARC run, restore the project to it's pristine state."""
 
   logger.debug("Restoring (global) project:")
-  logger.debug("\nSrc: {} \nDst: {}".format(config._PROJECT_BACKUP_DIR, config._PROJECT_SRC_DIR))
+  logger.debug("\nSrc: {} \nDst: {}".format(config._PROJECT_BACKUP_DIR, 
+    config._PROJECT_SRC_DIR))
 
   if os.path.exists(config._PROJECT_SRC_DIR):
     shutil.rmtree(config._PROJECT_SRC_DIR)
@@ -210,12 +253,17 @@ def restore_project():
 def create_local_project(generation, memberNum, restart):
   """After mutating the files above, create the local project for a member of
   a given generation.  The source of the project depends on the generation:
-  Gen 1: Original project
-  Gen >= 2: Source project is from generation - 1, for the same memberNum
+  Gen 1: Original (pristine) project
+  Gen >= 2: Source project is from generation - 1, for the same memberNum.
   Note that if it is not possible to mutate a member further, or a member
   has shown no improvement over a number of generations, we have the option
-  reset (restart) the member by overwriting the mutated project with the
+  to reset (restart) the member by overwriting the mutated project with the
   pristine original.  This is the 'restart' parameter - a boolean.
+
+  Attributes:
+  generation (int): Current generation of the evolutionary strategy
+  memberNum (int): Which member of the population we are dealing with   
+  restart (boolean): Do we want to reset the member project back to the pristine one?
   """
 
   logger.debug("Create I_{} G_{} Restart_{}".format(generation, memberNum, restart))
@@ -245,10 +293,16 @@ def copy_local_project_a_to_b(generationSrc, memberNumSrc, generationDst,
                               memberNumDst):
   """When an underperforming member is replaced by a higher performing one
   we have to replace their local project with the higher performing project
+
+  Attributes:
+  generationSrc (int): Source generation
+  memberNumSrc (int): Source member 
+  generationDst (int): Destination generation
+  memberNumDst (int): Destination member     
   """
 
-  logger.debug("I_{} G_{} -> I_{} G_{}".format(generationSrc, memberNumSrc,
-                                               generationDst, memberNumDst))
+  logger.debug("Mem: {} Gen: {} -> Mem: {} Gen: {}".format(generationSrc, 
+                                memberNumSrc, generationDst, memberNumDst))
 
   staticPart = os.sep + 'project' + os.sep
 
@@ -269,9 +323,15 @@ def copy_local_project_a_to_b(generationSrc, memberNumSrc, generationDst,
 def move_mutant_to_local_project(generation, memberNum, txlOperator, mutantNum):
   """After the files have been mutated and the local project formed (by copying
   it in), move a mutated file to the local project
+
+  Attributes:
+  generation (int): Current generation of the evolutionary strategy
+  memberNum (int): Which member of the population we are dealing with 
+  txlOperator (string): Selected TXL operator (eg: ASAS) 
+  mutantNum (int): Mutant number selected from the mutant dir 
   """
 
-  logger.debug("{} -> I_{} G_{}".format(txlOperator, generation, memberNum))
+  logger.debug("Op: {} -> Mem: {} Gen: {}".format(txlOperator, generation, memberNum))
 
   # Use the dictionary defined at the top of the file
   sourceDir = uniqueMutants[(generation, memberNum, txlOperator, mutantNum)]
@@ -312,16 +372,21 @@ def move_local_project_to_original(generation, memberNum):
   """When the mutants are generated, project assembled and mutant copied
   in, the final step is to copy the locak project back to the original
   directory and compile it. (See next.)
+
+  Attributes:
+  generation (int): Current generation of the evolutionary strategy
+  memberNum (int): Which member of the population we are dealing with  
   """
 
-  logger.debug("I_{} G_{} -> original".format(generation, memberNum))
+  logger.debug("Gen: {} Mem: {} -> original".format(generation, memberNum))
   # Check for existence of a backup
   for root, dirs, files in os.walk(config._PROJECT_BACKUP_DIR):
     if files == [] and dirs == []:
       logger.error("No backup for original project found")
       return
 
-  srcDir = config._TMP_DIR + str(generation) + os.sep + str(memberNum) + os.sep + 'project' + os.sep
+  srcDir = (config._TMP_DIR + str(generation) + os.sep + str(memberNum) + os.sep \
+            + 'project' + os.sep)
 
   logger.debug("Moving local project to original:")
   logger.debug("\nSrc: {}\nDst: {}".format(srcDir, config._PROJECT_SRC_DIR))
