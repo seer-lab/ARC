@@ -46,16 +46,14 @@ _MUTATION_EXSB = ['EXSB', True, True, True, _TXL_DIR + "EXSB.Txl"]
 _MUTATION_EXSA = ['EXSA', True, True, True, _TXL_DIR + "EXSA.Txl"]
 _MUTATION_RSAS = ['RSAS', True, True, True, _TXL_DIR + "RSAS.Txl"]
 _MUTATION_RSAV = ['RSAV', True, True, True, _TXL_DIR + "RSAV.Txl"]
-_MUTATION_RSB  = ['RSB', True, True, True, _TXL_DIR + "RSB.Txl"]
 _MUTATION_RSM  = ['RSM', True, True, True, _TXL_DIR + "RSM.Txl"]
 _MUTATION_SHSA = ['SHSA', True, True, True, _TXL_DIR + "SHSA.Txl"]
 _MUTATION_SHSB = ['SHSB', True, True, True, _TXL_DIR + "SHSB.Txl"]
 _FUNCTIONAL_MUTATIONS = [_MUTATION_ASAS, _MUTATION_ASAV, _MUTATION_ASM,
                          _MUTATION_CSO, _MUTATION_EXSB, _MUTATION_EXSA,
-                         _MUTATION_RSAS, _MUTATION_RSAV, _MUTATION_RSB,
-                         _MUTATION_RSM]
-_NONFUNCTIONAL_MUTATIONS = [_MUTATION_RSAS, _MUTATION_RSAV, _MUTATION_RSB,
-                            _MUTATION_RSM, _MUTATION_SHSA, _MUTATION_SHSB]
+                         _MUTATION_RSAS, _MUTATION_RSAV, _MUTATION_RSM]
+_NONFUNCTIONAL_MUTATIONS = [_MUTATION_RSAS, _MUTATION_RSAV, _MUTATION_RSM,
+                            _MUTATION_SHSA, _MUTATION_SHSB]
 
 # Evolution variables
 _EVOLUTION_GENERATIONS = 3
