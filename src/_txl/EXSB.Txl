@@ -105,7 +105,7 @@ function main
 	% initialize and export the name of the current mutant while 
 	% will be used for folder name generation
 	construct MutantOpName [stringlit]
-		"EXCR"
+		"EXSB"
 	export MutantOpName
 
 	replace [program] 
@@ -143,7 +143,7 @@ rule MutateExpandCriticalRegion
 end rule
 
 %------------------------------------------------------------
-% Create an EXCR mutant by expanding a critical region
+% Create an EXSB mutant by expanding a critical region
 %------------------------------------------------------------
 function doExpandCriticalRegion
 	replace * [synchronized_statement]
@@ -165,14 +165,15 @@ function doExpandCriticalRegion
 
 	% create mutant comment to appear in source
 	construct MutantString [stringlit]
-		"EXCR (Expand Critical Region)"
+		"EXSB (Expand Synch Before)"
 
 	by
 		'MUTATED 
 		/* 'MUTANT: MutantString */
 		'synchronized '( Expr ') '{
 			S1_b S2 
-		'}		
+		'}
+		/* 'MUTANT: MutantString */		
 end function
 
 %------------------------------------------------------------
@@ -194,10 +195,11 @@ function undoExpandCriticalRegion
 
 	% extract body
 	deconstruct ExpandedStatement 
-		/* 'MUTANT: MutantString1[stringlit] */
+		/* 'MUTANT: MutantStr1 [stringlit] */
 		'synchronized '( Expr [expression] ') '{
 			NewBody [repeat declaration_or_statement]
 		'}
+		/* 'MUTANT: MutantStr2 [stringlit] */
 		
 	by 
 		% replace mutated synchronized block with original but 

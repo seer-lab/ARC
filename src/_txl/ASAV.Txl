@@ -150,7 +150,7 @@ rule MutateSynchronizedInsert
 end rule
 
 %------------------------------------------------------------
-% Create an ASK mutant by adding synchronized to the method 
+% Create an ASAV mutant by adding synchronized to the method 
 % modifier list of a method that is not synchronized
 %------------------------------------------------------------
 function doSynchronizedInsertMutation
@@ -171,7 +171,7 @@ function doSynchronizedInsertMutation
 
 	% create mutant comment to appear in source
 	construct MutantString [stringlit]
-		"ASAV (Added Sync Around Variable)"
+		"ASAV (Add Sync Around Variable)"
 
 	construct ThisExpr [expression]
 		'this

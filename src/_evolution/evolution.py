@@ -61,8 +61,8 @@ def evaluate(individual, functionalPhase, worstScore):
       individual.involuntarySwitches.append(float(sum(contest.involuntarySwitches)) / len(contest.involuntarySwitches))
       individual.percentCPU.append(float(sum(contest.percentCPU)) / len(contest.percentCPU))
 
-      # TODO Need proper equation
-      individual.score.append(worstScore / (contest.realTime[-1] + contest.wallTime[-1] + contest.voluntarySwitches[-1] + contest.involuntarySwitches[-1] + contest.percentCPU[-1]))
+      # Nonfunctional fitness
+      individual.score.append(get_average_non_functional_score(individual))
     else:
       logger.debug("Functionality was broken by change")
       individual.score.append(-1)
@@ -254,21 +254,56 @@ def initialize(functionalPhase, bestIndividual=None):
   return population
 
 
-def get_worst_non_functional_score(individual):
+def get_average_non_functional_score(individual, numberOfRuns = config._CONTEST_RUNS):
 
   # This individual's best generation should be the last one compiled
   contest = tester.Tester()
-  contest.begin_testing(False, False, config._CONTEST_RUNS * 3)  # Measure performance
+  contest.begin_testing(False, False, numberOfRuns)  # Measure performance
 
   # TODO Still need appropriate equation
-  worstScore = max(contest.realTime) 
-  worstScore += max(contest.wallTime) 
-  worstScore += max(contest.voluntarySwitches) 
-  worstScore += max(contest.involuntarySwitches) 
-  worstScore += max(contest.percentCPU)
-  contest.clear_results()
-  return worstScore
+  # UPDATE: The equation now uses averages
 
+  # Get the average of realTime and voluntarySwitches
+  avgRealTime = sum(contest.realTime, 0.0) / len(contest.realTime)
+  avgVoluntarySwitches = sum(contest.voluntarySwitches, 0.0) / len(contest.voluntarySwitches)
+
+  # Find the uncertainties in the measurements
+  maxRT = max(contest.realTime)
+  minRT = min(contest.realTime)
+  maxVS = max(contest.voluntarySwitches) 
+  minVS = min(contest.voluntarySwitches)
+  uncRT = (maxRT - minRT) / avgRealTime
+  uncVS = (maxVS - minVS) / avgVoluntarySwitches
+
+  # Determine which one is more significant
+  sigNum = 0.0
+  sigUnc = 0.0
+  otherNum = 0.0
+  otherUnc = 0.0
+
+  # Voluntary switches are more significant
+  if (avgRealTime > avgVoluntarySwitches):
+    sigNum = avgVoluntarySwitches
+    sigUnc = uncVS
+    otherNum = avgRealTime
+    otherUnc = uncRT
+  # Real time is most significant
+  elif (avgRealTime < avgVoluntarySwitches):
+    sigNum = avgRealTime
+    sigUnc = uncRT
+    otherNum = avgVoluntarySwitches
+    otherUNC = uncVS
+  else: # (avgRealTime == avgVoluntarySwitches):
+    sigNum = 1
+    sigUnc = uncVS
+    otherNum = 1
+    otherUnc = uncRT
+
+  # Determine the fitness
+  avgFitness = ((sigNum / otherNum) * (1 - sigUnc)) + ((otherNum/sigNum) * (1 - otherUnc))
+  logger.debug("Nonfunctional fitness: {}".format(avgFitness))
+  contest.clear_results()
+  return avgFitness
 
 def start():
   """The actual starting process for ARC's evolutionary process."""
@@ -306,7 +341,7 @@ def start():
                                               individual.id)
     
       # Acquire worst possible non-functional score for best individual
-      worstScore = get_worst_non_functional_score(bestFunctional)
+      worstScore = get_average_non_functional_score(bestFunctional)
 
       # Evolve the population to find the best non-functional individual
       logger.info("Evolving population towards non-functional performance")
