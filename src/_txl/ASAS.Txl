@@ -155,7 +155,7 @@ rule MutateSynchronizedInsert
 end rule
 
 %------------------------------------------------------------
-% Create an ASK mutant by adding synchronized to the method 
+% Create an ASAS mutant by adding synchronized to the method 
 % modifier list of a method that is not synchronized
 %------------------------------------------------------------
 function doSynchronizedInsertMutation
@@ -180,7 +180,7 @@ function doSynchronizedInsertMutation
 
 	% create mutant comment to appear in source
 	construct MutantString [stringlit]
-		"ASAS (Added Sync Around Sync)"
+		"ASAS (Add Sync Around Sync)"
 
 	construct ThisExpr [expression]
 		'this

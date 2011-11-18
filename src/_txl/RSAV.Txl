@@ -1,5 +1,5 @@
 %***********************************************************
-% RSAS (Remove Sync Around Sync) Mutator for ARC
+% RSAV (Remove Sync Around Variable) Mutator for ARC
 % (Automatic Repair of Concurrency Bugs)
 % 
 % Kevin Jalbert and David Kelk, Sept. 2011
@@ -63,37 +63,25 @@ end redefine
 % Our choices of sync statements for RSAS
 
 redefine synchronized_statement
-          [attr labelM] [double_sync]
-	| [attr labelM] [decapitated_double_sync] 
+          [attr labelM] [single_sync]
+	| [attr labelM] [single_sync_removed] 
 	| ...
 end redefine
 
 % How it looks when we started
 
-define double_sync
-    'synchronized '( [expression] ')
-    '{ [NL][IN] 
-	[repeat declaration_or_statement] [NL][EX]       
+define single_sync
 	'synchronized '( [expression] ')
  	'{ [NL][IN] 
-		[repeat declaration_or_statement] [NL][EX]
+		[unary_expression] [assignment_operator] [assignment_expression] [NL]
 	'}   [NL]
-	[repeat declaration_or_statement] [NL][EX]  
-    '}   [NL]
 end define
 
 % How it looks after removing
 
-define decapitated_double_sync
+define single_sync_removed
     /* 'MUTANT: [stringlit] */ 	[NL]
-    '{ [NL][IN] 
-	[repeat declaration_or_statement] [NL][EX]   
-	'synchronized '( [expression] ')
- 	'{ [NL][IN] 
-		[repeat declaration_or_statement] [NL][EX]
-	'}   [NL]
-	[repeat declaration_or_statement] [NL][EX]      % DK
-    '}   [NL]
+    [unary_expression] [assignment_operator] [assignment_expression] '; [NL]
     /* 'MUTANT: [stringlit] */ 	[NL]	
 end define
 
@@ -159,29 +147,23 @@ end rule
 %------------------------------------------------------------
 function doSynchronizedDelMutation
 	replace * [synchronized_statement]
-		SynchStatement [synchronized_statement]
+		SyncStatement [synchronized_statement]
 
-	deconstruct SynchStatement
-		SynchStatement2 [double_sync]
+	deconstruct SyncStatement
+		'synchronized '( SyncExpr [expression] ')
+		'{
+	    		UA [unary_expression] 
+			AO [assignment_operator] 
+			AE [assignment_expression] ';
+		'}
 
-	deconstruct SynchStatement2
-    		'synchronized '( OuterExpr [expression] ')
-    		'{
-			OuterBody [repeat declaration_or_statement]   
-			'synchronized '( InnerExpr [expression] ')
- 			'{
-				InnerBody [repeat declaration_or_statement]
-			'}
-			OuterAfterBody [repeat declaration_or_statement]
-    		'}
 
 	% export the old synchronized expression and reinsert it 
 	% once the mutant has been created and saved
-	export OuterExpr
-	export OuterBody
-	export InnerExpr
-	export InnerBody
-	export OuterAfterBody
+	export UA
+	export AO
+	export AE
+	export SyncExpr
 
 	% create mutant comment to appear in source
 	construct MutantString [stringlit]
@@ -191,14 +173,7 @@ function doSynchronizedDelMutation
 		% Replace with empty syncronized statement
 		'MUTATED 
   		/* 'MUTANT: MutantString */
-    		'{
-			OuterBody    
-			'synchronized '( InnerExpr ')
- 			'{ 
-				InnerBody
-			'}
-			OuterAfterBody
-    		'}
+		UA AO AE ';
 		/* 'MUTANT: MutantString */
 end function
 
@@ -212,40 +187,27 @@ function undoSynchronizedDelMutation
 		SynchStatement [synchronized_statement]
 
 	% Import the old expression
-	import OuterExpr [expression]
-	import OuterBody [repeat declaration_or_statement]
-	import InnerExpr [expression]
-	import InnerBody [repeat declaration_or_statement]
-	import OuterAfterBody [repeat declaration_or_statement]
-
+	import UA [unary_expression] 
+	import AO [assignment_operator] 
+	import AE [assignment_expression]
+	import SyncExpr [expression]
 	% extract body
 	deconstruct SynchStatement
-		'MUTATED Decapitated [decapitated_double_sync]	
-	deconstruct Decapitated
+		'MUTATED SyncRemoved [single_sync_removed]	
+	deconstruct SyncRemoved
     		/* 'MUTANT: MutantStr1 [stringlit] */ 
-    		'{
-			OB [repeat declaration_or_statement]  
-			'synchronized '( IE [expression] ')
- 			'{
-				IB [repeat declaration_or_statement]
-			'}
-			OAB [repeat declaration_or_statement]
-    		'}
+	    		UA2 [unary_expression] 
+			AO2 [assignment_operator] 
+			AE2 [assignment_expression] ';
     		/* 'MUTANT: MutantStr2 [stringlit] */ 	
 
 	by 
 		% replace mutated synchronized block with original but 
 		% leave hidden attribute
-		'MUTATED     
-		'synchronized '( OuterExpr ')
-    		'{
-			OuterBody  
-			'synchronized '( InnerExpr ')
- 			'{
-				InnerBody
-			'}
-			OuterAfterBody
-    		'}
+		'synchronized '( SyncExpr ')
+		'{
+			UA AO AE
+		'}
 end function
 
 %Include rules for writing mutants to files

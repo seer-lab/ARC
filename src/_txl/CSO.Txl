@@ -133,7 +133,10 @@ function doExchangeLocks
 		"CSO (Change Sync Order)"
 
 	by
-		'MUTATED /* 'MUTANT: MutantString */ SynchStmt_new
+		'MUTATED 
+                /* 'MUTANT: MutantString */ 
+                SynchStmt_new
+		/* 'MUTANT: MutantString */
 end function
 
 %------------------------------------------------------------
@@ -167,7 +170,10 @@ end function
 %------------------------------------------------------------
 function undoExchangeLocks
 	replace * [synchronized_statement]
-		'MUTATED /* 'MUTANT: MutantString [stringlit] */ SynchStatement [synchronized_statement2]
+		'MUTATED 
+  		/* 'MUTANT: MutantStr1 [stringlit] */
+		SynchStatement [synchronized_statement2]
+		/* 'MUTANT: MutantStr2 [stringlit] */ 
 	
 	import SynchStatement2 [synchronized_statement2]
 
