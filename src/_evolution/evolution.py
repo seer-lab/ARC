@@ -260,9 +260,6 @@ def get_average_non_functional_score(individual, numberOfRuns = config._CONTEST_
   contest = tester.Tester()
   contest.begin_testing(False, False, numberOfRuns)  # Measure performance
 
-  # TODO Still need appropriate equation
-  # UPDATE: The equation now uses averages
-
   # Get the average of realTime and voluntarySwitches
   avgRealTime = sum(contest.realTime, 0.0) / len(contest.realTime)
   avgVoluntarySwitches = sum(contest.voluntarySwitches, 0.0) / len(contest.voluntarySwitches)
@@ -341,7 +338,7 @@ def start():
                                               individual.id)
     
       # Acquire worst possible non-functional score for best individual
-      worstScore = get_average_non_functional_score(bestFunctional)
+      worstScore = get_average_non_functional_score(bestFunctional, config._CONTEST_RUNS * 3)
 
       # Evolve the population to find the best non-functional individual
       logger.info("Evolving population towards non-functional performance")
