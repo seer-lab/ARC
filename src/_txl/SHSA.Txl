@@ -231,17 +231,18 @@ function undoShrinkCriticalRegion
 
 	% extract body
 	deconstruct ShrunkStatement 
-		/* 'MUTANT: MutantString1[stringlit] */
+		/* 'MUTANT: MutantStr1 [stringlit] */
 		'synchronized '( Expr [expression] ') '{
 			S2 [repeat declaration_or_statement]
 		'}
 		S1 [repeat declaration_or_statement]
-		/* 'MUTANT: MutantString2[stringlit] */
+		/* 'MUTANT: MutantStr2 [stringlit] */
 
 	by 
 		% replace mutated synchronized block with original but 
 		% leave hidden attribute
-		'MUTATED 'synchronized '( Expr ') '{
+		'MUTATED 
+		'synchronized '( Expr ') '{
 			Body
 		'}
 end function

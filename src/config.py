@@ -4,12 +4,17 @@ There are system, target project, ConTest, mutation operator and evolution
 variables that are set in this file and are used all throughout ARC.
 """
 
+import logging
+
 # System variables
 _ROOT_DIR = "/home/jalbert/workspace/arc/"
 _MAX_MEMORY_MB = 2000
 _MAX_CORES = 2
 _TMP_DIR = _ROOT_DIR + "tmp/"
 _TXL_DIR = _ROOT_DIR + "src/_txl/"
+_JUNIT_JAR = _ROOT_DIR + "lib/junit-4.8.1.jar"
+_VERBOSE = True
+_LOG_FILE = None  # If None then use stdout, otherwise specify a file
 
 # Target project variables
 _PROJECT_DIR = _ROOT_DIR + "input/"
@@ -37,20 +42,18 @@ _MUTATION_ASAS = ['ASAS', True, True, True, _TXL_DIR + "ASAS.Txl"]
 _MUTATION_ASAV = ['ASAV', True, True, True, _TXL_DIR + "ASAV.Txl"]
 _MUTATION_ASM  = ['ASM', True, True, True, _TXL_DIR + "ASM.Txl"]
 _MUTATION_CSO  = ['CSO', True, False, True, _TXL_DIR + "CSO.Txl"]
-_MUTATION_EXCR = ['EXCR', True, True, True, _TXL_DIR + "EXCR.Txl"]
+_MUTATION_EXSB = ['EXSB', True, True, True, _TXL_DIR + "EXSB.Txl"]
 _MUTATION_EXSA = ['EXSA', True, True, True, _TXL_DIR + "EXSA.Txl"]
 _MUTATION_RSAS = ['RSAS', True, True, True, _TXL_DIR + "RSAS.Txl"]
 _MUTATION_RSAV = ['RSAV', True, True, True, _TXL_DIR + "RSAV.Txl"]
-_MUTATION_RSB  = ['RSB', True, True, True, _TXL_DIR + "RSB.Txl"]
 _MUTATION_RSM  = ['RSM', True, True, True, _TXL_DIR + "RSM.Txl"]
 _MUTATION_SHSA = ['SHSA', True, True, True, _TXL_DIR + "SHSA.Txl"]
 _MUTATION_SHSB = ['SHSB', True, True, True, _TXL_DIR + "SHSB.Txl"]
-_FUNCTIONAL_MUTATIONS = [_MUTATION_ASAS, _MUTATION_ASAV, _MUTATION_ASM, 
-                         _MUTATION_CSO, _MUTATION_EXCR, _MUTATION_EXSA, 
-                         _MUTATION_RSAS, _MUTATION_RSAV, _MUTATION_RSB, 
-                         _MUTATION_RSM]
-_NONFUNCTIONAL_MUTATIONS = [_MUTATION_RSAS, _MUTATION_RSAV, _MUTATION_RSB, 
-                            _MUTATION_RSM, _MUTATION_SHSA, _MUTATION_SHSB]
+_FUNCTIONAL_MUTATIONS = [_MUTATION_ASAS, _MUTATION_ASAV, _MUTATION_ASM,
+                         _MUTATION_CSO, _MUTATION_EXSB, _MUTATION_EXSA,
+                         _MUTATION_RSAS, _MUTATION_RSAV, _MUTATION_RSM]
+_NONFUNCTIONAL_MUTATIONS = [_MUTATION_RSAS, _MUTATION_RSAV, _MUTATION_RSM,
+                            _MUTATION_SHSA, _MUTATION_SHSB]
 
 # Evolution variables
 _EVOLUTION_GENERATIONS = 3
@@ -58,12 +61,29 @@ _EVOLUTION_POPULATION = 3
 _EVOLUTION_REPLACE_LOWEST_PERCENT = 0
 _EVOLUTION_REPLACE_AFTER_TURNS = 0
 _EVOLUTION_REPLACE_WITH_BEST_PERCENT = 0
-_EVOLUTION_FUNCTIONAL_PHASE = True  # If false then skip the functional phase
 
 # Fitness evaluation variables
 _SUCCESS_WEIGHT = 100
 _TIMEOUT_WEIGHT = 50
 
-_GENERATIONAL_IMPROVEMENT_WINDOW = 10
-_AVG_FITNESS_UP = 50
-_BEST_FITNESS_UP = 100
+# Convergence criteria, considering the window size ensure there is at least 
+# a fitness score movement of delta
+_GENERATIONAL_IMPROVEMENT_WINDOW = 5
+_AVG_FITNESS_MIN_DELTA = 0.01
+_BEST_FITNESS_MIN_DELTA = 0.01
+
+# Create logger
+logger = logging.getLogger('arc')
+if _LOG_FILE is None:
+  handler = logging.StreamHandler()
+else:
+  handler = logging.FileHandler(_LOG_FILE, "w");
+
+if _VERBOSE:
+    logger.setLevel(logging.DEBUG)
+else:
+    logger.setLevel(logging.INFO)
+
+formatter = logging.Formatter('%(relativeCreated)d %(levelname)s [%(module)s.%(funcName)s] %(message)s')
+handler.setFormatter(formatter)
+logger.addHandler(handler)
