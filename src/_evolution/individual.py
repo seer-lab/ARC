@@ -46,11 +46,11 @@ class Individual():
     self.lastOperator = ""
     self.appliedOperators = []
 
-    self.successRate = [0]
-    self.timeoutRate = [0]
-    self.dataraceRate = [0]
-    self.deadlockRate = [0]
-    self.errorRate = [0]
+    self.successes = []
+    self.timeouts = []
+    self.dataraces = []
+    self.deadlocks = []
+    self.errors = []
     self.realTime = []
     self.wallTime = []
     self.voluntarySwitches = []
@@ -112,7 +112,7 @@ class Individual():
     ret += " Switch Generation: {}\n".format(self.switchGeneration)
     ret += " Last Operator: {}\n".format(self.lastOperator)
     ret += " Applied Operators: {}\n".format(self.appliedOperators)
-    ret += " Successes: {}\n".format(self.successRate)
+    ret += " Successes: {}\n".format(self.successes)
     ret += " Real Time: {}\n".format(self.realTime)
     ret += " Wall Time: {}\n".format(self.wallTime)
     ret += " Voluntary Switches: {}\n".format(self.voluntarySwitches)
@@ -128,11 +128,11 @@ class Individual():
     newIndividual.generation = self.generation
     newIndividual.lastOperator = self.lastOperator
     newIndividual.appliedOperators = self.appliedOperators[:]
-    newIndividual.successRate = self.successRate[:]
-    newIndividual.timeoutRate = self.timeoutRate[:]
-    newIndividual.dataraceRate = self.dataraceRate[:]
-    newIndividual.deadlockRate = self.deadlockRate[:]
-    newIndividual.errorRate = self.errorRate[:]
+    newIndividual.successes = self.successes[:]
+    newIndividual.timeouts = self.timeouts[:]
+    newIndividual.dataraces = self.dataraces[:]
+    newIndividual.deadlocks = self.deadlocks[:]
+    newIndividual.errors = self.errors[:]
     newIndividual.realTime = self.realTime[:]
     newIndividual.wallTime = self.wallTime[:]
     newIndividual.voluntarySwitches = self.voluntarySwitches[:]

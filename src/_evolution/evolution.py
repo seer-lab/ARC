@@ -8,6 +8,7 @@ from individual import Individual
 import math
 import traceback
 import copy
+from collections import Counter
 
 sys.path.append("..")  # To allow importing parent directory module
 import config
@@ -32,23 +33,18 @@ def evaluate(individual, functionalPhase, worstScore):
 
   if functionalPhase:
     contest.begin_testing(functionalPhase)
-    success_rate = contest.successes / config._CONTEST_RUNS
-    timeout_rate = contest.timeouts / config._CONTEST_RUNS
-    datarace_rate = contest.dataraces / config._CONTEST_RUNS
-    deadlock_rate = contest.deadlocks / config._CONTEST_RUNS
-    error_rate = contest.errors / config._CONTEST_RUNS
 
     individual.score.append((contest.successes * \
                                   config._SUCCESS_WEIGHT) + \
                                   (contest.timeouts * \
                                   config._TIMEOUT_WEIGHT))
 
-    # Store achieve rates into genome
-    individual.successRate.append(success_rate)
-    individual.timeoutRate.append(timeout_rate)
-    individual.dataraceRate.append(datarace_rate)
-    individual.deadlockRate.append(deadlock_rate)
-    individual.errorRate.append(error_rate)
+    # Store results into genome
+    individual.successes.append(contest.successes)
+    individual.timeouts.append(contest.timeouts)
+    individual.dataraces.append(contest.dataraces)
+    individual.deadlocks.append(contest.deadlocks)
+    individual.errors.append(contest.errors)
   else:
     # Ensure functionality is still there
     if contest.begin_testing(functionalPhase, True):
@@ -96,23 +92,31 @@ def feedback_selection(individual, functionalPhase):
     mutationOperators = config._FUNCTIONAL_MUTATIONS
   else:
     mutationOperators = config._NONFUNCTIONAL_MUTATIONS
-    
+
   opType = 'race'
   # candidateChoices is a list of config._MUTATIONS
   candatateChoices = []
 
+  # Acquire the deadlock and datarace rates
+  if len(individual.deadlocks) == 0:
+    deadlockRate = .5
+    dataraceRate = .5
+  else:
+    deadlockRate = individual.deadlocks[-1] / config._CONTEST_RUNS
+    dataraceRate = individual.dataraces[-1] / config._CONTEST_RUNS
+
   # Acquire a random value that is less then the total of the bug rates
-  totalBugRate = (individual.deadlockRate[-1] + individual.dataraceRate[-1])
+  totalBugRate = (deadlockRate + dataraceRate)
   choice = uniform(0, totalBugRate)
 
   # Determine which it bug type to use
-  if (individual.dataraceRate[-1] > individual.deadlockRate[-1]):
+  if (dataraceRate > deadlockRate):
     # If choice falls past the datarace range then type is lock
-    if choice >= individual.dataraceRate[-1]:
+    if choice >= dataraceRate:
       opType = 'lock'
   else:
     # If choice falls under the deadlock range then type is lock
-    if choice <= individual.deadlockRate[-1]:
+    if choice <= deadlockRate:
       opType = 'lock'
 
   # Select the appropriate operator based on enable/type/functional
@@ -168,13 +172,13 @@ def mutation(individual, functionalPhase):
   successfulCompile = False
 
   # Keep trying to find a successful mutant within the retry limits
-  while limit is not 0 and not successfulCompile:   
+  while limit is not 0 and not successfulCompile:
     # Acquire operator, one of config._MUTATIONS (ASAV, ...)
     selectedOperator = feedback_selection(individual, functionalPhase)
 
     # Find the integer index of the selectedOperator
     # That is, the index of ASAV, ASM, ...
-    operatorIndex = -1   
+    operatorIndex = -1
     for mutationOp in mutationOperators:
       if mutationOp[1]:
         operatorIndex += 1
@@ -187,13 +191,13 @@ def mutation(individual, functionalPhase):
       limit -= 1
       continue
 
-    txl_operator.create_local_project(individual.generation, 
+    txl_operator.create_local_project(individual.generation,
                                       individual.id, False)
 
-    randomMutant = randint(0, len(individual.genome[operatorIndex]) - 1)                                   
+    randomMutant = randint(0, len(individual.genome[operatorIndex]) - 1)
 
     txl_operator.move_mutant_to_local_project(individual.generation,
-                                              individual.id, 
+                                              individual.id,
                                               selectedOperator[0], randomMutant + 1)
 
     # Move the local project to the target's source
@@ -206,6 +210,7 @@ def mutation(individual, functionalPhase):
     if txl_operator.compile_project():
       successfulCompile = True
       logger.debug("  Success!\n")
+
       # Update individual
       individual.lastOperator = selectedOperator
       individual.appliedOperators.append(selectedOperator[0])
@@ -320,7 +325,7 @@ def start():
     bestFunctional = evolve(population, functionalPhase, 0)
 
     # Check to see if bestFunctional is valid for progress to next phase
-    if bestFunctional.successRate[-1] == 1.0:
+    if bestFunctional.successes[-1]/config._CONTEST_RUNS == 1.0:
 
       functionalPhase = False
       bestFunctional.switchGeneration = bestFunctional.generation
@@ -336,7 +341,7 @@ def start():
                                               bestFunctional.id,
                                               bestFunctional.generation,
                                               individual.id)
-    
+
       # Acquire worst possible non-functional score for best individual
       worstScore = get_average_non_functional_score(bestFunctional, config._CONTEST_RUNS * 3)
 
@@ -359,6 +364,11 @@ def start():
 
 
 def evolve(population, functionalPhase, generation=0, worstScore=0):
+
+  # Keeps track of the number of votes per mutation operator (improvements)
+  dataraceVotes = {}
+  deadlocksVotes = {}
+  nonFunctionalVotes = {}
 
   # For each generation, record the average and best fitness
   averageFitness = []
@@ -404,6 +414,45 @@ def evolve(population, functionalPhase, generation=0, worstScore=0):
     # Check to see if we can replace the weakest individuals
     replace_lowest(population, functionalPhase)
 
+    # Adjust weighting of mutation operators
+    dataraceVotes, deadlocksVotes, nonFunctionalVotes = adjust_operator_weighting(population, functionalPhase, generation)
+
+
+def adjust_operator_weighting(population, functionalPhase, generation):
+
+  # Hashes of operator_name -> votes
+  deadlockVotes = Counter()
+  dataraceVotes = Counter()
+  nonFunctionalVotes = Counter()
+
+  # Consider that we are not pass the minimum sliding window value
+  if generation <= config._DYNAMIC_RANKING_WINDOW:
+    beginningGeneration = 1
+  else:
+    beginningGeneration = generation - config._DYNAMIC_RANKING_WINDOW
+
+  logger.info("Operator weighting window of {} to {} generations".format(
+              beginningGeneration, generation))
+
+  for individual in population:
+    # Only consider the generations we are conserned with
+    for i in xrange(beginningGeneration-1,generation-1):
+      # Figure if there was any improvement from the last generation
+      if functionalPhase:
+        if individual.deadlocks[i+1] < individual.deadlocks[i]:
+          logger.info("Deadlock improvement from individual {} in generation {}".format(individual.id, i))
+          deadlockVotes[individual.appliedOperators[i]] += 1
+        if individual.dataraces[i+1] < individual.dataraces[i]:
+          logger.info("Datarace improvement from individual {} in generation {}".format(individual.id, i))
+          dataraceVotes[individual.appliedOperators[i]] += 1
+      else:
+        if individual.score[i+1] > individual.score[i]:
+          logger.info("Non-functional improvement from individual {} in generation {}".format(individual.id, i))
+          nonFunctionalVotes[individual.appliedOperators[i]] += 1
+
+  return deadlockVotes, dataraceVotes, nonFunctionalVotes
+
+
 def convergence(generation, bestFitness, averageFitness):
 
   # Alternate termination criteria to check for convergence
@@ -432,7 +481,7 @@ def terminate(population, generation, generationLimit, functionalPhase):
 
   # Check for terminating conditions
   for individual in population:
-    if functionalPhase and individual.successRate[-1] == 1:
+    if functionalPhase and individual.successes[-1]/config._CONTEST_RUNS == 1:
       logger.info("Found potential best individual {}".format(individual.id))
 
       if tester.Tester().begin_testing(True, True, config._CONTEST_RUNS * 2):
