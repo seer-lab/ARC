@@ -77,7 +77,7 @@ def evaluate(individual, functionalPhase, worstScore):
   contest.clear_results()
 
 
-def feedback_selection(individual, functionalPhase):
+def feedback_selection(individual, functionalPhase, deadlockVotes, dataraceVotes, nonFunctionalVotes):
   """Given the individual this function will find the next operator to apply.
 
   The selection of the next operator takes into account the individual's last
@@ -129,14 +129,56 @@ def feedback_selection(individual, functionalPhase):
       if operator[1] and operator[3]:
         candatateChoices.append(operator)
 
-  selectedOperator = candatateChoices[randint(0, len(candatateChoices) - 1)]
+  # Acquire the operator chances based on what voting condition we have
+  if functionalPhase and opType is 'lock':
+    operatorChances = get_operator_chances(candatateChoices, deadlockVotes)
+    logger.debug("Voting for functional phase with deadlocks: {}".format(operatorChances))
+  elif functionalPhase and opType is 'race':
+    operatorChances = get_operator_chances(candatateChoices, dataraceVotes)
+    logger.debug("Voting for functional phase with dataraces: {}".format(operatorChances))
+  else:
+    operatorChances = get_operator_chances(candatateChoices, nonFunctionalVotes)
+    logger.debug("Voting for non-functional phase: {}".format(operatorChances))
 
-  logger.debug("selectedOperator: {}".format(selectedOperator))
+  # Make selection of operator based on the adjusted weighting
+  randomChance = randint(0,sum(operatorChances))
+  currentRunning = 0  # Keeps track of sum (when we exceed this we are done)
+  for i in xrange(len(operatorChances)):
+    currentRunning += operatorChances[i]
+    if randomChance <= currentRunning:
+      selectedOperator = candatateChoices[i]
+      break
 
   return selectedOperator
 
 
-def mutation(individual, functionalPhase):
+def get_operator_chances(candatateChoices, votes):
+
+  operatorChances = [0] * len(candatateChoices)
+  currentValue = len(candatateChoices) + 1
+  currentLarge = config._DYNAMIC_RANKING_WINDOW + 1
+
+  # Map the values from largest to their appropriate values
+  for op in sorted(votes, key=votes.get, reverse=True):
+
+    # Move the currentValue down by one if the current votes are smaller
+    if votes[op] < currentLarge:
+      currentValue -= 1
+
+    # Place the current value in the appropriate element for array of chances
+    for i in xrange(len(candatateChoices)):
+      if candatateChoices[i][0] == op:
+        operatorChances[i] = currentValue
+    currentLarge = votes[op]
+
+  # Fill in chances where nothing was voted (gives largest unused chance value)
+  for operator in operatorChances:
+    if operator == 0:
+      operatorChances[operatorChances.index(operator)] = currentValue - 1
+
+  return operatorChances
+
+def mutation(individual, functionalPhase, deadlockVotes, dataraceVotes, nonFunctionalVotes):
   """A mutator for the individual using single mutation with feedback."""
 
   logger.debug("Mutating individual {} at generation {}".format(individual.id,
@@ -174,7 +216,7 @@ def mutation(individual, functionalPhase):
   # Keep trying to find a successful mutant within the retry limits
   while limit is not 0 and not successfulCompile:
     # Acquire operator, one of config._MUTATIONS (ASAV, ...)
-    selectedOperator = feedback_selection(individual, functionalPhase)
+    selectedOperator = feedback_selection(individual, functionalPhase, deadlockVotes, dataraceVotes, nonFunctionalVotes)
 
     # Find the integer index of the selectedOperator
     # That is, the index of ASAV, ASM, ...
@@ -227,7 +269,8 @@ def mutation(individual, functionalPhase):
     logger.error("Couldn't create a compilable mutant project.  Resetting to pristine project.")
     txl_operator.create_local_project(individual.generation, individual.id,
                                       True)
-
+  logger.info("Selected operator for Individual {} @ generation {}: {}".format(individual.id,
+                                                 individual.generation, selectedOperator[0]))
 
 def initialize(functionalPhase, bestIndividual=None):
   """Initialize the population of individuals."""
@@ -367,7 +410,7 @@ def evolve(population, functionalPhase, generation=0, worstScore=0):
 
   # Keeps track of the number of votes per mutation operator (improvements)
   dataraceVotes = {}
-  deadlocksVotes = {}
+  deadlockVotes = {}
   nonFunctionalVotes = {}
 
   # For each generation, record the average and best fitness
@@ -386,7 +429,7 @@ def evolve(population, functionalPhase, generation=0, worstScore=0):
     # Mutate each individual
     for individual in population:
       individual.generation = generation
-      mutation(individual, functionalPhase)
+      mutation(individual, functionalPhase, deadlockVotes, dataraceVotes, nonFunctionalVotes)
 
     # Evaluate each individual
     for individual in population:
@@ -415,7 +458,7 @@ def evolve(population, functionalPhase, generation=0, worstScore=0):
     replace_lowest(population, functionalPhase)
 
     # Adjust weighting of mutation operators
-    dataraceVotes, deadlocksVotes, nonFunctionalVotes = adjust_operator_weighting(population, functionalPhase, generation)
+    deadlockVotes, dataraceVotes, nonFunctionalVotes = adjust_operator_weighting(population, functionalPhase, generation)
 
 
 def adjust_operator_weighting(population, functionalPhase, generation):
@@ -431,7 +474,7 @@ def adjust_operator_weighting(population, functionalPhase, generation):
   else:
     beginningGeneration = generation - config._DYNAMIC_RANKING_WINDOW
 
-  logger.info("Operator weighting window of {} to {} generations".format(
+  logger.debug("Operator weighting window of {} to {} generations".format(
               beginningGeneration, generation))
 
   for individual in population:
@@ -440,15 +483,19 @@ def adjust_operator_weighting(population, functionalPhase, generation):
       # Figure if there was any improvement from the last generation
       if functionalPhase:
         if individual.deadlocks[i+1] < individual.deadlocks[i]:
-          logger.info("Deadlock improvement from individual {} in generation {}".format(individual.id, i))
+          logger.debug("Deadlock improvement from individual {} in generation {}".format(individual.id, i))
           deadlockVotes[individual.appliedOperators[i]] += 1
         if individual.dataraces[i+1] < individual.dataraces[i]:
-          logger.info("Datarace improvement from individual {} in generation {}".format(individual.id, i))
+          logger.debug("Datarace improvement from individual {} in generation {}".format(individual.id, i))
           dataraceVotes[individual.appliedOperators[i]] += 1
       else:
         if individual.score[i+1] > individual.score[i]:
-          logger.info("Non-functional improvement from individual {} in generation {}".format(individual.id, i))
+          logger.debug("Non-functional improvement from individual {} in generation {}".format(individual.id, i))
           nonFunctionalVotes[individual.appliedOperators[i]] += 1
+
+  logger.info("Deadlock Votes: {}".format(deadlockVotes))
+  logger.info("Datarace Votes: {}".format(dataraceVotes))
+  logger.info("Non-Functional Votes: {}".format(nonFunctionalVotes))
 
   return deadlockVotes, dataraceVotes, nonFunctionalVotes
 

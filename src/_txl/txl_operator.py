@@ -424,7 +424,7 @@ def compile_project():
       return False
     else:
       return True
-      
+
 # -----------------------------------------------------------------------------
 #
 # Main
