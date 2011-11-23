@@ -1,8 +1,7 @@
 """This module will start the evolution process for ARC."""
 
 from __future__ import division
-from random import randint
-from random import uniform
+import random
 import sys
 from individual import Individual
 import math
@@ -18,6 +17,9 @@ from _txl import txl_operator
 import logging
 logger = logging.getLogger('arc')
 
+# Set random's seed if enabled
+if config._RANDOM_SEED is not None:
+  random.seed(config._RANDOM_SEED)
 
 def evaluate(individual, functionalPhase, worstScore):
   """Perform the actual evaluation of said individual using ConTest testing.
@@ -107,7 +109,7 @@ def feedback_selection(individual, functionalPhase, deadlockVotes, dataraceVotes
 
   # Acquire a random value that is less then the total of the bug rates
   totalBugRate = (deadlockRate + dataraceRate)
-  choice = uniform(0, totalBugRate)
+  choice = random.uniform(0, totalBugRate)
 
   # Determine which it bug type to use
   if (dataraceRate > deadlockRate):
@@ -141,7 +143,7 @@ def feedback_selection(individual, functionalPhase, deadlockVotes, dataraceVotes
     logger.debug("Voting for non-functional phase: {}".format(operatorChances))
 
   # Make selection of operator based on the adjusted weighting
-  randomChance = randint(0,sum(operatorChances))
+  randomChance = random.randint(0,sum(operatorChances))
   currentRunning = 0  # Keeps track of sum (when we exceed this we are done)
   for i in xrange(len(operatorChances)):
     currentRunning += operatorChances[i]
@@ -236,7 +238,7 @@ def mutation(individual, functionalPhase, deadlockVotes, dataraceVotes, nonFunct
     txl_operator.create_local_project(individual.generation,
                                       individual.id, False)
 
-    randomMutant = randint(0, len(individual.genome[operatorIndex]) - 1)
+    randomMutant = random.randint(0, len(individual.genome[operatorIndex]) - 1)
 
     txl_operator.move_mutant_to_local_project(individual.generation,
                                               individual.id,
@@ -588,12 +590,12 @@ def replace_lowest(population, functionalPhase):
         config._EVOLUTION_REPLACE_AFTER_TURNS):
       continue
 
-    randomNum = randint(1, 100)
+    randomNum = random.randint(1, 100)
 
     # Case 1: Replace an underperforming member with a fit member
     if randomNum <= config._EVOLUTION_REPLACE_WITH_BEST_PERCENT:
       # Take a member from the top 10% of the population
-      highMember =  randint(int(config._EVOLUTION_POPULATION * 0.9),
+      highMember =  random.randint(int(config._EVOLUTION_POPULATION * 0.9),
                         config._EVOLUTION_POPULATION) - 1
       # Keep the id of the original member
       lowId = sortedMembers[i].id

@@ -15,6 +15,7 @@ _TXL_DIR = _ROOT_DIR + "src/_txl/"
 _JUNIT_JAR = _ROOT_DIR + "lib/junit-4.8.1.jar"
 _VERBOSE = True
 _LOG_FILE = None  # If None then use stdout, otherwise specify a file
+_RANDOM_SEED = None  # If None then use default (system time)
 
 # Target project variables
 _PROJECT_DIR = _ROOT_DIR + "input/"
