@@ -15,6 +15,7 @@ _TXL_DIR = _ROOT_DIR + "src/_txl/"
 _JUNIT_JAR = _ROOT_DIR + "lib/junit-4.8.1.jar"
 _VERBOSE = True
 _LOG_FILE = None  # If None then use stdout, otherwise specify a file
+_RANDOM_SEED = None  # If None then use default (system time)
 
 # Target project variables
 _PROJECT_DIR = _ROOT_DIR + "input/"
@@ -54,6 +55,9 @@ _FUNCTIONAL_MUTATIONS = [_MUTATION_ASAS, _MUTATION_ASAV, _MUTATION_ASM,
                          _MUTATION_RSAS, _MUTATION_RSAV, _MUTATION_RSM]
 _NONFUNCTIONAL_MUTATIONS = [_MUTATION_RSAS, _MUTATION_RSAV, _MUTATION_RSM,
                             _MUTATION_SHSA, _MUTATION_SHSB]
+
+# Dynamic ranking window (number of generations to consider)
+_DYNAMIC_RANKING_WINDOW = 3
 
 # Evolution variables
 _EVOLUTION_GENERATIONS = 3
