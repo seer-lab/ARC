@@ -266,7 +266,7 @@ def create_local_project(generation, memberNum, restart):
   restart (boolean): Do we want to reset the member project back to the pristine one?
   """
 
-  logger.debug("Create I_{} G_{} Restart_{}".format(generation, memberNum, restart))
+  logger.debug("Input arguments: {}, {} and {}".format(generation, memberNum, restart))
 
   staticPart = os.sep + str(memberNum) + os.sep + 'project' + os.sep
   # If the indivudal is on the first or restarted, use the original
@@ -342,9 +342,9 @@ def move_mutant_to_local_project(generation, memberNum, txlOperator, mutantNum):
 
   if (pathNoFileName != basePath):
     relPath = pathNoFileName.replace(basePath, '')
-    relPath = os.path.split(relPath)[0] + os.sep
-  else:
-    relPath = '/'
+    relPath = os.path.split(relPath)[0] #+ os.sep
+  #else:
+  #  relPath = '/'
 
   for root, dirs, files in os.walk(sourceDir):
       for aFile in files:
@@ -362,7 +362,7 @@ def move_mutant_to_local_project(generation, memberNum, txlOperator, mutantNum):
   if not os.path.exists(dst):
     os.makedirs(dst)
 
-  logger.debug("Moving mutant to local project:")
+  # logger.debug("Moving mutant to local project:")
   logger.debug("\nSrc: {} \nDst: {}".format(sourceDir, dst))
 
   shutil.copy(sourceDir, dst)
@@ -370,15 +370,14 @@ def move_mutant_to_local_project(generation, memberNum, txlOperator, mutantNum):
 
 def move_local_project_to_original(generation, memberNum):
   """When the mutants are generated, project assembled and mutant copied
-  in, the final step is to copy the locak project back to the original
-  directory and compile it. (See next.)
+  in, the final step is to copy the local project back to the original
+  directory and compile it.
 
   Attributes:
   generation (int): Current generation of the evolutionary strategy
   memberNum (int): Which member of the population we are dealing with  
   """
 
-  logger.debug("Gen: {} Mem: {} -> original".format(generation, memberNum))
   # Check for existence of a backup
   for root, dirs, files in os.walk(config._PROJECT_BACKUP_DIR):
     if files == [] and dirs == []:
@@ -396,6 +395,24 @@ def move_local_project_to_original(generation, memberNum):
     shutil.rmtree(config._PROJECT_SRC_DIR)
   shutil.copytree(srcDir, config._PROJECT_SRC_DIR)
 
+def move_best_project_to_output(generation, memberNum):
+  """At the end of the process, copy the correct mutant program to the output
+  directory
+
+  Attributes:
+  generation (int): Generation of the best solution
+  memberNum (int): Which member of the population   
+  """
+
+  srcDir = (config._TMP_DIR + str(generation) + os.sep + str(memberNum) + os.sep \
+            + 'project' + os.sep)
+
+  logger.debug("Moving local project to output:")
+  logger.debug("\nSrc: {}\nDst: {}".format(srcDir, config._PROJECT_OUTPUT_DIR))
+
+  if os.path.exists(config._PROJECT_OUTPUT_DIR):
+    shutil.rmtree(config._PROJECT_OUTPUT_DIR)
+  shutil.copytree(srcDir, config._PROJECT_OUTPUT_DIR)
 
 def compile_project():
   """After the local project is copied back to the original, compile it."""

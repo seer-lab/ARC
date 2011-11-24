@@ -374,7 +374,10 @@ def start():
 
       functionalPhase = False
       bestFunctional.switchGeneration = bestFunctional.generation
-      print population
+
+      logger.info("Best individual found during the bug fixing phase:")
+      logger.info(bestFunctional)
+      logger.info("")
 
       # Reinitialize the population with the best functional individual
       logger.debug("Repopulating with best individual {} at generation {}".format(
@@ -387,16 +390,21 @@ def start():
                                               bestFunctional.generation,
                                               individual.id)
 
-      # Acquire worst possible non-functional score for best individual
+      # Acquire worst possible non-functional score for best individual.
+      # Here "worst" is the average of a large number of executions
       worstScore = get_average_non_functional_score(bestFunctional, config._CONTEST_RUNS * 3)
 
       # Evolve the population to find the best non-functional individual
       logger.info("Evolving population towards non-functional performance")
       bestNonFunctional = evolve(population, functionalPhase,
                                  bestFunctional.generation, worstScore)
-      print population
-      logger.info("Best Individual\n")
-      print bestNonFunctional
+
+      logger.info("Best individual found during the bug fixing phase:")
+      logger.info(bestNonFunctional)
+      logger.info("")
+
+      logger.info("Copying fixed project to {}".format(config._PROJECT_OUTPUT_DIR))
+      txl_operator.move_best_project_to_output(bestNonFunctional.generation, bestNonFunctional.id)
     else:
       logger.info("No individual was found that functions correctly")
 
@@ -460,7 +468,8 @@ def evolve(population, functionalPhase, generation=0, worstScore=0):
     replace_lowest(population, functionalPhase)
 
     # Adjust weighting of mutation operators
-    deadlockVotes, dataraceVotes, nonFunctionalVotes = adjust_operator_weighting(population, functionalPhase, generation)
+    deadlockVotes, dataraceVotes, nonFunctionalVotes = adjust_operator_weighting(population, 
+      functionalPhase, generation)
 
 
 def adjust_operator_weighting(population, functionalPhase, generation):
@@ -485,16 +494,25 @@ def adjust_operator_weighting(population, functionalPhase, generation):
       # Figure if there was any improvement from the last generation
       if functionalPhase:
         if individual.deadlocks[i+1] < individual.deadlocks[i]:
-          logger.debug("Deadlock improvement from individual {} in generation {}".format(individual.id, i))
+          logger.debug("Deadlock improvement from individual {} in generation {}".
+            format(individual.id, i))
           deadlockVotes[individual.appliedOperators[i]] += 1
+
         if individual.dataraces[i+1] < individual.dataraces[i]:
-          logger.debug("Datarace improvement from individual {} in generation {}".format(individual.id, i))
+          logger.debug("Datarace improvement from individual {} in generation {}".
+            format(individual.id, i))
           dataraceVotes[individual.appliedOperators[i]] += 1
+
       else:
         if individual.score[i+1] > individual.score[i]:
-          logger.debug("Non-functional improvement from individual {} in generation {}".format(individual.id, i))
-          nonFunctionalVotes[individual.appliedOperators[i]] += 1
-
+          logger.debug("Non-functional improvement from individual {} in generation {}".
+            format(individual.id, i))
+          logger.debug("Applied operators: {}".format(individual.appliedOperators))
+          print("{}".format(individual))
+          j = individual.appliedOperators[i]
+          #logger.debug ("      ***** J is {} *****".format(j))
+          nonFunctionalVotes[j] += 1
+     
   logger.info("Deadlock Votes: {}".format(deadlockVotes))
   logger.info("Datarace Votes: {}".format(dataraceVotes))
   logger.info("Non-Functional Votes: {}".format(nonFunctionalVotes))

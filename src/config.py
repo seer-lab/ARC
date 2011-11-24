@@ -7,14 +7,14 @@ variables that are set in this file and are used all throughout ARC.
 import logging
 
 # System variables
-_ROOT_DIR = "/home/jalbert/workspace/arc/"
+_ROOT_DIR = "/home/myrikhan/workspace/arc/"
 _MAX_MEMORY_MB = 2000
 _MAX_CORES = 2
 _TMP_DIR = _ROOT_DIR + "tmp/"
 _TXL_DIR = _ROOT_DIR + "src/_txl/"
 _JUNIT_JAR = _ROOT_DIR + "lib/junit-4.8.1.jar"
 _VERBOSE = True
-_LOG_FILE = None  # If None then use stdout, otherwise specify a file
+_LOG_FILE = "log.txt"  # If None then use stdout, otherwise specify a file
 _RANDOM_SEED = None  # If None then use default (system time)
 
 # Target project variables
@@ -23,6 +23,7 @@ _PROJECT_SRC_DIR = _PROJECT_DIR + "source/"
 _PROJECT_TEST_DIR = _PROJECT_DIR + "source/"
 _PROJECT_CLASS_DIR = _PROJECT_DIR + "class/"
 _PROJECT_BACKUP_DIR = _ROOT_DIR + "project_backup/"
+_PROJECT_OUTPUT_DIR = _ROOT_DIR + "output/"
 _PROJECT_PREFIX = ""
 _PROJECT_TESTSUITE = "Deadlock2"
 _PROJECT_CLASSPATH = _PROJECT_CLASS_DIR
@@ -33,9 +34,9 @@ _PROJECT_TEST_MB = 2000
 _CONTEST_DIR = _ROOT_DIR + "lib/ConTest/"
 _CONTEST_KINGPROPERTY = _CONTEST_DIR + "KingProperties"
 _CONTEST_JAR = _CONTEST_DIR + "ConTest.jar"
-_CONTEST_RUNS = 5
+_CONTEST_RUNS = 3
 _CONTEST_TIMEOUT_SEC = 2  # Aim for around x2-3 desirable performance
-_TESTSUITE_AVG = 20  # Number of test executions for finding the average time
+_TESTSUITE_AVG = 3  # Number of test executions for finding the average time
 
 # Mutation operator variables
 # [0]Name  [1]Enable  [2]DataRace  [3]Deadlock  [4]File
@@ -56,15 +57,15 @@ _FUNCTIONAL_MUTATIONS = [_MUTATION_ASAS, _MUTATION_ASAV, _MUTATION_ASM,
 _NONFUNCTIONAL_MUTATIONS = [_MUTATION_RSAS, _MUTATION_RSAV, _MUTATION_RSM,
                             _MUTATION_SHSA, _MUTATION_SHSB]
 
-# Dynamic ranking window (number of generations to consider)
-_DYNAMIC_RANKING_WINDOW = 3
-
 # Evolution variables
-_EVOLUTION_GENERATIONS = 3
+_EVOLUTION_GENERATIONS = 10
 _EVOLUTION_POPULATION = 3
-_EVOLUTION_REPLACE_LOWEST_PERCENT = 0
-_EVOLUTION_REPLACE_AFTER_TURNS = 0
-_EVOLUTION_REPLACE_WITH_BEST_PERCENT = 0
+_EVOLUTION_REPLACE_LOWEST_PERCENT = 33
+_EVOLUTION_REPLACE_AFTER_TURNS = 5
+_EVOLUTION_REPLACE_WITH_BEST_PERCENT = 80
+
+# Dynamic ranking window (number of generations to consider)
+_DYNAMIC_RANKING_WINDOW = 5
 
 # Fitness evaluation variables
 _SUCCESS_WEIGHT = 100
