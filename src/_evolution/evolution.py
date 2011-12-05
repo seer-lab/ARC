@@ -204,12 +204,27 @@ def mutation(individual, functionalPhase, deadlockVotes, dataraceVotes, nonFunct
       if len(individual.genome[checkInd]) != 0:
         mutantsExist = True
 
-  # If no mutants exist, reset and return
+  # If no mutants exist, reset and re-attempt mutation
   if not mutantsExist:
     logger.debug("No possible mutations for individual")
     txl_operator.create_local_project(individual.generation, individual.id,
                                       True)
-    return
+
+    # Repopulate the individual's genome with new possible mutation locations
+    individual.repopulateGenome(functionalPhase)
+
+    # Definite check to see if ANY mutants exists for an individual
+    checkInd = -1
+    mutantsExist = False
+    for mutationOp in mutationOperators:
+      if mutationOp[1]:
+        checkInd += 1
+        if len(individual.genome[checkInd]) != 0:
+          mutantsExist = True
+
+    if not mutantsExist:
+      logger.info("A restarted individual has no mutations... Going to terminating")
+      return False
 
   # Pick a mutation operator to apply
   limit = 100  # Number of attempts to find a valid mutation
@@ -273,6 +288,7 @@ def mutation(individual, functionalPhase, deadlockVotes, dataraceVotes, nonFunct
                                       True)
   logger.info("Selected operator for Individual {} @ generation {}: {}".format(individual.id,
                                                  individual.generation, selectedOperator[0]))
+  return True
 
 def initialize(functionalPhase, bestIndividual=None):
   """Initialize the population of individuals."""
@@ -439,7 +455,7 @@ def evolve(population, functionalPhase, generation=0, worstScore=0):
     # Mutate each individual
     for individual in population:
       individual.generation = generation
-      mutation(individual, functionalPhase, deadlockVotes, dataraceVotes, nonFunctionalVotes)
+      moreMutations = mutation(individual, functionalPhase, deadlockVotes, dataraceVotes, nonFunctionalVotes)
 
     # Evaluate each individual
     for individual in population:
@@ -464,11 +480,21 @@ def evolve(population, functionalPhase, generation=0, worstScore=0):
     if terminate(population, generation, generationLimit, functionalPhase):
       return get_best_individual(population, bestFitness)
 
+    # If there are no more mutations, this process cannot go any further
+    if not moreMutations:
+      logger.info("Terminating evolution process, there are no more possible mutations")
+      return get_best_individual(population, bestFitness)
+
     # Check to see if we can replace the weakest individuals
     replace_lowest(population, functionalPhase)
 
+    # Perform mutation again for those individuals who were replaced or restarted
+    for individual in population:
+      if generation == individual.generation - 1:
+        mutation(individual, functionalPhase, deadlockVotes, dataraceVotes, nonFunctionalVotes)
+
     # Adjust weighting of mutation operators
-    deadlockVotes, dataraceVotes, nonFunctionalVotes = adjust_operator_weighting(population, 
+    deadlockVotes, dataraceVotes, nonFunctionalVotes = adjust_operator_weighting(population,
       functionalPhase, generation)
 
 
@@ -512,7 +538,7 @@ def adjust_operator_weighting(population, functionalPhase, generation):
           j = individual.appliedOperators[i]
           #logger.debug ("      ***** J is {} *****".format(j))
           nonFunctionalVotes[j] += 1
-     
+
   logger.info("Deadlock Votes: {}".format(deadlockVotes))
   logger.info("Datarace Votes: {}".format(dataraceVotes))
   logger.info("Non-Functional Votes: {}".format(nonFunctionalVotes))
