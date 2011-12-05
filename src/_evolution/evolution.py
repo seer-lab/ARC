@@ -612,9 +612,16 @@ def replace_lowest(population, functionalPhase):
 
     # Case 1: Replace an underperforming member with a fit member
     if randomNum <= config._EVOLUTION_REPLACE_WITH_BEST_PERCENT:
-      # Take a member from the top 10% of the population
-      highMember =  random.randint(int(config._EVOLUTION_POPULATION * 0.9),
-                        config._EVOLUTION_POPULATION) - 1
+
+      while True:
+        # Take a member from the top 10% of the population
+        highMember =  random.randint(int(config._EVOLUTION_POPULATION * 0.9),
+                          config._EVOLUTION_POPULATION) - 1
+
+        # Ensure that the selected memeber is not the current member
+        if highMember is not i:
+          break
+
       # Keep the id of the original member
       lowId = sortedMembers[i].id
       # print "[INFO] Replacing ID: {} with {}".format(lowId, sortedMembers[highMember].id)
