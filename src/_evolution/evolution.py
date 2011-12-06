@@ -515,6 +515,12 @@ def adjust_operator_weighting(population, functionalPhase, generation):
               beginningGeneration, generation))
 
   for individual in population:
+
+    # To ensure that the window will not cross back into the functional phase
+    if beginningGeneration < individual.switchGeneration:
+      logger.debug("Adjusting weighting window to not cross into functional phase")
+      beginningGeneration = individual.switchGeneration
+
     # Only consider the generations we are conserned with
     for i in xrange(beginningGeneration-1,generation-1):
       # Figure if there was any improvement from the last generation
@@ -569,6 +575,7 @@ def convergence(generation, bestFitness, averageFitness):
             config._GENERATIONAL_IMPROVEMENT_WINDOW))
       return True
   return False
+
 
 def terminate(population, generation, generationLimit, functionalPhase):
 
@@ -627,10 +634,10 @@ def replace_lowest(population, functionalPhase):
   # as they are the worst performing
   for i in xrange(0, numUnder):
     sortedMembers[i].turnsUnderperforming += 1
- 
+
   # Replace or restart members who have underperformed for too long
   for i in xrange(0, numUnder):
-    if (sortedMembers[i].turnsUnderperforming < 
+    if (sortedMembers[i].turnsUnderperforming <
         config._EVOLUTION_REPLACE_AFTER_TURNS):
       continue
 
