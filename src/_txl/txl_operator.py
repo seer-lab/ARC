@@ -49,7 +49,7 @@ def mutate_project(generation, memberNum, mutationOperators):
     config._NONFUNCTIONAL_MUTATIONS}
   """
 
-  logger.debug("Arguments received: {} {}".format(generation, memberNum))
+  #logger.debug("Arguments received: {} {} {}".format(generation, memberNum, mutationOperators))
   
   destDir = config._TMP_DIR + str(generation) + os.sep + str(memberNum) + os.sep
 
@@ -167,11 +167,20 @@ def generate_mutants(generation, memberNum, txlOperator, sourceFile, destDir,
 
   outFile = tempfile.SpooledTemporaryFile()
   errFile = tempfile.SpooledTemporaryFile()
-
+  
+  #logger.debug("Generating mutant at: {}".format(txlDestDir))
+  #logger.debug("sourceFile: {}".format(sourceFile))
+  #logger.debug("txlOperator[4]: {}".format(txlOperator[4]))
+  #logger.debug("sourceNameOnly + sourceExtOnly: {}".format(sourceNameOnly + sourceExtOnly))
+  #logger.debug("txlDestDir: {}".format(txlDestDir))  
+  
   process = subprocess.Popen(['txl', sourceFile, txlOperator[4], '-',
             '-outfile', sourceNameOnly + sourceExtOnly, '-outdir', txlDestDir],
             stdout=outFile, stderr=errFile, cwd=config._PROJECT_DIR, shell=False)
   process.wait()
+  
+  #logger.debug("stdout: {}".format(outFile))
+  #logger.debug("stderr: {}".format(errFile))
 
 
 def generate_representation(generation, memberNum, mutationOperators):
@@ -266,7 +275,7 @@ def create_local_project(generation, memberNum, restart):
   restart (boolean): Do we want to reset the member project back to the pristine one?
   """
 
-  logger.debug("Input arguments: {}, {} and {}".format(generation, memberNum, restart))
+  logger.debug("Input arguments:  Gen: {}, Mem: {} and Restart: {}".format(generation, memberNum, restart))
 
   staticPart = os.sep + str(memberNum) + os.sep + 'project' + os.sep
   # If the indivudal is on the first or restarted, use the original
@@ -301,7 +310,7 @@ def copy_local_project_a_to_b(generationSrc, memberNumSrc, generationDst,
   memberNumDst (int): Destination member     
   """
 
-  logger.debug("Mem: {} Gen: {} -> Mem: {} Gen: {}".format(generationSrc, 
+  logger.debug("Gen: {} Mem: {}  ->  Gen: {} Mem: {} ".format(generationSrc, 
                                 memberNumSrc, generationDst, memberNumDst))
 
   staticPart = os.sep + 'project' + os.sep
@@ -331,7 +340,7 @@ def move_mutant_to_local_project(generation, memberNum, txlOperator, mutantNum):
   mutantNum (int): Mutant number selected from the mutant dir 
   """
 
-  logger.debug("Op: {} -> Mem: {} Gen: {}".format(txlOperator, generation, memberNum))
+  logger.debug("Op: {} -> Gen: {} Mem: {} ".format(txlOperator, generation, memberNum))
 
   # Use the dictionary defined at the top of the file
   sourceDir = uniqueMutants[(generation, memberNum, txlOperator, mutantNum)]
@@ -420,11 +429,15 @@ def compile_project():
   if not os.path.isfile(config._PROJECT_DIR + 'build.xml'):
     logger.error("No ant build.xml file found in project under test's directory")
   else:
-    logger.debug("Compiling (global project) new source files")
+    logger.debug("Compiling new source files")
 
     outFile = tempfile.SpooledTemporaryFile()
     errFile = tempfile.SpooledTemporaryFile()
 
+    if os.path.exists(config._PROJECT_CLASS_DIR):
+      shutil.rmtree(config._PROJECT_CLASS_DIR)
+    os.mkdir(config._PROJECT_CLASS_DIR)
+    
     # Make an ant call to compile the program
     #os.chdir(config._PROJECT_DIR)
     antProcess = subprocess.Popen(['ant', 'compile'], stdout=outFile,
@@ -436,7 +449,8 @@ def compile_project():
     errorText = errFile.read()
     errFile.close()
 
-    if (errorText.find(b"BUILD FAILED") >= 0):
+    #if (errorText.find(b"BUILD FAILED") >= 0):
+    if (errorText.find("Build failed") >= 0):
       logger.error("ant 'compile' command failed, could not compile (global) project")
       return False
     else:

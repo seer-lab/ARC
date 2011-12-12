@@ -7,7 +7,7 @@ variables that are set in this file and are used all throughout ARC.
 import logging
 
 # System variables
-_ROOT_DIR = "/home/myrikhan/workspace/arc/"
+_ROOT_DIR = "/home/dkelk/workspace/arc/"
 _MAX_MEMORY_MB = 2000
 _MAX_CORES = 2
 _TMP_DIR = _ROOT_DIR + "tmp/"
@@ -15,7 +15,7 @@ _TXL_DIR = _ROOT_DIR + "src/_txl/"
 _JUNIT_JAR = _ROOT_DIR + "lib/junit-4.8.1.jar"
 _VERBOSE = True
 _LOG_FILE = "log.txt"  # If None then use stdout, otherwise specify a file
-_RANDOM_SEED = None  # If None then use default (system time)
+_RANDOM_SEED = 0  # 0 means use the system time, non-zero is fixed
 
 # Target project variables
 _PROJECT_DIR = _ROOT_DIR + "input/"
@@ -25,8 +25,8 @@ _PROJECT_CLASS_DIR = _PROJECT_DIR + "class/"
 _PROJECT_BACKUP_DIR = _ROOT_DIR + "project_backup/"
 _PROJECT_OUTPUT_DIR = _ROOT_DIR + "output/"
 _PROJECT_PREFIX = ""
-_PROJECT_TESTSUITE = "Deadlock2"
-_PROJECT_CLASSPATH = _PROJECT_CLASS_DIR
+_PROJECT_TESTSUITE = "DeadlockTest"
+_PROJECT_CLASSPATH = _PROJECT_CLASS_DIR + ":" + _PROJECT_DIR + "test/" + ":" + _JUNIT_JAR
 _PROJECT_TEST_MB = 2000
 # TODO Consider some automatic way to figure classpath if Ant or MVN exist
 
@@ -35,12 +35,12 @@ _CONTEST_DIR = _ROOT_DIR + "lib/ConTest/"
 _CONTEST_KINGPROPERTY = _CONTEST_DIR + "KingProperties"
 _CONTEST_JAR = _CONTEST_DIR + "ConTest.jar"
 _CONTEST_RUNS = 3
-_CONTEST_TIMEOUT_SEC = 2  # Aim for around x2-3 desirable performance
+_CONTEST_TIMEOUT_SEC = 3 # Aim for around x2-3 desirable performance
 _TESTSUITE_AVG = 3  # Number of test executions for finding the average time
 
 # Mutation operator variables
 # [0]Name  [1]Enable  [2]DataRace  [3]Deadlock  [4]File
-_MUTATION_ASAS = ['ASAS', True, True, True, _TXL_DIR + "ASAS.Txl"]
+_MUTATION_ASAS = ['ASAS', False, True, True, _TXL_DIR + "ASAS.Txl"]
 _MUTATION_ASAV = ['ASAV', True, True, True, _TXL_DIR + "ASAV.Txl"]
 _MUTATION_ASM  = ['ASM', True, True, True, _TXL_DIR + "ASM.Txl"]
 _MUTATION_CSO  = ['CSO', True, False, True, _TXL_DIR + "CSO.Txl"]
@@ -58,14 +58,14 @@ _NONFUNCTIONAL_MUTATIONS = [_MUTATION_RSAS, _MUTATION_RSAV, _MUTATION_RSM,
                             _MUTATION_SHSA, _MUTATION_SHSB]
 
 # Evolution variables
-_EVOLUTION_GENERATIONS = 10
-_EVOLUTION_POPULATION = 3
-_EVOLUTION_REPLACE_LOWEST_PERCENT = 33
-_EVOLUTION_REPLACE_AFTER_TURNS = 5
+_EVOLUTION_GENERATIONS = 20
+_EVOLUTION_POPULATION = 10
+_EVOLUTION_REPLACE_LOWEST_PERCENT = 10
+_EVOLUTION_REPLACE_AFTER_TURNS = 20
 _EVOLUTION_REPLACE_WITH_BEST_PERCENT = 80
 
 # Dynamic ranking window (number of generations to consider)
-_DYNAMIC_RANKING_WINDOW = 5
+_DYNAMIC_RANKING_WINDOW = 20
 
 # Fitness evaluation variables
 _SUCCESS_WEIGHT = 100
@@ -73,7 +73,7 @@ _TIMEOUT_WEIGHT = 50
 
 # Convergence criteria, considering the window size ensure there is at least 
 # a fitness score movement of delta
-_GENERATIONAL_IMPROVEMENT_WINDOW = 5
+_GENERATIONAL_IMPROVEMENT_WINDOW = 20
 _AVG_FITNESS_MIN_DELTA = 0.01
 _BEST_FITNESS_MIN_DELTA = 0.01
 

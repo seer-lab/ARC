@@ -48,6 +48,7 @@ class Tester():
   percentCPU = []
   goodRuns = []  # True || False
 
+
   def begin_testing(self, functional, nonFunctional=False,
                     runs=config._CONTEST_RUNS):
     """Begins the testing phase by creating the test processes."""
@@ -61,18 +62,20 @@ class Tester():
 
       # Start a test process
       if functional:
-        process = subprocess.Popen(['java',
-                    '-Xmx{}m'.format(config._PROJECT_TEST_MB), '-cp',
-                    config._PROJECT_CLASSPATH + ':{}'.format(config._JUNIT_JAR), '-javaagent:' +
-                    config._CONTEST_JAR, '-Dcontest.verbose=0', 'org.junit.runner.JUnitCore',
+      # example invocation in one huge line:
+      # java -Xmx2000m  -cp /home/dkelk/workspace/arc/input/class:/home/dkelk/workspace/arc/input/test:/home/dkelk/workspace/arc/lib/junit-4.8.1.jar -javaagent:/home/dkelk/workspace/arc/lib/ConTest/ConTest.jar  -Dcontest.verbose=0 org.junit.runner.JUnitCore PingPongTest
+        process = subprocess.Popen(['java', '-Xmx{}m'.format(config._PROJECT_TEST_MB), 
+                    '-cp', config._PROJECT_CLASSPATH, '-javaagent:' + config._CONTEST_JAR, 
+                    '-Dcontest.verbose=0',  'org.junit.runner.JUnitCore',
                     config._PROJECT_TESTSUITE], stdout=outFile,
                     stderr=errFile, cwd=config._PROJECT_DIR, shell=False)
       else:
         process = subprocess.Popen(['/usr/bin/time', '-v', 'java',
                     '-Xmx{}m'.format(config._PROJECT_TEST_MB), '-cp',
-                    config._PROJECT_CLASSPATH + ':{}'.format(config._JUNIT_JAR), 'org.junit.runner.JUnitCore',
-                    config._PROJECT_TESTSUITE], stdout=outFile,
-                    stderr=errFile, cwd=config._PROJECT_DIR, shell=False)
+                    config._PROJECT_CLASSPATH, 'org.junit.runner.JUnitCore', 
+                    config._PROJECT_TESTSUITE], 
+                    stdout=outFile, stderr=errFile, cwd=config._PROJECT_DIR, 
+                    shell=False)
 
       success = self.run_test(process, outFile, errFile, i, functional)
 
@@ -165,8 +168,15 @@ class Tester():
         errFile.close()
 
         # Acquire the number of faults (accoring to ant test)
-        faults = re.search("Tests run: \d+,  Failures: (\d+)", output)
+        #logger.debug("Test, Output text:\n")
+        #logger.debug(output)
+        #logger.debug("Test, Error text:\n")
+        #logger.debug(error)        
+        
+        faults = re.search("Tests run: \d+,\s+Failures: (\d+)", output)
 
+        #logger.debug("Faults found: {}".format(faults))
+        
         if faults is not None:
           # Check to see if any tests failed, and if so how many?
           totalFaults = int(faults.groups()[0])
