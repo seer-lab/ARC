@@ -458,91 +458,229 @@ concurrency; genetic programming; mutation.
 \section{Introduction}
 \label{sec:introduction}
 
-As desktop computers now ship with more than one processor, programs must parallelize to continue to benefit from Moore's Law. Inevitibly these programs will contain bugs. If fixing bugs in single-threaded programs is a difficult and resource intensive task,  it is doubly so in multi-threaded programs. Parallelism introduces new classes of bugs and makes them harder to find by having them only occur in rare execution interleavings for example. Data-races cause variables to take on unpredictable values as different threads race to write to them while deadlocks bring part or all of a running program to a halt.
- 
-We propose ARC (Automatic Repair of Concurrency bugs): An automatic technique to repair deadlocks and data races in parallel Java programs. Formal specifications, annotations and elaborate test suites are not required. Only the Java source code and test(s) demonstrating the deadlocks and data races are necessary. Evolutionary strategies are used to evolve variants until one is found that fixes the bugs in question.
+%%%TODO Integrate Me
+Research and development surrounding multi-threaded software systems has
+recently boomed due to the increased demand and attention for concurrent
+software~\cite{SL05}. Concurrency has the benefit of increased performance by
+exploiting hardware advances in multi-cores. The largest issue associated with
+concurrent software systems is the \textit{heisenbug}, a difficult to detect
+bug hidden by the way threads are scheduled~\cite{MQB07}.
+%%%%
 
-There has been a great deal of research in the area of search-based software engineering~\cite{Har+10}. Furthermore, the use of heuristic search to identify a solution that fixes a bug is not a novel idea~\cite{FNWG09, AY08, Arc08, WT10, WNLF09, WFGN10}. Our proposed approach adapts the original idea of automatically fixing sequential software to specifically target concurrent software.
+As desktop computers now ship with more than one processor, programs must
+parallelize to continue to benefit from Moore's Law. Inevitibly these programs
+will contain bugs. If fixing bugs in single-threaded programs is a difficult
+and resource intensive task,  it is doubly so in multi-threaded programs.
+Parallelism introduces new classes of bugs and makes them harder to find by
+having them only occur in rare execution interleavings for example. Data-races
+cause variables to take on unpredictable values as different threads race to
+write to them while deadlocks bring part or all of a running program to a halt.
 
-Evolutionary strategies (ES) is part of the family of heuristic search algorithms. They are population-based technique driven by mutation. Crossover and replacement are not used.  All members of the population exist throughout an invocation of the search. A fitness function is used to evaluate each member's proposed fix. Bugs in a concurrent program are fixed by iteratively mutating the program and evaluating each mutation by executing the program a number of times. CONTest (cite) is used to explore different interleavings of the program under test to increase our confidence bugs are not slipping by. Fitness improves with the number of correct executions.
+We propose ARC (Automatic Repair of Concurrency bugs): An automatic technique
+to repair deadlocks and data races in parallel Java programs. Formal
+specifications, annotations and elaborate test suites are not required. Only
+the Java source code and test(s) demonstrating the deadlocks and data races are
+necessary. Evolutionary strategies are used to evolve variants until one is
+found that fixes the bugs in question.
 
-Large search spaces are a problem faced by all bug fixing techniques. Parallelism introduces thread interleavings on top of this. A number of steps are taken to address this issue.  First, we limit the algorithm to only fixing deadlocks and data races. Second, only the concurrency mechanisms are targeted. Specifically, \textit{synchronize} statements are added, removed, swapped, grown and shrunk. No other statements are affected. Third, we use a specific set of eleven TXL operators (Mention ConMan here?) operators to mutate the code.
+There has been a great deal of research in the area of search-based software
+engineering~\cite{Har+10}. Furthermore, the use of heuristic search to identify
+a solution that fixes a bug is not a novel idea~\cite{FNWG09, AY08, Arc08,
+WT10, WNLF09, WFGN10}. Our proposed approach adapts the original idea of
+automatically fixing sequential software to specifically target concurrent
+software.
 
-ARC operates in two phases. In the first, synchronized blocks are added, expanded and swapped to attempt to fix the bugs. This may add unnecessary synchronization. If a correct program is found in phase 1 a second phase is run where synchronization blocks are shrunk or removed in an attempt to increase efficiency. As this can introduce data races or deadlocks, any mutant decreasing correctness is rejected.
- 
-To the best of our knowledge there has been no previous work using evolutionary strategies to fix bugs in concurrent software.  There has been work involving the correction of concurrency bugs using self-healing~\cite{LVK08}. From the paper, \textit{The healing techniques based on influencing the scheduling do not guarantee that a detected problem will really be completely removed, but they can decrease the probability of its manifestation.} In contrast ARC is an off-line technique that fixes the bug by modifying the source code.
+Evolutionary strategies (ES) is part of the family of heuristic search
+algorithms. They are population-based technique driven by mutation. Crossover
+and replacement are not used.  All members of the population exist throughout
+an invocation of the search. A fitness function is used to evaluate each
+member's proposed fix. Bugs in a concurrent program are fixed by iteratively
+mutating the program and evaluating each mutation by executing the program a
+number of times. CONTest (cite) is used to explore different interleavings of
+the program under test to increase our confidence bugs are not slipping by.
+Fitness improves with the number of correct executions.
+
+Large search spaces are a problem faced by all bug fixing techniques.
+Parallelism introduces thread interleavings on top of this. A number of steps
+are taken to address this issue.  First, we limit the algorithm to only fixing
+deadlocks and data races. Second, only the concurrency mechanisms are targeted.
+Specifically, \textit{synchronize} statements are added, removed, swapped,
+grown and shrunk. No other statements are affected. Third, we use a specific
+set of eleven TXL operators (Mention ConMan here?) operators to mutate the
+code.
+
+ARC operates in two phases. In the first, synchronized blocks are added,
+expanded and swapped to attempt to fix the bugs. This may add unnecessary
+synchronization. If a correct program is found in phase 1 a second phase is run
+where synchronization blocks are shrunk or removed in an attempt to increase
+efficiency. As this can introduce data races or deadlocks, any mutant
+decreasing correctness is rejected.
+
+To the best of our knowledge there has been no previous work using evolutionary
+strategies to fix bugs in concurrent software.  There has been work involving
+the correction of concurrency bugs using self-healing~\cite{LVK08}. From the
+paper, \textit{The healing techniques based on influencing the scheduling do
+not guarantee that a detected problem will really be completely removed, but
+they can decrease the probability of its manifestation.} In contrast ARC is an
+off-line technique that fixes the bug by modifying the source code.
 
 The main contributions of this paper are:
 
 \begin{itemize}
-\item An algorithm to create minimal fixes for deadlocks and data races in Java programs. Only the source code and tests demonstrating the bugs are necessary. To the best of our knowledge this is the first approach to fix both kinds of bugs in Java programs.
 
-\item Methods to constrain the search space: Specific targeting of synchronization mechanisms and the TXL operators implementing this.
+\item An algorithm to create minimal fixes for deadlocks and data races in Java
+programs. Only the source code and tests demonstrating the bugs are necessary.
+To the best of our knowledge this is the first approach to fix both kinds of
+bugs in Java programs.
+
+\item Methods to constrain the search space: Specific targeting of
+synchronization mechanisms and the TXL operators implementing this.
+
 \end{itemize}
 
-(The structure of the paper is as follows. ...
-)
+
+
+
 \subsection{Motivation using quote from GenProg paper}
 
+
+
+
 \section{Background}
+\label{sec:background}
+All of the material discussed in this paper revolves around topics of
+concurrency, model checking and searches to explore state-spaces. A firm
+understanding of these topics are required for various parts of the paper, thus
+some background information is provided.
 
 \subsection{Concurrency}
+\label{sec:concurrency}
+Concurrency is the act of having multiple threads executing in parallel.
+Threads in programs are objects which execute statements, thus by having
+multiple threads in a program it is possible to executing statements in
+parallel. Concurrent programs are able to exploit multi-core systems since
+threads can be distributed across each of the CPUs to increase the performance.
+The inherit problem with concurrency is that a new class of bugs have emerged,
+the \textit{heisenbugs}, which are tied to the concurrent nature of
+multi-threads. Due to concurrent access to shared memory, threads are able to
+cause \textit{dataraces} and \textit{deadlocks}.
+
+A \textbf{data race} has been defined as: \textit{``\ldots two or more
+concurrent threads access a shared variable and when at least one access is a
+write, and the threads use no explicit mechanism to prevent the access from
+being simultaneous.''}~\cite{LSW07}
+
+A \textbf{deadlock} has been defined as: \textit{``\ldots a situation where two
+or more processes are unable to proceed because each is waiting for one of the
+others to do something in a deadlock cycle \ldots} For example, this occurs
+when a thread holds a lock that another thread desires and
+vice-versa''~\cite{LSW07}
+
+These bugs are extremely difficult to detect due to the non-deterministic
+nature of how the threads are interleaved (the way the system schedules them).
+In one execution a concurrency bug might occur, then a second execution the bug
+might not occur due to how the threads were scheduled. Various techniques are
+available to try and detect concurrency bugs such as static
+analysis~\cite{NA07,NPSG09,HP04}, stress testing~\cite{HSU03}, dynamic
+analysis~\cite{JNPS09,EFN+02}, and model
+checking~\cite{BHPV00,RDH03,OM03,MQB07,Holz97,JM04,BHPV00,HP00}.
 
 \subsection{Evolutionary Algorithms}
 
 \section{Related Works}
 
-Previous attempts of Auto. Fixing bugs
+TODO Previous attempts of Auto. Fixing bugs
 
 \section{Motivating Problem}
 
 \section{Our solution -- Walkthrough -- Functional Phase}
 
+\begin{figure}[!t]
+  \centering
+  %\hrule
+  %\vspace{2mm}
+  \includegraphics[width=6.7cm]{figures/process.pdf}
+  \caption{ARC's Repair and Optimization Process}
+  \label{fig:process}
+  \vspace{1mm}
+  %\footnotesize{Using the repaired program $P'$, an optimization phase occurs to minimize unnecessary synchronizations.}
+  %\vspace{2mm}
+  %\hrule
+\end{figure}
+
+
+
+
 \subsection{Program Representation}
+
+
+
 
 \subsection{Evolutionary Strategy}
 
+
+
+
 \subsubsection{Heuristic Aspects}
+
+
+
 
 \subsection{Mutation Operators}
 
+
+
+
 \subsection{Fitness Functions}
+
+
+
 
 \section{Walkthrough -- Non-Functional Phase}
 
+
+
+
 \subsection{Mutation Operators}
+
+
+
 
 \subsection{Fitness Functions}
 
+
+
+
 \section{Experiments}
+
+
+
 
 \subsection{Experimental Setup}
 
+
+
+
 \subsection{Experimental Results}
+
+
+
 
 \section{Threats to Validity}
 
+
+
+
 \section{Future Work}
+
+
+
 
 \section{Conclusion}
 
 
+
 % Samples we can reuse
-
-%\begin{figure}[!t]
-%\centering
-%\hrule
-%\vspace{2mm}
-%\includegraphics[width=6.7cm]{figures/process.pdf}
-%\caption{Automatic Repair Process}
-%\label{fig:process}
-%\vspace{1mm}
-%\footnotesize{\emph{Legend: Rounded grey rectangles represent process phase. White rectangles with a folded corner represent data input. Diamond represents a decision.}}
-%\vspace{2mm}
-%\hrule
-%\end{figure}
-
-
 \begin{enumerate}
 	\item \textit{Synchronize an unprotected shared resource.} One cause of a data race is that a shared resource is unprotected. By synchronizing around a shared resource data races can be fixed.
 
@@ -657,9 +795,6 @@ $n = \#\ of\ Test\ Cases$
 % <OR> manually copy in the resultant .bbl file
 % set second argument of \begin to the number of references
 % (used to reserve space for the reference number labels box)
-
-
-
 
 % that's all folks
 \end{document}
