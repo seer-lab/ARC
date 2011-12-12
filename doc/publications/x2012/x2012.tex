@@ -436,8 +436,6 @@ Oshawa, Ontario, Canada\\
 
 
 \begin{abstract}
-Bugs in concurrent software are difficult to identify and fix since they may only exhibit abnormal behaviour on certain thread interleavings. We propose the use of genetic programming to incrementally create a solution that fixes a concurrency bug automatically. Bugs in a concurrent program are fixed by iteratively mutating the program and evaluating each mutation using a fitness function that compares the mutated program with the previous version. We propose three mutation operators that can fix concurrency bugs: synchronize an unprotected shared resource, expand synchronization regions to include unprotected source code, and interchange nested lock objects.
-%Bugs in concurrent software are difficult to identify and fix since they may only exhibit abnormal behaviour on certain thread interleavings. Genetic algorithms are extremely useful at solving optimization and search-based problems. By using genetic algorithms we implement an approach to incrementally create a solution that fixes a bug automatically. A bug fix is formed by iteratively mutating the program and evaluating the mutation using a fitness function that test for the bug's existence. We have identified three types of mutation operations that can fix concurrency bugs: synchronize an unprotected shared resource, expand synchronization regions to include unprotected source code, and interchanging nested lock objects. We believe our algorithm can at least partially fix the bug and guide the developer in the correct direction.
 
 \end{abstract}
 
@@ -468,12 +466,53 @@ There has been a great deal of research in the area of search-based software eng
 
 To the best of our knowledge there has been no previous work using genetic programming to patch bugs in concurrent software, However, there has also been work that involves the correction of concurrency bugs using self-healing~\cite{LVK08}. The self-healing approach is applied dynamically and is focused on coping with a concurrency bug, while our approach evolves the source code in order to correct the bug.
 
-%In the next section we will explain our approach and outline our mutation operators and the fitness function used in our genetic programming approach. In the final section we will present our initial conclusions and discuss several possible avenues of future work.
 
-\section{Our Automatic Repair Process}
-\label{sec:genetic_algorithm}
+\subsection{Motivation using quote from GenProg paper}
 
-%Genetic algorithms are well defined and requires the following concepts: input data, mutation operators, fitness function, and terminating conditions. Each of these concepts must be tailored specifically to automatically repair concurrency bugs. Our approach is described in the following sections.
+\section{Background}
+
+\subsection{Concurrency}
+
+\subsection{Evolutionary Algorithms}
+
+\section{Related Works}
+
+Previous attempts of Auto. Fixing bugs
+
+\section{Motivating Problem}
+
+\section{Our solution -- Walkthrough -- Functional Phase}
+
+\subsection{Program Representation}
+
+\subsection{Evolutionary Strategy}
+
+\subsubsection{Heuristic Aspects}
+
+\subsection{Mutation Operators}
+
+\subsection{Fitness Functions}
+
+\section{Walkthrough -- Non-Functional Phase}
+
+\subsection{Mutation Operators}
+
+\subsection{Fitness Functions}
+
+\section{Experiments}
+
+\subsection{Experimental Setup}
+
+\subsection{Experimental Results}
+
+\section{Threats to Validity}
+
+\section{Future Work}
+
+\section{Conclusion}
+
+
+% Samples we can reuse
 
 \begin{figure}[!t]
 \centering
@@ -488,8 +527,6 @@ To the best of our knowledge there has been no previous work using genetic progr
 %\hrule
 \end{figure}
 
-Our process expects a concurrent program $P$ as input (see Figure~\ref{fig:process}). A mutation operator is applied to $P$, which results in a mutated program, $P'$. We have identified three mutation operators that can correct data race and deadlock bugs. We have previously explored variations of these operators in previous work on mutation testing of concurrent software~\cite{BCD06b}. %The operators are applied to the source tree of the program due to the nature of how concurrency is written (by encapsulating regions of source code in synchronizations).
-The first two operators specifically target data race bugs while the third operator targets deadlock bugs:%\footnote{It must be noted that by applying these mutations it might be possible to induce new deadlock bugs.}:
 
 \begin{enumerate}
 	\item \textit{Synchronize an unprotected shared resource.} One cause of a data race is that a shared resource is unprotected. By synchronizing around a shared resource data races can be fixed.
@@ -563,7 +600,6 @@ synchronized ( lock2 ){
 
 \end{enumerate}
 
-After the application of a mutation operator, the new program, $P'$, is then evaluated using our fitness function:
 
 %\notesbox{
 \begin{footnotesize}
@@ -578,19 +614,6 @@ $n = \#\ of\ Test\ Cases$
 \end{tiny}
 %}
 
-Our fitness function differs from the function used by Weimer et al. in which the fitness is the weighted value of the number of tests that pass in addition to a weighted sum of the number of tests that fail. Since we are focused on concurrent programs we have to provide coverage of the interleaving space and need to run each test many times in order to provide confidence that the test will not fail for some interleaving. Therefore, we have chosen to calculate the percent of interleavings that pass for each test case and use the sum of these values as our measure of fitness. We evaluate our fitness function by running all tests with $P'$ a number of times using a concurrency testing tool (e.g., IBM's ConTest~\cite{EFN+02}) to aid in exploring different thread interleavings.  If the $fitness(P') > fitness(P)$ then a given mutation is kept, otherwise it is discarded.%The scoring of the new programs will be the summation of the percentages of interleavings that causes a bug for each test case.
-
-
-We next check if the process can terminate or if more mutations (i.e., bug fixes) are required. The terminating conditions are: (1) a program $P'$ has reached a user-defined threshold of success meaning that enough tests succeed with enough interleavings to provide confidence in the program correctness, (2) the process has progressed a predefined number of iterations without significant progress.
-
-If no terminating condition is met then we need to select a mutation operator for the next iteration of the algorithm. We do not select the mutation operators randomly. Instead, we select mutations based on the bugs present in the program. For example, if most of the test cases failed due to a deadlock then selecting the third mutation operator has the best chance of fixing the deadlock otherwise we select one of the other two operators.
-
-For simplicity, our process was described with one mutation per iteration. Ideally, we can mutate the program to generate and evaluate multiple mutants per iteration in order to find a solution more quickly.
-
-\section{Conclusion \& Future Work}
-\label{sec:conclusion_future_work}
-
-Genetic programming has been used to fix sequential programs~\cite{FNWG09, AY08, Arc08, WNLF09, WFGN10} and additional work has focused on refinement of this approach~\cite{WT10}. Our research is an adaptation of this previous work that targets concurrent programs with deadlock and data race bugs. Currently, we are in the process of implementing our work.  After the implementation is complete we plan to evaluate and refine many aspects of our approach including: the mutation operators, the fitness function, the termination threshold and the heuristic selection of mutation operators.
 
 % use section* for acknowledgement
 %\section*{Acknowledgment}
