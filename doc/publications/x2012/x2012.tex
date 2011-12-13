@@ -781,8 +781,15 @@ As it isn't clear when a member program is as optimized as it could be - and the
 
 \section{Future Work}
 
+Currently ARC mutates all variables of the program under test. Ideally it should target only those involved in concurrency. We believe there are off-the-shelf solutions we can integrate into ARC to give it this capability, similar to~\cite{CM08, HP00} amongst others.  
 
+Targeting the variables, functions and classes on the error path is another feature we would like to add.  It has shown great success in helping to isolate and automatically fix bugs in single-threaded programs~\cite{FNWG09, NWLF09, WFGN10, GNFW11}. We believe it will do the same for multithreaded programs.
 
+Generalizing the TXL operators is also important. Currently the add synchronization around synchronization operator (ASAS) for example, only adds !synchronize(this)! to the Java source.  When the analysis of the previous two paragraphs are implemented the operators need to be updated to work with them.
+
+We also plan to experiment with new operators.  Is splitting or merging synchronization blocks useful for example? Changing the argument in the synchronize call?  
+
+Many new concurrency structures were introduced in Java 5. Expanding the operators to deal with new anti-patterns~\cite{BJ09} (cite ConMAn) allows ARC to fix additional types of bugs.  
 
 \section{Conclusion}
 
