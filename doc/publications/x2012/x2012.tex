@@ -85,6 +85,12 @@
 \usepackage{epsfig}
 \usepackage{listings}
 
+\usepackage{array}
+\usepackage{longtable}
+\usepackage{hhline}
+\usepackage{listings}
+%\usepackage{tabular}
+
 \lstset{ %
 lineskip=0.5pt,
 basicstyle=\scriptsize,       % the size of the fonts that are used for the code
@@ -610,47 +616,149 @@ TODO Previous attempts of Auto. Fixing bugs
 
 
 
-
 \subsection{Program Representation}
-
+\label{sec:programrepresentation}
 
 
 
 \subsection{Evolutionary Strategy}
-
+\label{sec:evolutionarystrategy}
 
 
 
 \subsubsection{Heuristic Aspects}
-
-
-
-
-\subsection{Mutation Operators}
-
-
-
-
-\subsection{Fitness Functions}
-
-
-
-
-\section{Walkthrough -- Non-Functional Phase}
-
+\label{sec:heuristicaspects}
 
 
 
 \subsection{Mutation Operators}
+\label{sec:mutationoperators}
 
+\begin{table}
+\begin{center}
+\begin{tabular}{|l|l|c|c|}
+\hline
+\textbf{Operator} &
+\textbf{Acronym} &
+\textbf{Functional} &
+\textbf{Non-Functional}
+\\\hline
 
+Add synch. around synch. & ASAS & $\surd$ &
+\\\hline
+
+Add synch. around variable & ASAV & $\surd$ &
+\\\hline
+
+Add synch. around method & ASM & $\surd$ &
+\\\hline
+
+Change synch. order & CSO & $\surd$ &
+\\\hline
+
+Expand synch. before & EXSB & $\surd$ &
+\\\hline
+
+Expand synch. after & EXSA & $\surd$ &
+\\\hline
+
+Remove synch. around synch. & RSAS & $\surd$ & $\surd$
+\\\hline
+
+Remove synch. around variable & RSAV & $\surd$ & $\surd$
+\\\hline
+
+Remove synch. around method & RSM & $\surd$ & $\surd$
+\\\hline
+
+Remove synch. around block & RSB & $\surd$ & $\surd$
+\\\hline
+
+Shrink synch. before & SHSB & & $\surd$
+\\\hline
+
+Shrink synch. after & SHSA & & $\surd$
+\\\hline
+
+\end{tabular}
+\caption{Operators used by ARC in the functional and non-functional phases respectively.}
+\label{tbl:operators}
+\end{center}
+\end{table}
+
+\begin{table}
+\begin{center}
+\begin{tabular}{l l}
+
+\vspace{2mm}
+
+\begin{minipage}{3.70cm}
+\footnotesize{\textbf{ Program $P$:}}
+\begin{lstlisting}[language=Java]
+  ...
+  obj.write(var1);
+  synchronized(lock){
+    myHash.remove(var1);
+  }
+\end{lstlisting}
+\end{minipage}\hfill
+
+&
+
+\begin{minipage}{3.70cm}
+\footnotesize{\textbf{ Program $P'$:}}
+\begin{lstlisting}[language=Java]
+  ...
+  synchronized(lock){
+    obj.write(var1);
+    myHash.remove(var1);
+  }
+\end{lstlisting}
+\end{minipage}
+
+\end{tabular}
+\caption{Example of EXSB, the expand synchronization before operator.}
+\label{tbl:EXSBExample}
+\end{center}
+\end{table}
+
+Evolutionary strategies are solely mutation driven. During the fixing phase ARC adds, expands and alters synchronization blocks in an attept to fix deadlocks and data races. During the second phase ARC attempts to shrink and remove synchronization to improve performance. Table~\ref{tbl:operators} lists the operators used in ARC by phase. 
+
+Mutation is a multi-step process. Each member of the ES population contains it's
+own copy of the Java project to be fixed.  During the mutation phase each TXL operator operates against each source code unit to create all mutants of it's type. For example, the expand synchronization before (EXSB, Table~\ref{tbl:EXSBExample}) operator is applied to every existing concurrency block in every Java file. All mutants - where each concurrency block is expanded at the front by one statement - are exaustively written to separate files. This is repeated for every Java file in the project and each elidgeable mutant in phase.
+
+With all mutants written to files, an operator is randomly selected to become the actual mutation operator for that member project for that generation.  One of it's mutations is randomly selected and applied to the project as the actual mutation.
+
+Note that each member project must have it's mutants tracked separately as the application of mutations causes the points where future mutation can happen to diverge.  (If a synchronization block is added to the first project, EXSB, EXSA, SHSB and SHSA can operate on it in future generations. The second project may expand an existing synchronization and so-on.)
+
+Statistics are gathered on the performance of each operator.  After a defineable number of generations a weighting scheme is applied:  Mutation operators that were more successful in the past are given higher weights so they are more likely to be selected in the current generation.  Weightings are designed to insure the chance of selection is always greater than zero.  Further, a sliding window is used to dynamically update the weights as the evolution progresses.
+
+As ARC only adds, removes and changes synchronization blocks, the meaning of a program shouldn't change. 
 
 
 \subsection{Fitness Functions}
+\label{sec:funcfitnessfunctions}
 
+A key problem in parallel programming is the unpredictability of thread interleavings.  If a parallel bug appears only rarely, how can we gain confidence that a proposed fix actually works?  IBM's CONTest Tool (cite) is used to instrument the project and inject noise into the scheduled interleavings.  CONTest is then invoked by ARC many times to test each member program in turn.  By running CONTest multiple times we gain confidence enough interleavings are explored to find bugs. Note that running CONTest many times for each member of the population at each generation is time intensive.
 
+In the first phase fitness is determined by the number of successfull CONTest runs. As a data race could also be a successful execution, they also add to fitness. The weight for data races, $WDataRace$ is set lower than $WSuccess$ to reflect this. 
 
+\begin{center}
+$Fitness = \# Successes x WSuccess + \# Data Races * WDataRace$ 
+\end{center}
 
+Phase one ends when a ES member is found that passes all CONTest runs. There is a possibility that the bug isn't truly fixed in the proposed solution.  By chance the proper interleavings were not explored.  ARC has an additional safeguard for this:  Every proposed fix is run a large number of times in CONTest. (The default is 10x more runs than a ES member experiences in any generation.) If any test fails the solution is rejected and the evolutionary process continues.
+
+Once a fix is found the second phase begins.  Here the fitness function is concerned with optimizing performance.  Fitness is now determined by the wall time required for an execution and the number of voluntary context switches made.  Durning the initialization of phase 2 the proposed fix is run a large number of times to determine baseline averages for these two values.
+
+We reason these two metrics are important as excessive synchronization causes contention within a program.  Phase two attempts to reduce contention by removing and reducing synchronization.
+
+Removing and reducing synchronization runs the risk of introducing new bugs in to the program.  Thus, before the phase 2 fitness evaluation is performed, a phase 1 fitness evaluation is performed again.  If any deadlock or data race is encountered the proposed fix is reset to it's state in the previous generation. 
+
+Assuming correctness hasn't suffered the member program is run again a number of times in CONTest.  Average wall time and voluntary context switches are computed and compared to the baseline values.  Improvements are rewarded with higher fitness.  
+
+As it isn't clear when a member program is as optimized as it could be - and there is no a-priori way to know this, the second phase runs for it's full allotment of generations.  At the end it outputs the member program with the highest non-functional fitness as the final optimized fix.
+ 
 \section{Experiments}
 
 
