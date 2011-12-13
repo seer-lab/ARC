@@ -598,8 +598,116 @@ checking~\cite{BHPV00,RDH03,OM03,MQB07,Holz97,JM04,BHPV00,HP00}.
 TODO Previous attempts of Auto. Fixing bugs
 
 \section{Motivating Problem}
+As we already mentioned concurrency bugs are difficult to detect and fix. Many
+tools exist to detect concurrency bugs. The identification of a problem is
+often not enough for concurrency bugs as multiple code fragments are involved
+in the bug, the appropriate fix is not always clear. There has been work in
+concurrency anti-patterns that provides a definition, problem, context and
+solution of concurrency bugs~\cite{BJ09}.
 
-\section{Our solution -- Walkthrough -- Functional Phase}
+For example, if we have a \texttt{write} and \texttt{read} methods that
+accesses a shared variable. We have a very simple data race bug because there
+is no atomic access to the \texttt{data} variable during the reading or
+writing. Both methods are involved in the data race bug, and it is because of
+the interactions between these methods that a data race is possible. The
+solution to this bug involves two changes, if only one change is present the
+bug still exists.  Using this example one of the native solutions to this data
+race is to synchronize both methods (as shown in
+Figure~\ref{fig:fixed_sample_datarace}):
+
+The presented solution is far from ideal, as it forces other threads to wait
+while the write method works on the loop and database sections. An optimization
+to the found fix is to shrink the critical region (the statements that are
+synchronized) to only guard access to the shared variable (as shown in
+Figure~\ref{fig:optimized_sample_datarace}.
+
+\begin{figure}[h!]
+\vspace{2mm}
+\begin{minipage}{3.70cm}
+\footnotesize{\textbf{Buggy Program:}}
+\begin{lstlisting}[language=Java]
+write(int var1){
+  ... // Expensive loop
+  data = var1;
+  ... // Database query
+}
+
+int public read(){
+  return data;
+}
+\end{lstlisting}
+\end{minipage}\hfill
+\begin{minipage}{3.70cm}
+\footnotesize{\textbf{Fixed Program:}}
+\begin{lstlisting}[language=Java]
+synchronize write(int var1){
+  ... // Expensive loop
+  data = var1;
+  ... // Database query
+}
+
+int synchronize read(){
+  return data;
+}
+\end{lstlisting}
+\end{minipage}
+\caption{A developer first synchronizes the \texttt{read} function, yet the bug
+still presents itself. The developer then synchronizes the \texttt{write}
+method as well, and the bug is fixed}
+\label{fig:fixed_sample_datarace}
+\end{figure}
+
+\begin{figure}[h!]
+\vspace{2mm}
+\begin{minipage}{3.70cm}
+\footnotesize{\textbf{$1^{st}$ Optimization on Fix:}}
+\begin{lstlisting}[language=Java]
+public write(int var1){
+  ... // Expensive loop
+  synchronized(this){
+    data = var1;
+    ... // Database query
+  }
+}
+
+int synchronize read(){
+  return data;
+}
+\end{lstlisting}
+\end{minipage}\hfill
+\begin{minipage}{3.70cm}
+\footnotesize{\textbf{$2^{nd}$ Optimization on Fix:}}
+\begin{lstlisting}[language=Java]
+public write(int var1){
+  ... // Expensive loop
+  synchronized(this){
+    data = var1;
+  }
+  ... // Database query
+}
+
+int synchronize read(){
+  return data;
+}
+\end{lstlisting}
+\end{minipage}
+\caption{A developer first shrinks the critical region to exclude the expensive
+loop. The developer shrinks the critical region again to exclude the database
+query as a further optimization.}
+\label{fig:optimized_sample_datarace}
+\end{figure}
+
+From a developer's standpoint there is a lot of work involved in creating a fix
+for these types of bugs as multiple changes are not uncommon. As the presented
+example illustrated two changes were required to functionally fix the program,
+while two additional changes were required to improve the non-functional
+performance. Automated tools in software testing are highly desired as it has
+the potential to reduce the vast amount of resources spent on software testing
+(upwards to \$59.5 billion)~\cite{RTI02}. ARC provides an automated approach to
+first fixing the \textit{functionality}, and then optimizing the
+\textit{non-functional} performance of programs with concurrency bugs.
+
+\section{ARC's Approach}
 
 \begin{figure}[!t]
   \centering
@@ -634,7 +742,7 @@ TODO Previous attempts of Auto. Fixing bugs
 \subsection{Mutation Operators}
 \label{sec:mutationoperators}
 
-\begin{table}
+\begin{table*}
 \begin{center}
 \begin{tabular}{|l|l|c|c|}
 \hline
@@ -684,15 +792,12 @@ Shrink synch. after & SHSA & & $\surd$
 \caption{Operators used by ARC in the functional and non-functional phases respectively.}
 \label{tbl:operators}
 \end{center}
-\end{table}
+\end{table*}
 
-\begin{table}
-\begin{center}
-\begin{tabular}{l l}
-
+\begin{figure}[h!]
 \vspace{2mm}
-
 \begin{minipage}{3.70cm}
+
 \footnotesize{\textbf{ Program $P$:}}
 \begin{lstlisting}[language=Java]
   ...
@@ -702,9 +807,6 @@ Shrink synch. after & SHSA & & $\surd$
   }
 \end{lstlisting}
 \end{minipage}\hfill
-
-&
-
 \begin{minipage}{3.70cm}
 \footnotesize{\textbf{ Program $P'$:}}
 \begin{lstlisting}[language=Java]
@@ -716,16 +818,14 @@ Shrink synch. after & SHSA & & $\surd$
 \end{lstlisting}
 \end{minipage}
 
-\end{tabular}
 \caption{Example of EXSB, the expand synchronization before operator.}
-\label{tbl:EXSBExample}
-\end{center}
-\end{table}
+\label{fig:EXSBExample}
+\end{figure}
 
 Evolutionary strategies are solely mutation driven. During the fixing phase ARC adds, expands and alters synchronization blocks in an attept to fix deadlocks and data races. During the second phase ARC attempts to shrink and remove synchronization to improve performance. Table~\ref{tbl:operators} lists the operators used in ARC by phase. 
 
 Mutation is a multi-step process. Each member of the ES population contains it's
-own copy of the Java project to be fixed.  During the mutation phase each TXL operator operates against each source code unit to create all mutants of it's type. For example, the expand synchronization before (EXSB, Table~\ref{tbl:EXSBExample}) operator is applied to every existing concurrency block in every Java file. All mutants - where each concurrency block is expanded at the front by one statement - are exaustively written to separate files. This is repeated for every Java file in the project and each elidgeable mutant in phase.
+own copy of the Java project to be fixed.  During the mutation phase each TXL operator operates against each source code unit to create all mutants of it's type. For example, the expand synchronization before (EXSB, Table~\ref{fig:EXSBExample}) operator is applied to every existing concurrency block in every Java file. All mutants - where each concurrency block is expanded at the front by one statement - are exaustively written to separate files. This is repeated for every Java file in the project and each elidgeable mutant in phase.
 
 With all mutants written to files, an operator is randomly selected to become the actual mutation operator for that member project for that generation.  One of it's mutations is randomly selected and applied to the project as the actual mutation.
 
@@ -735,7 +835,6 @@ Statistics are gathered on the performance of each operator.  After a defineable
 
 As ARC only adds, removes and changes synchronization blocks, the meaning of a program shouldn't change. 
 
-
 \subsection{Fitness Functions}
 \label{sec:funcfitnessfunctions}
 
@@ -743,13 +842,57 @@ A key problem in parallel programming is the unpredictability of thread interlea
 
 In the first phase fitness is determined by the number of successfull CONTest runs. As a data race could also be a successful execution, they also add to fitness. The weight for data races, $WDataRace$ is set lower than $WSuccess$ to reflect this. 
 
+\begin{figure}
+\begin{footnotesize}
 \begin{center}
-$Fitness = \# Successes x WSuccess + \# Data Races * WDataRace$ 
+$functional\ fitness(P) = (s \times sw) + (t \times tw)$
 \end{center}
+\end{footnotesize}
+\begin{tiny}
+\begin{center}
+$s = \#\ of\ successful\ executions$ \\
+$sw = success\ weighting$ \\
+$t = \#\ of\ timeout\ executions$ \\
+$tw = timeout\ weighting$
+\end{center}
+\end{tiny}
+\caption{Fitness Function for Functional Phase}
+\label{fig:functional_fitness}
+\end{figure}
 
 Phase one ends when a ES member is found that passes all CONTest runs. There is a possibility that the bug isn't truly fixed in the proposed solution.  By chance the proper interleavings were not explored.  ARC has an additional safeguard for this:  Every proposed fix is run a large number of times in CONTest. (The default is 10x more runs than a ES member experiences in any generation.) If any test fails the solution is rejected and the evolutionary process continues.
 
 Once a fix is found the second phase begins.  Here the fitness function is concerned with optimizing performance.  Fitness is now determined by the wall time required for an execution and the number of voluntary context switches made.  Durning the initialization of phase 2 the proposed fix is run a large number of times to determine baseline averages for these two values.
+
+\begin{figure}
+\begin{footnotesize}
+\begin{center}
+$non-functional\ fitness(P) = \frac{worst\ score}{[sig_t \times unc(t)] + [sig_c \times unc(c)]}$
+\end{center}
+\vspace{0.1cm} \textit{Where:} \vspace{0.1cm}
+\end{footnotesize}
+\begin{tiny}
+\begin{center}
+$unc(x) = \frac{(x_{max} - x_{min})}{x_{avg}}$ \\ \vspace{0.2cm}
+$
+  sig_t = \left\{
+  \begin{array}{l l}
+    t/c & \quad if\ t\ > c \\
+    c/t & \quad if\ c\ > t \\
+  \end{array} \right.
+$ \\ \vspace{0.2cm}
+$
+  sig_s = \left\{
+  \begin{array}{l l}
+    c/t & \quad if\ t\ > c \\
+    t/c & \quad if\ c\ > t \\
+  \end{array} \right.
+$ \\
+\end{center}
+\end{tiny}
+\caption{Fitness Function for Non-Functional Phase}
+\label{fig:nonfunctional_fitness}
+\end{figure}
 
 We reason these two metrics are important as excessive synchronization causes contention within a program.  Phase two attempts to reduce contention by removing and reducing synchronization.
 
@@ -787,93 +930,6 @@ As it isn't clear when a member program is as optimized as it could be - and the
 \section{Conclusion}
 
 
-
-% Samples we can reuse
-\begin{enumerate}
-	\item \textit{Synchronize an unprotected shared resource.} One cause of a data race is that a shared resource is unprotected. By synchronizing around a shared resource data races can be fixed.
-
-\vspace{2mm}
-	\begin{minipage}{3.70cm}
-	\footnotesize{\textbf{ Program $P$:}}
-\begin{lstlisting}[language=Java]
-...
-obj.write( var1 );
-...
-
-\end{lstlisting}
-\end{minipage}\hfill
-\begin{minipage}{3.70cm}
-\footnotesize{\textbf{ Program $P'$:}}
-\begin{lstlisting}[language=Java]
-synchronized ( lock ){
-	obj.write( var1 );
-}
-\end{lstlisting}
-\end{minipage}
-
-
-	\item \textit{Expand synchronization regions to include unprotected source code.} Data races can sometimes be caused if the synchronization region does not fully encapsulate access to the shared resources. Expanding the synchronization region can also fix the data race.
-
-\vspace{2mm}
-	\begin{minipage}{3.70cm}
-\footnotesize{\textbf{ Program $P$:}}
-\begin{lstlisting}[language=Java]
-synchronized ( lock ){
-	obj.write( var1 );
-}
-obj.write( var2 );
-\end{lstlisting}
-\end{minipage}\hfill
-\begin{minipage}{3.70cm}
-\footnotesize{\textbf{ Program $P'$:}}
-\begin{lstlisting}[language=Java]
-synchronized ( lock ){
-	obj.write( var1 );
-	obj.write( var2 );
-}
-\end{lstlisting}
-\end{minipage}
-
-
-	\item \textit{Interchange nested lock objects.} Common deadlocks occur due to the ordering of lock acquisition. By interchanging nested lock objects common deadlocks can be fixed.
-
-\vspace{2mm}
-	\begin{minipage}{3.70cm}
-\footnotesize{\textbf{ Program $P$:}}
-\begin{lstlisting}[language=Java]
-synchronized ( lock1 ){
-	synchronized ( lock2 ){
-		obj.write( var1 );
-	}
-}
-\end{lstlisting}
-\end{minipage}\hfill
-\begin{minipage}{3.70cm}
-\footnotesize{\textbf{ Program $P'$:}}
-\begin{lstlisting}[language=Java]
-synchronized ( lock2 ){
-	synchronized ( lock1 ){
-		obj.write( var1 );
-	}
-}
-\end{lstlisting}
-\end{minipage}
-
-\end{enumerate}
-
-
-%\notesbox{
-\begin{footnotesize}
-\begin{center}
-$fitness(P) = \displaystyle\sum\limits_{i=0}^n\frac{interleavings\ without\ a\ bug}{total\ \#\ of\ interleavings\ tested}$
-\end{center}
-\end{footnotesize}
-\begin{tiny}
-\begin{center}
-$n = \#\ of\ Test\ Cases$
-\end{center}
-\end{tiny}
-%}
 
 
 % use section* for acknowledgement
