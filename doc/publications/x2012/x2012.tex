@@ -515,7 +515,8 @@ are taken to address this issue.  First, we limit the algorithm to only fixing
 deadlocks and data races. Second, only the concurrency mechanisms are targeted.
 Specifically, \textit{synchronize} statements are added, removed, swapped,
 grown and shrunk. No other statements are affected. Third, we use a specific
-set of eleven TXL~\cite{CHP91} operators (Mention ConMan here?) operators to mutate the code.
+set of eleven TXL~\cite{CHP91} operators (Mention ConMan here?) operators to 
+mutate the code.
 
 ARC operates in two phases. In the first, synchronized blocks are added,
 expanded and swapped to attempt to fix the bugs. This may add unnecessary
@@ -588,11 +589,71 @@ bugs such as static analysis~\cite{NA07,NPSG09,HP04}, stress
 testing~\cite{HSU03}, dynamic analysis~\cite{JNPS09,EFN+02}, and model
 checking~\cite{BHPV00,RDH03,OM03,MQB07,Holz97,JM04,BHPV00,HP00}.
 
-\subsection{Evolutionary Algorithms}
+\subsection{Evolutionary Programming}
+
+Evolutionary programming (EP) is part of the family of heuristic search algorithms.
+The most commonly referenced heuristic search technique is the genetic
+algorithm~\cite{GA92}. For space reasons only the briefest outline of EP and it's
+place in the heuristic search family will be given.
+
+A standard genetic algorithm is population based, uses mutation and crossover and a
+fitness function to evolve solutions to problems. A proposed solution to the problem
+is encoded as a member of the population. Each is evaluated by a fitness function.  
+The more fit a member solution is, the greater the chance it will pass it's genetic
+material (solution) on to the next generation. \textit{Selection pressure prefentially selects better solutions.}
+Crossover mixes these solutions to produce new solutions while mutation injects fresh
+information in to the population so it doesn't become stagnant.
+
+EP is a simpler form of search than a genetic algorithm. A population of proposed
+solutions is generated and mutated each generation.  Crossover and selection aren't
+used, so the same population exists throughout the evolution. Every members fitness
+is evaluated every generation. It ends when a predetermined fitness is reached or
+after a set number of generations have passed.
+
+Why use mutation only?  Sometimes it is unclear how to use crossover.  For example,
+if the member solutions are Java programs, how does one ensure that when putting two
+halves of different programs together the resulting program is correct, makes sense
+or even compiles?
 
 \section{Related Works}
 
-TODO Previous attempts of Auto. Fixing bugs
+There are a number of approaches to automatically hide or fix bugs in programs.
+Attempts to fix single-threaded and multi-threaded software will be looked at
+in turn.
+
+Co-evolutionary competition between programs with bugs and test cases is used in
+~\cite{AY08, Arc08, WT10}. Both approaches use genetic programming to evolve
+fixes. Co-evolution is used to cause competition between the evolving fixes and
+test cases. In both cases the resulting framework is tested only againt a toy
+sorting algorithm with limited success. The untargeted nature of the fixing
+process is the largest limitation. No effort is made to constrain the large
+search space of the problem.
+
+Significant improvements on the previous approach are made in~\cite{FNWG09, WNLF09,
+WLF09, WFGN10, GNFW11}. Formal specifications are no longer required. Instead,
+test cases are used to demonstrate the bug and describe the desired functionality
+that must be preserved. To address the limitations of the previous approach they
+introduce two innovations: First, they assume the bug is written correctly in 
+another part of the program. Second, they determine the error path on which the
+bug occurs and target those statements specifically for repair.  Together these
+additions constrain the state space enough that the framework can fix real bugs in
+real programs.
+
+Similar to the work done here, ~\cite{KLT+07, LVK08} uses ConTest to heal data 
+races. From their paper, "Healing concurrency problems is about limiting or 
+changing the probability of interleaving, such that bugs will be seen less." In
+contrast, our approach uses ConTest to fix both data races and deadlocks.
+
+A framework is created in~\cite{CB05} to "repair" buffer overflow attacks.  When
+one is identified, the program state is reset to what it was before the attack.
+The attack packet is disgarded then the program continues running. As in the
+previous approach the goal is to hide the problem, not fix it.
+
+SAT solving is used in~\cite{AY07}  to repair shared memory concurrent programs
+"w.r.t. CTL specifications" where processes atomically read, write one shared
+variable at a time. All that is required is the concurrent program and a 
+specification in modal or temporal logic. It is unclear if the fix is applied to
+the program or the specification of the program.
 
 \section{Motivating Problem}
 \label{sec:motivation}
