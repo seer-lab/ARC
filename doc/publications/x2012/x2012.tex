@@ -439,7 +439,18 @@ Oshawa, Ontario, Canada\\
 
 \begin{abstract}
 
-Automatic repair of single-threaded programs is being realised in practice.  Similar progress has not been made for the automatic repair of parallel programs.  We introduce a fully automated two-phase system for repairing deadlocks and data races in parallel Java programs. The approach works on any Java source code and requires only rudimentary test cases. Annotations, formal specifications or other notations are not required. As only the concurrency mechanisms are targeted the semantic meaning of the program is not changed. In the first phase an evolutionary strategy is used to mutate the existing program until a variant is found that fixes the deadlocks and data races. As the first phase may introduce unneeded synchronization, a second phase attempts to optimize performance by removing the excess synchronization without sacraficing program correctness. We describe the approach and report on early results.  
+Automatic repair of single-threaded programs is being realised in practice.
+Similar progress has not been made for the automatic repair of parallel
+programs.  We introduce a fully automated two-phase system for repairing
+deadlocks and data races in parallel Java programs. The approach works on any
+Java source code and requires only rudimentary test cases. Annotations, formal
+specifications or other notations are not required. As only the concurrency
+mechanisms are targeted the semantic meaning of the program is not changed. In
+the first phase an evolutionary strategy is used to mutate the existing program
+until a variant is found that fixes the deadlocks and data races. As the first
+phase may introduce unneeded synchronization, a second phase attempts to
+optimize performance by removing the excess synchronization without sacraficing
+program correctness. We describe the approach and report on early results.
 
 \end{abstract}
 
@@ -489,14 +500,14 @@ approach adapts the original idea of automatically fixing sequential
 programs to specifically target concurrent software.
 
 Evolutionary strategies (ES) is part of the family of heuristic search
-algorithms. They are population-based technique driven by mutation.
-Crossover and replacement are not used.  All members of the population
-exist throughout an invocation of the search. A fitness function is used
-to evaluate each member's proposed fix. Bugs in a concurrent program are
-fixed by iteratively mutating the program and evaluating each mutation by
-executing the program many times. CONTest (cite) is used to explore different interleavings of the program under test to increase our confidence
-bugs are not slipping by.  Fitness improves with the number of correct
-executions.
+algorithms. They are population-based technique driven by mutation. Crossover
+and replacement are not used.  All members of the population exist throughout
+an invocation of the search. A fitness function is used to evaluate each
+member's proposed fix. Bugs in a concurrent program are fixed by iteratively
+mutating the program and evaluating each mutation by executing the program many
+times. IBM's ConTest~\cite{EFN+02} is used to explore different interleavings
+of the program under test to increase our confidence bugs are not slipping by.
+Fitness improves with the number of correct executions.
 
 Large search spaces are a problem faced by all bug fixing techniques.
 Parallelism introduces thread interleavings on top of this. A number of steps
@@ -584,30 +595,32 @@ checking~\cite{BHPV00,RDH03,OM03,MQB07,Holz97,JM04,BHPV00,HP00}.
 TODO Previous attempts of Auto. Fixing bugs
 
 \section{Motivating Problem}
+\label{sec:motivation}
+
 As described above, concurrency bugs are difficult to detect and fix. Many
-tools exist that do so. The identification of a problem is often not enough 
+tools exist that do so. The identification of a problem is often not enough
 as multiple code fragments are involved, possibly in different units of code
-with differently named variables. In this amiguous scenario the appropriate 
-fix is not always clear. There has been work in concurrency anti-patterns 
+with differently named variables. In this amiguous scenario the appropriate
+fix is not always clear. There has been work in concurrency anti-patterns
 that provide a definition, problem, context and solution for concurrency
 bugs~\cite{BJ09}.
 
 For example, we have a \texttt{write} and \texttt{read} method accessing a
-shared variable. A very simple data race bug exists because there
-is no atomic access to the \texttt{data} variable during the reading or
-writing. Both methods are involved in the data race bug, and it is because of
-the interactions between these methods that a data race is possible. The
-solution involves synchronizing both accesses (as shown in
-Figure~\ref{fig:fixed_sample_datarace}). Synchronizing one method does not
-fix the bug.
+shared variable. A very simple data race bug exists because thereis no atomic
+access to the \texttt{data} variable during the reading or writing. Both
+methods are involved in the data race bug, and it is because of the
+interactions between these methods that a data race is possible. The solution
+involves synchronizing both accesses (as shown in
+Figure~\ref{fig:fixed_sample_datarace}). Synchronizing one method does not fix
+the bug.
 
-This solution, ~\ref{fig:fixed_sample_datarace},  is far from ideal as it
-forces other threads to wait while the write method works on the loop and
-database sections. An optimization is to shrink the critical region (the
-synchronized statements) to only guard access to the shared variable 
-(as shown in Figure~\ref{fig:optimized_sample_datarace}).
+This solution, is far from ideal as it forces other threads to wait while the
+write method works on the loop and database sections. An optimization is to
+shrink the critical region (the synchronized statements) to only guard access
+to the shared variable (as shown in
+Figure~\ref{fig:optimized_sample_datarace}).
 
-\begin{figure}[h!]
+\begin{figure}[!h]
 \vspace{2mm}
 \begin{minipage}{3.70cm}
 \footnotesize{\textbf{Buggy Program:}}
@@ -638,11 +651,12 @@ int synchronize read(){
 \end{lstlisting}
 \end{minipage}
 \caption{A developer first synchronizes the \texttt{read} function, yet the bug
-still presents itself. Synchronizing the \texttt{write} method as well fixes the bug.}
+still presents itself. Synchronizing the \texttt{write} method as well fixes
+the bug.}
 \label{fig:fixed_sample_datarace}
 \end{figure}
 
-\begin{figure}[h!]
+\begin{figure}[!h]
 \vspace{2mm}
 \begin{minipage}{3.70cm}
 \footnotesize{\textbf{$1^{st}$ Optimization the fix:}}
@@ -683,32 +697,97 @@ further optimization.}
 \end{figure}
 
 From a developer's standpoint there is a lot of work involved in creating a fix
-for parallel bugs as multiple changes are not uncommon. As the example illustrated, two changes were required to functionally fix the program.
-Two additional changes were required to improve the non-functional
-performance. 
+for parallel bugs as multiple changes are not uncommon. As the example
+illustrated, two changes were required to functionally fix the program. Two
+additional changes were required to improve the non-functional performance.
 
-Automated tools in software testing and debugging are needed as they
-have the potential to reduce the vast amount of resources spent on software
-testing (upwards to \$59.5 billion)~\cite{RTI02}. ARC provides an automated
-approach to first fixing the \textit{functionality}, and then optimizing the
-\textit{non-functional} performance of programs with concurrency bugs.
+Automated tools in software testing and debugging are needed as they have the
+potential to reduce the vast amount of resources spent on software testing
+(upwards to \$59.5 billion)~\cite{RTI02}. ARC provides an automated approach to
+first fixing the \textit{functionality}, and then optimizing the \textit{non-
+functional} performance of programs with concurrency bugs.
 
 \section{ARC's Approach}
+\label{sec:approach}
 
-\begin{figure}[!t]
+Essentially ARC aims to solve problems like the one presented in
+Section~\ref{sec:motivation}. ARC accomplishes the task of potential multiple
+change fixes using evolution strategies, that is to evolve the buggy program
+into a fixed program. When a fix is found for the buggy program and
+optimization phase is carried out to evolve the program into a more optimized
+program. The end result is a fixed and optimized program, the entire process is
+broken into two phases as shown in Figure~\ref{fig:process}.
+
+\begin{figure}[!h]
   \centering
-  %\hrule
-  %\vspace{2mm}
-  \includegraphics[width=6.7cm]{figures/process.pdf}
-  \caption{ARC's Repair and Optimization Process}
+  \includegraphics[width=7.0cm]{figures/process.pdf}
+  \caption{High Level Overview of ARC's Repair and Optimization Process}
   \label{fig:process}
-  \vspace{1mm}
-  %\footnotesize{Using the repaired program $P'$, an optimization phase occurs to minimize unnecessary synchronizations.}
-  %\vspace{2mm}
-  %\hrule
 \end{figure}
 
 
+\begin{figure}[!h]
+  \centering
+  \includegraphics[width=4.50cm]{figures/phases.pdf}
+  \caption{Internal View of ARC's Phases}
+  \label{fig:phases_internals}
+\end{figure}
+
+The events in both phases are nearly identical, as the only thing that changes
+is the selection of mutation operators and the method of evaluation. The events
+which take place within the phases are shown in
+Figure~\ref{fig:phases_internals}, and are briefly described here:
+
+\textbf{Initialize Population}: In the functional phase the individuals begin
+as the buggy program. When the non-functional phase begins each individual now
+represents the best found individual from the functional phase.
+
+\textbf{Update Individual's Representation}: Based on the individual's current
+version of the program that is being evolved, there exists a set of possible
+mutations that can occur. Each mutation will result in new possible locations
+that can be mutated, thus we need to update the individual's representation to
+account for the changing set of mutation operators.
+
+\textbf{Mutate Individuals}: Each individual will evolve from their current
+program state to a new state. The mutations used in this step change based on
+what phase ARC is currently in, as indicated in Table~\ref{tbl:operators}.
+
+\textbf{Evaluate Individuals}: Each individual is now at a new program state,
+thus they are evaluated to determine whether they are in a better state or not.
+In the functional phase the evaluation criteria is based on the success of test
+cases. In the non-functional phase the evaluation criteria is based on the
+performance of the program, with the condition that it continues to perform the
+same according the functional phase's evaluation criteria.
+
+\textbf{Check Terminating Condition}: Each phase will continue to evolve and
+evaluate individuals until some terminating condition is met. In the functional
+phase these conditions are: a solution is found, no solution is found within
+the defined limit of generations, the population has converged (no changes
+within a defined number of generations). In the non-functional phase the
+conditions are the same as the functional phase except for the first one about
+a solution found, because there is no known solution for optimal performance.
+
+\textbf{Replace Weakest Individuals}: With any evolutionary algorithm it is
+entirely possible for an individual to stray down a path that leads to little
+or no improvement. To encourage individuals to explore more of the potential
+states we employ a replacement strategy that replaces the lower $x$ percentage
+of individuals with a random individual that resides in the upper $x$ percent.
+These replacements only occur after an individual has seen at least $y$ new
+changes. In addition, we feel that the original state of the bug is not too far
+from the solution. To prevent individuals from straying to far from the
+original state an individual is reseted to the original state if the individual
+has not seen any improvement in $z$ generations.
+% TODO Double check that ARC actually does it like this
+
+\textbf{Recalculate All Operator's Weighting}: ARC utilizes a heuristic
+approach for selecting the mutation operator in the mutation step. A sliding
+window of $n$ generations is used while figuring out the success of previously
+used mutation operators. If certain mutation operators tend to improve
+individuals fitness score, then we want to utilize these mutation operators
+more then ones that have not seen such success. The sliding window is used to
+prevent domination of the weighting. To ensure that this approach is up to date
+the current weighting for each operator is recalculated based on the new
+feedback received from the population.
 
 \subsection{Program Representation}
 \label{sec:programrepresentation}
@@ -737,45 +816,33 @@ approach to first fixing the \textit{functionality}, and then optimizing the
 \textbf{Functional} &
 \textbf{Non-Functional}
 \\\hline
-
 Add synch. around synch. & ASAS & $\surd$ &
 \\\hline
-
 Add synch. around variable & ASAV & $\surd$ &
 \\\hline
-
 Add synch. around method & ASM & $\surd$ &
 \\\hline
-
 Change synch. order & CSO & $\surd$ &
 \\\hline
-
 Expand synch. before & EXSB & $\surd$ &
 \\\hline
-
 Expand synch. after & EXSA & $\surd$ &
 \\\hline
-
 Remove synch. around synch. & RSAS & $\surd$ & $\surd$
 \\\hline
-
 Remove synch. around variable & RSAV & $\surd$ & $\surd$
 \\\hline
-
 Remove synch. around method & RSM & $\surd$ & $\surd$
 \\\hline
-
 Remove synch. around block & RSB & $\surd$ & $\surd$
 \\\hline
-
 Shrink synch. before & SHSB & & $\surd$
 \\\hline
-
 Shrink synch. after & SHSA & & $\surd$
 \\\hline
-
 \end{tabular}
-\caption{Operators used by ARC in the functional and non-functional phases respectively.}
+\caption{Operators used by ARC in the functional and non-functional phases
+respectively.}
 \label{tbl:operators}
 \end{center}
 \end{table*}
@@ -844,14 +911,24 @@ regardless of performance.  A sliding window is used to dynamically update the
 weights as the evolution progresses.
 
 (This goes somewhere else?) As ARC only adds, removes and changes
-synchronization blocks, the meaning of a program shouldn't change. 
+synchronization blocks, the meaning of a program shouldn't change.
 
 \subsection{Fitness Functions}
 \label{sec:funcfitnessfunctions}
 
-A key problem in parallel programming is the unpredictability of thread interleavings.  If a parallel bug appears only rarely, how can we gain confidence that a proposed fix actually works?  IBM's CONTest Tool (cite) is used to instrument the project and inject noise into it's scheduled interleavings. CONTest is then invoked by ARC many times to test each member program in turn. By running CONTest multiple times we gain confidence enough interleavings are explored to find bugs. Note that running CONTest many times for each member of the population at each generation is time intensive.
+A key problem in parallel programming is the unpredictability of thread
+interleavings.  If a parallel bug appears only rarely, how can we gain
+confidence that a proposed fix actually works?  IBM's ConTest
+Tool~\cite{EFN+02} is used to instrument the project and inject noise into it's
+scheduled interleavings. ConTest is then invoked by ARC many times to test each
+member program in turn. By running ConTest multiple times we gain confidence
+enough interleavings are explored to find bugs. Note that running ConTest many
+times for each member of the population at each generation is time intensive.
 
-In the first phase fitness is determined by the number of successfull CONTest runs. As a data race could also be a successful execution, they also add to fitness. The weight for data races, $WDataRace$ is set lower than $WSuccess$ to reflect this. 
+In the first phase fitness is determined by the number of successfull ConTest
+runs. In the first phase fitness is determined by the number of successful
+ConTest runs. We consider timeouts as they could either result in a deadlock or
+a successful execution given more time.
 
 \begin{figure}
 \begin{footnotesize}
@@ -871,9 +948,19 @@ $tw = timeout\ weighting$
 \label{fig:functional_fitness}
 \end{figure}
 
-Phase one ends when a ES member is found that passes all CONTest runs. There is a possibility that the bug isn't truly fixed in the proposed solution.  (By chance the proper interleavings were not explored.)  ARC has an additional safeguard for this:  Every proposed fix is run a large number of times in CONTest. (The default is 10x more runs than a ES member experiences in any generation.) If any test fails the solution is rejected and the evolutionary process continues.
+Phase one ends when a ES member is found that passes all ConTest runs. There is
+a possibility that the bug isn't truly fixed in the proposed solution.  (By
+chance the proper interleavings were not explored.)  ARC has an additional
+safeguard for this:  Every proposed fix is run a large number of times in
+ConTest. (The default is 10x more runs than a ES member experiences in any
+generation.) If any test fails the solution is rejected and the evolutionary
+process continues.
 
-Once a fix is found the second phase begins.  Here the fitness function is concerned with optimizing performance.  Fitness is now determined by the wall time required for an execution and the number of voluntary context switches made.  Durning the initialization of phase 2 the proposed fix is run a large number of times to determine baseline averages for these two values.
+Once a fix is found the second phase begins.  Here the fitness function is
+concerned with optimizing performance.  Fitness is now determined by the wall
+time required for an execution and the number of voluntary context switches
+made.  Durning the initialization of phase 2 the proposed fix is run a large
+number of times to determine baseline averages for these two values.
 
 \begin{figure}
 \begin{footnotesize}
@@ -914,12 +1001,12 @@ Removing and reducing synchronization runs the risk of introducing new bugs in
 to the program. Before every phase 2 fitness evaluation is performed, a phase 1
 fitness evaluation is performed again.  If any deadlock or data race is
 encountered the proposed fix is rejected.  That member has it's project reset
-to it's state in the previous generation. 
+to it's state in the previous generation.
 
 Assuming correctness hasn't suffered the member program is run again a number
-of times in CONTest.  Average wall time and voluntary context switches are
+of times in ConTest.  Average wall time and voluntary context switches are
 computed and compared to the baseline values.  Improvements are rewarded with
-higher fitness.  
+higher fitness.
 
 As it isn't clear when a member program is as optimized as it could be - and
 there is no a-priori way to know this, the second phase runs for it's full
@@ -950,7 +1037,9 @@ fix.
 \section{Future Work}
 
 Currently ARC mutates all variables of the program under test. Ideally it
-should target only those involved in concurrency. We believe there are off-the-shelf solutions we can integrate into ARC to give it this capability, similar to~\cite{CM08, HP00}.  
+should target only those involved in concurrency. We believe there are off-the-
+shelf solutions we can integrate into ARC to give it this capability, similar
+to~\cite{CM08, HP00}.
 
 Targeting the variables, functions and classes on the error path is another
 feature we would like to add.  It has shown great success in helping to isolate
@@ -959,8 +1048,8 @@ WFGN10, GNFW11}. We believe it will do the same for multithreaded programs.
 
 Generalizing the TXL operators is also important. Currently the add
 synchronization around synchronization operator (ASAS) for example, only adds
-!synchronize(this) {...}! to the Java source.  When the analysis of the
-previous two paragraphs are implemented the operators need to be updated to
+\texttt{synchronize(this) \{...\}} to the Java source.  When the analysis of
+the previous two paragraphs are implemented the operators need to be updated to
 work with them.
 
 We also plan to experiment with new operators.  Potential additions include
