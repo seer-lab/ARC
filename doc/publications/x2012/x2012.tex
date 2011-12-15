@@ -1269,7 +1269,15 @@ the ability to fix additional types of bugs.
 \section{Conclusion}
 \label{sec:conclusion}
 
+We identified a lack of automated repair techniques in the literature.
+Concurrency bugs were identified as a difficult bug to automatically repair
+using exists techniques. We developed an approach that uses an evolutionary
+algorithm to evolve a buggy program into one that fixes the bug identified
+through a testsuite. Our technique operators in two phases, the first being to
+fix the program while the second is to optimize the performance.
 
+An experiment was conducted to evaluate ARC using a set of 10 programs found in
+a concurrency benchmark. The results indicate that ARC is \ldots % TODO
 
 % use section* for acknowledgement
 %\section*{Acknowledgment}
