@@ -774,13 +774,14 @@ functional} performance of programs with concurrency bugs.
 \section{ARC's Approach}
 \label{sec:approach}
 
-Essentially ARC aims to solve problems like the one presented in
-Section~\ref{sec:motivation}. ARC accomplishes the task of potential multiple
-change fixes using evolution strategies, that is to evolve the buggy program
-into a fixed program. When a fix is found for the buggy program and
-optimization phase is carried out to evolve the program into a more optimized
-program. The end result is a fixed and optimized program, the entire process is
-broken into two phases as shown in Figure~\ref{fig:process}.
+Essentially ARC aims to automatically repair concurrency bugs like the one
+presented in Section~\ref{sec:motivation}. A high-level overview of ARC's
+approach is presented in Figure~\ref{fig:process}. There are two inputs to ARC,
+firstly the buggy program and secondly a comprehensive JUnit testsuite. This
+testsuite is necessary as it acts like an oracle in determining if the bug
+still exists in the program. One limitation of ARC is that it can only fix bugs
+that can be detected by the testsuite, thus a comprehensive testsuite is
+required.
 
 \begin{figure}[!h]
   \centering
@@ -789,6 +790,19 @@ broken into two phases as shown in Figure~\ref{fig:process}.
   \label{fig:process}
 \end{figure}
 
+ARC is composed of two major phases, the \textit{Functional Phase} and the
+\textit{Non-Functional Phase}. Both phases are similar in terms of the steps
+they follow, though there are slight variations to accomplish different goals.
+As ARC is using an evolutionary algorithm, the first phase attempts to fix the
+buggy program while the second phase attempts to optimize the fixed program
+produced from the previous phase. The result of the last phase is a fixed
+program that is functionally fixed and that the non-functional performance is
+optimized. The next set of sections will detail each step of the phases (as
+shown in Figure~\ref{fig:phases_internals}) all while indicating the
+differences in each phase.
+
+As ARC uses an evolutionary algorithm to evolve solutions from the buggy
+program, the key aspects of the approach is the mutation and evaluation steps.
 
 \begin{figure}[!h]
   \centering
@@ -797,76 +811,114 @@ broken into two phases as shown in Figure~\ref{fig:process}.
   \label{fig:phases_internals}
 \end{figure}
 
-The events in both phases are nearly identical, as the only thing that changes
-is the selection of mutation operators and the method of evaluation. The events
-which take place within the phases are shown in
-Figure~\ref{fig:phases_internals}, and are briefly described here:
+\subsection{Initialize Population}
+\label{sec:initialize_population}
 
-\textbf{Initialize Population}: In the functional phase the individuals begin
-as the buggy program. When the non-functional phase begins each individual now
-represents the best found individual from the functional phase.
+Before ARC can start with either phase it must initialize the population of
+individuals. The initialization of individuals involves creating a copy of the
+program so that the rest of the phase can mutate these copies. In the
+functional phase the original buggy program is copied into each individual. For
+the non-functional phase ARC would have already produced the fixed program as a
+result of the functional phase, thus each individual receives a copy of the
+fixed program.
 
-\textbf{Update Individual's Representation}: Based on the individual's current
-version of the program that is being evolved, there exists a set of possible
-mutations that can occur. Each mutation will result in new possible locations
-that can be mutated, thus we need to update the individual's representation to
-account for the changing set of mutation operators.
+\subsection{Update Individual's Representation}
+\label{sec:update_individual_representation}
 
-\textbf{Mutate Individuals}: Each individual will evolve from their current
-program state to a new state. The mutations used in this step change based on
-what phase ARC is currently in, as indicated in Table~\ref{tbl:operators}.
+An individual will be mutated from generation-to-generation based off of its
+current representation. Therefore this step will update the represent based on
+the individual's state of the program. The individual's representation consists
+of an array each with a set of variable elements, with each array representing
+a particular mutation operator and each element representing an instance found
+in the program. Table~\ref{tbl:individual_representation} illustrates the
+program representation. Further details of selecting and applying mutation are
+covered in the next section.
 
-\textbf{Evaluate Individuals}: Each individual is now at a new program state,
-thus they are evaluated to determine whether they are in a better state or not.
-In the functional phase the evaluation criteria is based on the success of test
-cases. In the non-functional phase the evaluation criteria is based on the
-performance of the program, with the condition that it continues to perform the
-same according the functional phase's evaluation criteria.
+As ARC is mutating the concurrency aspects of this program the program changes
+in concurrency structure through mutation. Essentially the search space of
+possible mutations is changing every generation. This is why the representation
+must be updated to account for this.
 
-\textbf{Check Terminating Condition}: Each phase will continue to evolve and
-evaluate individuals until some terminating condition is met. In the functional
-phase these conditions are: a solution is found, no solution is found within
-the defined limit of generations, the population has converged (no changes
-within a defined number of generations). In the non-functional phase the
-conditions are the same as the functional phase except for the first one about
-a solution found, because there is no known solution for optimal performance.
+Based on the individual's current version of the program that is being evolved,
+there exists a set of possible mutations that can occur. Each mutation will
+result in new possible locations that can be mutated, thus we need to update
+the individual's representation to account for the changing set of mutation
+operators.
 
-\textbf{Replace Weakest Individuals}: With any evolutionary algorithm it is
-entirely possible for an individual to stray down a path that leads to little
-or no improvement. To encourage individuals to explore more of the potential
-states we employ a replacement strategy that replaces the lower $x$ percentage
-of individuals with a random individual that resides in the upper $x$ percent.
-These replacements only occur after an individual has seen at least $y$ new
-changes. In addition, we feel that the original state of the bug is not too far
-from the solution. To prevent individuals from straying to far from the
-original state an individual is reseted to the original state if the individual
-has not seen any improvement in $z$ generations.
+\begin{table}[!h]
+\begin{center}
+\begin{tabular}{|l|l|}
+\hline
+\textbf{Operator} &
+\textbf{Instances}
+\\\hline
+Mutation 1 & 0
+\\\hline
+Mutation 2 & 0 0 0
+\\\hline
+Mutation 3 & --
+\\\hline
+\ldots & \ldots
+\\\hline
+Mutation $n$ & 0 0
+\\\hline
+\end{tabular}
+\caption{Example representation of an individual, each 0 represents an instance
+of where the operator can be applied. There can be up to $n$ mutation operators
+with no-limit to the number of instances per operator.}
+\label{tbl:individual_representation}
+\end{center}
+\end{table}
+
+\subsection{Mutate Individuals}
+\label{sec:mutate_individuals}
+Each individual will evolve from their current program state to a new state.
+The mutations used in this step change based on what phase ARC is currently in,
+as indicated in Table~\ref{tbl:operators}.
+
+\subsection{Evaluate Individuals}
+\label{sec:evalute_individuals}
+Each individual is now at a new program state, thus they are evaluated to
+determine whether they are in a better state or not.  In the functional phase
+the evaluation criteria is based on the success of test cases. In the
+non-functional phase the evaluation criteria is based on the performance of the
+program, with the condition that it continues to perform the same according the
+functional phase's evaluation criteria.
+
+\subsection{Check Terminating Condition}
+\label{sec:check_terminating_condition}
+Each phase will continue to evolve and evaluate individuals until some
+terminating condition is met. In the functional phase these conditions are: a
+solution is found, no solution is found within the defined limit of
+generations, the population has converged (no changes within a defined number
+of generations). In the non-functional phase the conditions are the same as the
+functional phase except for the first one about a solution found, because there
+is no known solution for optimal performance.
+
+\subsection{Replace Weakest Individuals}
+\label{sec:replace_weakest_individuals}
+With any evolutionary algorithm it is entirely possible for an individual to
+stray down a path that leads to little or no improvement. To encourage
+individuals to explore more of the potential states we employ a replacement
+strategy that replaces the lower $x$ percentage of individuals with a random
+individual that resides in the upper $x$ percent.  These replacements only
+occur after an individual has seen at least $y$ new changes. In addition, we
+feel that the original state of the bug is not too far from the solution. To
+prevent individuals from straying to far from the original state an individual
+is reseted to the original state if the individual has not seen any improvement
+in $z$ generations.
 % TODO Double check that ARC actually does it like this
 
-\textbf{Recalculate All Operator's Weighting}: ARC utilizes a heuristic
-approach for selecting the mutation operator in the mutation step. A sliding
-window of $n$ generations is used while figuring out the success of previously
-used mutation operators. If certain mutation operators tend to improve
-individuals fitness score, then we want to utilize these mutation operators
-more then ones that have not seen such success. The sliding window is used to
-prevent domination of the weighting. To ensure that this approach is up to date
-the current weighting for each operator is recalculated based on the new
-feedback received from the population.
-
-\subsection{Program Representation}
-\label{sec:programrepresentation}
-
-
-
-\subsection{Evolutionary Strategy}
-\label{sec:evolutionarystrategy}
-
-
-
-\subsubsection{Heuristic Aspects}
-\label{sec:heuristicaspects}
-
-
+\subsection{Recalculate All Operator's Weighting}
+\label{sec:recalculate_operator_weighting}
+ARC utilizes a heuristic approach for selecting the mutation operator in the
+mutation step. A sliding window of $n$ generations is used while figuring out
+the success of previously used mutation operators. If certain mutation
+operators tend to improve individuals fitness score, then we want to utilize
+these mutation operators more then ones that have not seen such success. The
+sliding window is used to prevent domination of the weighting. To ensure that
+this approach is up to date the current weighting for each operator is
+recalculated based on the new feedback received from the population.
 
 \subsection{Mutation Operators}
 \label{sec:mutationoperators}
