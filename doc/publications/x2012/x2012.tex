@@ -407,7 +407,7 @@ Oshawa, Ontario, Canada\\
 % the acknowledgment of grants, issue a \IEEEoverridecommandlockouts
 % after \documentclass
 
-% for over three affiliations, or if they all won't fit within the width
+% for over three affiliations, o nexusr if they all won't fit within the width
 % of the page, use this alternative format:
 %
 %\author{\IEEEauthorblockN{Michael Shell\IEEEauthorrefmark{1},
@@ -440,7 +440,7 @@ Oshawa, Ontario, Canada\\
 \begin{abstract}
 
 Automatic repair of single-threaded programs is being realised in practice.
-Similar progress has not been made for the automatic repair of parallel
+Similar progress has not been made on the automatic repair of parallel
 programs.  We introduce a fully automated two-phase system for repairing
 deadlocks and data races in parallel Java programs. The approach works on any
 Java source code and requires only rudimentary test cases. Annotations, formal
@@ -475,9 +475,12 @@ concurrency; genetic programming; mutation.
 \section{Introduction}
 \label{sec:introduction}
 
+\begin{quote}\textit{Some properties are difficult or impossible to encode using test cases, such as nondeterministic properties; GenProg cannot currently repair race conditions, for example.}
+~\cite{GNFW11}\end{quote}
+
 As desktop computers now ship with more than one processor, programs must
 parallelize to continue to benefit from Moore's Law. Inevitibly these programs
-will contain bugs. If fixing bugs in single-threaded programs is a difficult
+contain bugs. If fixing bugs in single-threaded programs is a difficult
 and resource intensive task,  it is doubly so in multi-threaded programs.
 Parallelism~\cite{SL05} introduces new classes of bugs and makes them harder to
 find by having them only occur in rare execution interleavings~\cite{MQB07}.
@@ -515,8 +518,8 @@ are taken to address this issue.  First, we limit the algorithm to only fixing
 deadlocks and data races. Second, only the concurrency mechanisms are targeted.
 Specifically, \textit{synchronize} statements are added, removed, swapped,
 grown and shrunk. No other statements are affected. Third, we use a specific
-set of eleven TXL~\cite{CHP91} operators (Mention ConMan here?) operators to
-mutate the code.
+set of eleven TXL~\cite{CHP91} operators based on the ConMan operators~\cite{BCD06} 
+to mutate the code.
 
 ARC operates in two phases. In the first, synchronized blocks are added,
 expanded and swapped to attempt to fix the bugs. This may add unnecessary
@@ -556,21 +559,17 @@ synchronization mechanisms and the TXL operators implementing this.
 
 All of the material discussed here revolves around the topics of concurrency,
 model checking, heuristic search and state-space exploration. A firm
-understanding of these topics is required for various parts of the paper so
-some background information is provided.
+understanding of these topics is required for various parts of the paper.
 
 \subsection{Concurrency}
 \label{sec:concurrency}
 
 Concurrency is the act of having multiple threads executing in parallel.
-Threads in programs are objects which execute statements, thus by having
-multiple threads in a program it is possible to executing statements in
-parallel. Concurrent programs are able to exploit multi-core systems since
-threads can be distributed across each of the CPUs to increase performance. The
-inherit problem with concurrency is that a new class of bugs have emerged, the
-\textit{heisenbugs}, which are tied to the concurrent nature of multi-threads.
-Due to concurrent access to shared memory, threads are able to cause
-\textit{dataraces} and \textit{deadlocks}.
+Threads in programs are objects which execute statements. Concurrent programs 
+are able to exploit multi-core systems as threads can be distributed across
+each of the CPUs to increase performance. Concurrency introduces a new class
+class of bugs, the \textit{heisenbugs}.  Due to concurrent access to shared 
+memory, threads are able to cause \textit{dataraces} and \textit{deadlocks}.
 
 A \textbf{data race} has been defined as: \textit{``\ldots two or more
 concurrent threads access a shared variable and when at least one access is a
@@ -588,7 +587,7 @@ one execution a concurrency bug might occur, then a second, third and forth it
 does not. Various techniques are available to try and detect concurrency bugs
 such as static analysis~\cite{NA07,NPSG09,HP04}, stress testing~\cite{HSU03},
 dynamic analysis~\cite{JNPS09,EFN+02}, and model
-checking~\cite{BHPV00,RDH03,OM03,MQB07,Holz97,JM04,BHPV00,HP00}.
+checking~\cite{BHPV00,RDH03,OM03,MQB07,Holz97,JM04,HP00}.
 
 \subsection{Evolutionary Programming}
 \label{sec:evolutionary_programming}
@@ -596,9 +595,9 @@ checking~\cite{BHPV00,RDH03,OM03,MQB07,Holz97,JM04,BHPV00,HP00}.
 Evolutionary programming (EP) is part of the family of heuristic search
 algorithms. The most commonly referenced heuristic search technique is the
 genetic algorithm~\cite{GA92}. For space reasons only the briefest outline of
-EP and it's place in the heuristic search family will be given.
+EP and it's place in the heuristic search family is given.
 
-A standard genetic algorithm is population based, uses mutation and crossover
+A standard genetic algorithm is population based, uses mutation, crossover
 and a fitness function to evolve solutions to problems. A proposed solution to
 the problem is encoded as a member of the population. Each is evaluated by a
 fitness function.   The more fit a member solution is, the greater the chance
@@ -623,19 +622,19 @@ correct, makes sense or even compiles?
 \label{sec:related_works}
 
 There are a number of approaches to automatically hide or fix bugs in programs.
-Attempts to fix single-threaded and multi-threaded software will be looked at
+Attempts to fix single-threaded and multi-threaded software are looked at
 in turn.
 
 Co-evolutionary competition between programs with bugs and test cases is used
 in~\cite{AY08, Arc08, WT10}. Both approaches use genetic programming to evolve
 fixes. Co-evolution is used to cause competition between the evolving fixes and
 test cases. In both cases the resulting framework is tested only againt a toy
-sorting algorithm with limited success. The untargeted nature of the fixing
+sorting algorithm with mixed success. The untargeted nature of the fixing
 process is the largest limitation. No effort is made to constrain the large
 search space of the problem.
 
 Significant improvements on the previous approach are made in~\cite{FNWG09,
-WNLF09, WLF09, WFGN10, GNFW11}. Formal specifications are no longer required.
+WNLF09, NWLF09, WFGN10, GNFW11}. Formal specifications are no longer required.
 Instead, test cases are used to demonstrate the bug and describe the desired
 functionality that must be preserved. To address the limitations of the
 previous approach they introduce two innovations: First, they assume the bug is
@@ -645,8 +644,8 @@ repair.  Together these additions constrain the state space enough that the
 framework can fix real bugs in real programs.
 
 Similar to the work done here,~\cite{KLT+07, LVK08} uses ConTest to heal data
-races. From their paper, "Healing concurrency problems is about limiting or
-changing the probability of interleaving, such that bugs will be seen less." In
+races. From their paper, \textit{"Healing concurrency problems is about limiting or
+changing the probability of interleaving, such that bugs will be seen less."} In
 contrast, our approach uses ConTest to fix both data races and deadlocks.
 
 A framework is created in~\cite{CB05} to ``repair'' buffer overflow attacks.
@@ -664,20 +663,20 @@ to the program or the specification of the program.
 \label{sec:motivation}
 
 As described above, concurrency bugs are difficult to detect and fix. Many
-tools exist that do so. The identification of a problem is often not enough as
-multiple code fragments are involved, possibly in different units of code with
-differently named variables. In this amiguous scenario the appropriate fix is
-not always clear. There has been work in concurrency anti-patterns that provide
-a definition, problem, context and solution for concurrency bugs~\cite{BJ09}.
+tools exist that identify concurrent bugs. The identification of a problem is
+often not enough as multiple code fragments are involved, possibly in different
+units with differently named variables. In this ambiguous scenario the 
+appropriate fix is not always clear. There has been work in concurrency 
+anti-patterns that provide a definition, problem, context and solution for 
+concurrency bugs~\cite{BJ09}.
 
 For example, we have a \texttt{write} and \texttt{read} method accessing a
-shared variable. A very simple data race bug exists because thereis no atomic
+shared variable. A very simple data race bug exists because there is no atomic
 access to the \texttt{data} variable during the reading or writing. Both
-methods are involved in the data race bug, and it is because of the
-interactions between these methods that a data race is possible. The solution
-involves synchronizing both accesses (as shown in
-Figure~\ref{fig:fixed_sample_datarace}). Synchronizing one method does not fix
-the bug.
+methods are involved in the data race, and it is because of the interactions 
+between these methods that a data race is possible. The solution involves 
+synchronizing both accesses (as shown in Figure~\ref{fig:fixed_sample_datarace}). 
+Synchronizing one method does not fix the bug.
 
 This solution, is far from ideal as it forces other threads to wait while the
 write method works on the loop and database sections. An optimization is to
@@ -1082,25 +1081,22 @@ fix.
 \section{Experiments}
 \label{sec:experiments}
 
-ARC is designed to automatically repair concurrency bug, thus a proper
-evaluation will measure ARC's ability to repair known concurrency bugs. In
-addition to this measurement we are also interesting in how efficient ARC is at
-finding solutions to these known concurrency bugs.
+ARC is designed to automatically repair concurrency bugs. A proper
+evaluation must measure ARC's ability to do so. We are also interesting in how
+efficient ARC is at finding these solutions.
 
 Due to the repairing and optimization nature of ARC it is entirely possible for
-a program to perform better or worst then it original performed. Thus we are
-also interested in the effect of performance of the found solution that ARC
-produces.
+a program to perform better or worst then it originally performed. We are
+also interested in the effect of performance of the solution produced by ARC.
 
 \subsection{Experimental Setup}
 \label{sec:experimental_setup}
 
-The programs that were are going to evaluate ARC on come from the IBM
-Concurrency Benchmark~\cite{EHSU06}. These set of programs are rather small yet
-demonstrate some variety of concurrency bug types. These programs from the
-benchmark do not contain a testsuite, thus they were all modified to include
-the required testsuite component without any modifications to the bug. Details
-on the used programs are presented in Table~\ref{tbl:used_programs}.
+Programs were are going to evaluate ARC on come from the IBM
+Concurrency Benchmark~\cite{EHSU06}. This set of programs are rather small yet
+demonstrate a variety of concurrency bug types. None of them contain the required
+test suite.  They were manually created without altering the programs and their
+bugs. Details on the programs are presented in Table~\ref{tbl:used_programs}.
 
 \begin{table}[!h]
 \begin{center}
@@ -1140,8 +1136,8 @@ program is excluded from these values.}
 
 ARC was designed to be flexible in terms of the parameters that can be
 configured. Table~\ref{tbl:used_parameters} lists and describes each parameter,
-including the values we've selected for the experimentation. The values were
-mostly picked arbitrarily.
+including the values selected for evaluation. Values were selected based on
+our experience with ARC.
 
 \begin{table*}[!t]
 \begin{center}
@@ -1189,8 +1185,8 @@ used values for the experimentations.}
 \subsection{Experimental Results}
 \label{sec:experimental_results}
 
-Each program was ran through ARC for a total of 10 times using the following
-parameters described in Table~\ref{tbl:used_parameters}. The results of each
+Each program was run through ARC a total of 10 times using the parameters 
+described in Table~\ref{tbl:used_parameters}. The results of each
 program is summarized in Table~\ref{tbl:summary_results}.
 
 \begin{table*}[!t]
@@ -1244,7 +1240,7 @@ Pingpong & 0.6 & [3--17] & [0.10--0.14] & [0.9--0.12] & [73--97] & [60--81]
 
 Currently ARC mutates all variables of the program under test. Ideally it
 should target only those involved in concurrency. We believe there are off-the-
-shelf solutions we can integrate into ARC to give it this capability, similar
+shelf solutions integrateable into ARC to give it this capability, similar
 to~\cite{CM08, HP00}.
 
 Targeting the variables, functions and classes on the error path is another
@@ -1263,8 +1259,8 @@ splitting or merging synchronization blocks and changing the argument in the
 synchronize call.
 
 Many new concurrency structures were introduced in Java 5. Expanding ARC's
-operators to deal with new anti-patterns~\cite{BJ09} (cite ConMAn) gives ARC
-the ability to fix additional types of bugs.
+operators to deal with new anti-patterns~\cite{BJ09, BCD06} gives ARC the 
+ability to fix additional types of bugs.
 
 \section{Conclusion}
 \label{sec:conclusion}
@@ -1299,7 +1295,7 @@ a concurrency benchmark. The results indicate that ARC is \ldots % TODO
 % http://www.ctan.org/tex-archive/biblio/bibtex/contrib/doc/
 % The IEEEtran BibTeX style support page is at:
 % http://www.michaelshell.org/tex/ieeetran/bibtex/
-\bibliographystyle{IEEEtran}
+\bibliographystyle{alpha} %IEEEtran}
 % argument is your BibTeX string definitions and bibliography database(s)
 \bibliography{x2012}
 %
