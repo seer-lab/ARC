@@ -407,7 +407,7 @@ Oshawa, Ontario, Canada\\
 % the acknowledgment of grants, issue a \IEEEoverridecommandlockouts
 % after \documentclass
 
-% for over three affiliations, o nexusr if they all won't fit within the width
+% for over three affiliations, or if they all won't fit within the width
 % of the page, use this alternative format:
 %
 %\author{\IEEEauthorblockN{Michael Shell\IEEEauthorrefmark{1},
@@ -475,9 +475,6 @@ concurrency; genetic programming; mutation.
 \section{Introduction}
 \label{sec:introduction}
 
-\begin{quote}\textit{Some properties are difficult or impossible to encode using test cases, such as nondeterministic properties; GenProg cannot currently repair race conditions, for example.}
-~\cite{GNFW11}\end{quote}
-
 As desktop computers now ship with more than one processor, programs must
 parallelize to continue to benefit from Moore's Law. Inevitibly these programs
 contain bugs. If fixing bugs in single-threaded programs is a difficult
@@ -518,8 +515,8 @@ are taken to address this issue.  First, we limit the algorithm to only fixing
 deadlocks and data races. Second, only the concurrency mechanisms are targeted.
 Specifically, \textit{synchronize} statements are added, removed, swapped,
 grown and shrunk. No other statements are affected. Third, we use a specific
-set of eleven TXL~\cite{CHP91} operators based on the ConMan operators~\cite{BCD06} 
-to mutate the code.
+set of eleven TXL~\cite{CHP91} operators based on the ConMan
+operators~\cite{BCD06} to mutate the code.
 
 ARC operates in two phases. In the first, synchronized blocks are added,
 expanded and swapped to attempt to fix the bugs. This may add unnecessary
@@ -552,7 +549,10 @@ synchronization mechanisms and the TXL operators implementing this.
 
 
 \subsection{Motivation using quote from GenProg paper}
-
+\begin{quote}\textit{Some properties are difficult or impossible to encode
+using test cases, such as nondeterministic properties; GenProg cannot
+currently repair race conditions, for example.}~\cite{GNFW11}
+\end{quote}
 
 \section{Background}
 \label{sec:background}
@@ -644,9 +644,10 @@ repair.  Together these additions constrain the state space enough that the
 framework can fix real bugs in real programs.
 
 Similar to the work done here,~\cite{KLT+07, LVK08} uses ConTest to heal data
-races. From their paper, \textit{"Healing concurrency problems is about limiting or
-changing the probability of interleaving, such that bugs will be seen less."} In
-contrast, our approach uses ConTest to fix both data races and deadlocks.
+races. From their paper, \textit{``Healing concurrency problems is about
+limiting or changing the probability of interleaving, such that bugs will be
+seen less.''} In contrast, our approach uses ConTest to fix both data races and
+deadlocks.
 
 A framework is created in~\cite{CB05} to ``repair'' buffer overflow attacks.
 When one is identified, the program state is reset to what it was before the
@@ -723,7 +724,7 @@ the bug.}
 \begin{figure}[!h]
 \vspace{2mm}
 \begin{minipage}{3.70cm}
-\footnotesize{\textbf{$1^{st}$ Optimization the fix:}}
+\footnotesize{\textbf{$1^{st}$ Optimization on Fix:}}
 \begin{lstlisting}[language=Java]
 public write(int var1){
   ... // Expensive loop
@@ -872,56 +873,18 @@ with no-limit to the number of instances per operator.}
 
 \subsection{Mutate Individuals}
 \label{sec:mutate_individuals}
-Each individual will evolve from their current program state to a new state.
-The mutations used in this step change based on what phase ARC is currently in,
-as indicated in Table~\ref{tbl:operators}.
 
-\subsection{Evaluate Individuals}
-\label{sec:evalute_individuals}
-Each individual is now at a new program state, thus they are evaluated to
-determine whether they are in a better state or not.  In the functional phase
-the evaluation criteria is based on the success of test cases. In the
-non-functional phase the evaluation criteria is based on the performance of the
-program, with the condition that it continues to perform the same according the
-functional phase's evaluation criteria.
+As suggested at in the previous section, the mutation step will attempt to
+mutate each individual's current program state. The mutation step begins with
+selecting a mutation operator, then by selecting an instance using the
+individual's representation. When these two options are selected then the
+mutation is applied and the program's state has changed.
 
-\subsection{Check Terminating Condition}
-\label{sec:check_terminating_condition}
-Each phase will continue to evolve and evaluate individuals until some
-terminating condition is met. In the functional phase these conditions are: a
-solution is found, no solution is found within the defined limit of
-generations, the population has converged (no changes within a defined number
-of generations). In the non-functional phase the conditions are the same as the
-functional phase except for the first one about a solution found, because there
-is no known solution for optimal performance.
-
-\subsection{Replace Weakest Individuals}
-\label{sec:replace_weakest_individuals}
-With any evolutionary algorithm it is entirely possible for an individual to
-stray down a path that leads to little or no improvement. To encourage
-individuals to explore more of the potential states we employ a replacement
-strategy that replaces the lower $x$ percentage of individuals with a random
-individual that resides in the upper $x$ percent.  These replacements only
-occur after an individual has seen at least $y$ new changes. In addition, we
-feel that the original state of the bug is not too far from the solution. To
-prevent individuals from straying to far from the original state an individual
-is reseted to the original state if the individual has not seen any improvement
-in $z$ generations.
-% TODO Double check that ARC actually does it like this
-
-\subsection{Recalculate All Operator's Weighting}
-\label{sec:recalculate_operator_weighting}
-ARC utilizes a heuristic approach for selecting the mutation operator in the
-mutation step. A sliding window of $n$ generations is used while figuring out
-the success of previously used mutation operators. If certain mutation
-operators tend to improve individuals fitness score, then we want to utilize
-these mutation operators more then ones that have not seen such success. The
-sliding window is used to prevent domination of the weighting. To ensure that
-this approach is up to date the current weighting for each operator is
-recalculated based on the new feedback received from the population.
-
-\subsection{Mutation Operators}
-\label{sec:mutationoperators}
+The set of mutation operators are listed in Table~\ref{tbl:operators}. These
+mutation operators are TXL operators, specifically they are derived from the
+ConMAn operators~\cite{BCD06}. TXL operators work by looking for a pattern and then
+transforming it according to a set of rules, and example of one of our
+operators is shown in Figure~\ref{fig:EXSB_example}.
 
 \begin{table*}
 \begin{center}
@@ -957,8 +920,8 @@ Shrink synch. before & SHSB & & $\surd$
 Shrink synch. after & SHSA & & $\surd$
 \\\hline
 \end{tabular}
-\caption{Operators used by ARC in the functional and non-functional phases
-respectively.}
+\caption{Set of mutation operators used by ARC, indicating which phases they
+are considered in for possible mutations.}
 \label{tbl:operators}
 \end{center}
 \end{table*}
@@ -988,7 +951,7 @@ respectively.}
 \end{minipage}
 
 \caption{Example of EXSB, the expand synchronization before operator.}
-\label{fig:EXSBExample}
+\label{fig:EXSB_example}
 \end{figure}
 
 Evolutionary strategies (ES) are solely mutation driven. During the fixing
@@ -1001,7 +964,7 @@ Mutation is a multi-step process. Each member of the ES population contains
 it's own copy of the Java project to be fixed.  During the mutation phase each
 TXL operator operates against each source code unit to create all mutants of
 it's type. For example, the expand synchronization before (EXSB,
-Table~\ref{fig:EXSBExample}) operator is applied to every existing concurrency
+Table~\ref{fig:EXSB_example}) operator is applied to every existing concurrency
 block in every Java file. All mutants - where each concurrency block is
 expanded at the front by one statement - are exaustively written to separate
 files. This is repeated for every Java file in the project and each elidgeable
@@ -1029,8 +992,65 @@ weights as the evolution progresses.
 (This goes somewhere else?) As ARC only adds, removes and changes
 synchronization blocks, the meaning of a program shouldn't change.
 
+\subsection{Evaluate Individuals}
+\label{sec:evalute_individuals}
+Each individual is now at a new program state, thus they are evaluated to
+determine whether they are in a better state or not.  In the functional phase
+the evaluation criteria is based on the success of test cases. In the
+non-functional phase the evaluation criteria is based on the performance of the
+program, with the condition that it continues to perform the same according the
+functional phase's evaluation criteria.
+
+\subsection{Check Terminating Condition}
+\label{sec:check_terminating_condition}
+
+Each phase will continue to evolve and evaluate individuals until some
+terminating condition is met. After the evaluation of each individual the
+terminating conditions are checked, the following conditions are for the
+functional phase:
+
+\begin{enumerate}
+  \item A solution is found (100\% successful executions)
+  \item No solution is found within the generational limit
+  \item The population has converged (no improvement has been seen in $x$ generations)
+\end{enumerate}
+
+For the non-functional phase the terminating conditions are the same as the
+functional phase except for the first one. This condition is dropped because
+there is no actual best known solution for optimal performance unlike a fixes
+program in the functional phase.
+
+In the situation where no terminating condition is met then the process will
+contiue to operating in that phase. If condition is met then the best found
+individual represents the output of the phase.
+
+\subsection{Replace Weakest Individuals}
+\label{sec:replace_weakest_individuals}
+With any evolutionary algorithm it is entirely possible for an individual to
+stray down a path that leads to little or no improvement. To encourage
+individuals to explore more of the potential states we employ a replacement
+strategy that replaces the lower $x$ percentage of individuals with a random
+individual that resides in the upper $x$ percent.  These replacements only
+occur after an individual has seen at least $y$ new changes. In addition, we
+feel that the original state of the bug is not too far from the solution. To
+prevent individuals from straying to far from the original state an individual
+is reseted to the original state if the individual has not seen any improvement
+in $z$ generations.
+% TODO Double check that ARC actually does it like this
+
+\subsection{Recalculate All Operator's Weighting}
+\label{sec:recalculate_operator_weighting}
+ARC utilizes a heuristic approach for selecting the mutation operator in the
+mutation step. A sliding window of $n$ generations is used while figuring out
+the success of previously used mutation operators. If certain mutation
+operators tend to improve individuals fitness score, then we want to utilize
+these mutation operators more then ones that have not seen such success. The
+sliding window is used to prevent domination of the weighting. To ensure that
+this approach is up to date the current weighting for each operator is
+recalculated based on the new feedback received from the population.
+
 \subsection{Fitness Functions}
-\label{sec:funcfitnessfunctions}
+\label{sec:fitness_functions}
 
 A key problem in parallel programming is the unpredictability of thread
 interleavings.  If a parallel bug appears only rarely, how can we gain
@@ -1347,7 +1367,7 @@ a concurrency benchmark. The results indicate that ARC is \ldots % TODO
 % http://www.ctan.org/tex-archive/biblio/bibtex/contrib/doc/
 % The IEEEtran BibTeX style support page is at:
 % http://www.michaelshell.org/tex/ieeetran/bibtex/
-\bibliographystyle{alpha} %IEEEtran}
+\bibliographystyle{IEEEtran}
 % argument is your BibTeX string definitions and bibliography database(s)
 \bibliography{x2012}
 %
