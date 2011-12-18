@@ -828,23 +828,15 @@ fixed program.
 
 An individual will be mutated from generation-to-generation based off of its
 current representation. Therefore this step will update the represent based on
-the individual's state of the program. The individual's representation consists
-of an array each with a set of variable elements, with each array representing
-a particular mutation operator and each element representing an instance found
-in the program. Table~\ref{tbl:individual_representation} illustrates the
-program representation. Further details of selecting and applying mutation are
-covered in the next section.
+the individual's state of the program by actually create all the possible
+mutant variations for the individual. While the next step will actually apply
+one of these mutant variants.
 
-As ARC is mutating the concurrency aspects of this program the program changes
-in concurrency structure through mutation. Essentially the search space of
-possible mutations is changing every generation. This is why the representation
-must be updated to account for this.
-
-Based on the individual's current version of the program that is being evolved,
-there exists a set of possible mutations that can occur. Each mutation will
-result in new possible locations that can be mutated, thus we need to update
-the individual's representation to account for the changing set of mutation
-operators.
+The individual's representation consists of an array each with a set of
+variable elements, with each array representing a particular mutation operator
+and each element representing an instance found in the program.
+Table~\ref{tbl:individual_representation} illustrates the program
+representation.
 
 \begin{table}[!h]
 \begin{center}
@@ -871,19 +863,10 @@ with no-limit to the number of instances per operator.}
 \end{center}
 \end{table}
 
-\subsection{Mutate Individuals}
-\label{sec:mutate_individuals}
-
-As suggested at in the previous section, the mutation step will attempt to
-mutate each individual's current program state. The mutation step begins with
-selecting a mutation operator, then by selecting an instance using the
-individual's representation. When these two options are selected then the
-mutation is applied and the program's state has changed.
-
 The set of mutation operators are listed in Table~\ref{tbl:operators}. These
 mutation operators are TXL operators, specifically they are derived from the
-ConMAn operators~\cite{BCD06}. TXL operators work by looking for a pattern and then
-transforming it according to a set of rules, and example of one of our
+ConMAn operators~\cite{BCD06}. TXL operators work by looking for a pattern and
+then transforming it according to a set of rules, and example of one of our
 operators is shown in Figure~\ref{fig:EXSB_example}.
 
 \begin{table*}
@@ -954,43 +937,48 @@ are considered in for possible mutations.}
 \label{fig:EXSB_example}
 \end{figure}
 
-Evolutionary strategies (ES) are solely mutation driven. During the fixing
-phase ARC adds, expands and alters synchronization blocks in an attept to fix
-deadlocks and data races. During the second phase ARC attempts to shrink and
-remove synchronization to improve performance. Table~\ref{tbl:operators} lists
-the operators used in ARC by phase.
+We acquire a complete list of all the mutation instances by using the TXL
+mutation operators on the individual's program. This will effectively populate
+the individual's representation with possible instance where the mutation can
+be applied. The side effect of populating the individual's representation is
+that a set of the actual mutations are generated for the individual. For
+example, using the \textit{expand synchronization before} operator (EXSB,
+example mutation in Figure~\ref{fig:EXSB_example}) will create all the mutants
+for this operator for the program and updates the individual's representation.
 
-Mutation is a multi-step process. Each member of the ES population contains
-it's own copy of the Java project to be fixed.  During the mutation phase each
-TXL operator operates against each source code unit to create all mutants of
-it's type. For example, the expand synchronization before (EXSB,
-Table~\ref{fig:EXSB_example}) operator is applied to every existing concurrency
-block in every Java file. All mutants - where each concurrency block is
-expanded at the front by one statement - are exaustively written to separate
-files. This is repeated for every Java file in the project and each elidgeable
-mutant available in the phase.
+As ARC is mutating the concurrency aspects of this program the program changes
+in concurrency structure through mutation. Essentially the search space of
+possible mutations is changing every generation. This is why the representation
+must be updated to account for this.
 
-With all mutants written to files, an operator is randomly selected to become
-the actual mutation operator for that member project for that generation.  One
-of it's mutations is randomly selected and applied to the project as the actual
-mutation.
+Based on the individual's current version of the program that is being evolved,
+there exists a set of possible mutations that can occur. Each mutation will
+result in new possible locations that can be mutated, thus we need to
+continually update the individual's representation.
 
-Note that each member project must have it's mutants tracked separately as the
-application of mutations causes the points where future mutation occur to
-diverge.  (If a synchronization block is added to the first project, EXSB,
-EXSA, SHSB and SHSA can operate on it in future generations. The second project
-may expand an existing synchronization and so-on.)
+\subsection{Mutate Individuals}
+\label{sec:mutate_individuals}
 
-Statistics are gathered on the performance of each operator.  After a
-defineable number of generations a weighting scheme is applied:  Mutation
-operators that were more successful in the past are given higher weights so
-they are more likely to be selected in the current generation.  Weightings are
-designed to insure the chance of selection is always greater than zero
-regardless of performance.  A sliding window is used to dynamically update the
-weights as the evolution progresses.
+As suggested at in the previous section, the mutation step will attempt to
+mutate each individual's current program state. The mutation step begins with
+selecting a mutation operator, then by selecting an instance using the
+individual's representation. When these two options are selected then the
+mutation is applied and the program's state has changed.
 
-(This goes somewhere else?) As ARC only adds, removes and changes
-synchronization blocks, the meaning of a program shouldn't change.
+ARC's mutation step involves the context of the current progress to support the
+mutation operator's selection process. We first consider the results calculated
+from the step involved in calculating the operator's weighting which is further
+detailed in Section~\ref{sec:recalculate_operator_weighting}. As discussed in
+Section~\ref{sec:update_individual_representation}, TXL mutation operators are used
+to discover the number of mutation instances thus we use the individual's
+representation.  ARC will also use the historical information about previous
+successes in the mutation operators as well as the current dominating bug type
+to select a mutation operator. By considering historical information and bug
+type information ARC will weight the selection of mutation operators to those
+of highly succeful operators that apply for the specified bug type. After the
+mutation operator is selected, we currently employ a random selection for the
+mutation instance to accept as our final mutation to progress forward with into
+the next generation for this individual.
 
 \subsection{Evaluate Individuals}
 \label{sec:evalute_individuals}
@@ -1021,7 +1009,7 @@ there is no actual best known solution for optimal performance unlike a fixes
 program in the functional phase.
 
 In the situation where no terminating condition is met then the process will
-contiue to operating in that phase. If condition is met then the best found
+continue to operating in that phase. If condition is met then the best found
 individual represents the output of the phase.
 
 \subsection{Replace Weakest Individuals}
@@ -1045,9 +1033,11 @@ mutation step. A sliding window of $n$ generations is used while figuring out
 the success of previously used mutation operators. If certain mutation
 operators tend to improve individuals fitness score, then we want to utilize
 these mutation operators more then ones that have not seen such success. The
-sliding window is used to prevent domination of the weighting. To ensure that
-this approach is up to date the current weighting for each operator is
-recalculated based on the new feedback received from the population.
+sliding window is used to prevent domination of the weighting. The weighting is
+designed to ensure that the change of selecting an operator is always greater
+than zero regardless of performance.. To ensure that this approach is up to
+date the current weighting for each operator is recalculated based on the new
+feedback received from the population.
 
 \subsection{Fitness Functions}
 \label{sec:fitness_functions}
@@ -1061,7 +1051,7 @@ member program in turn. By running ConTest multiple times we gain confidence
 enough interleavings are explored to find bugs. Note that running ConTest many
 times for each member of the population at each generation is time intensive.
 
-In the first phase fitness is determined by the number of successfull ConTest
+In the first phase fitness is determined by the number of successful ConTest
 runs. In the first phase fitness is determined by the number of successful
 ConTest runs. We consider timeouts as they could either result in a deadlock or
 a successful execution given more time.
@@ -1095,7 +1085,7 @@ process continues.
 Once a fix is found the second phase begins.  Here the fitness function is
 concerned with optimizing performance.  Fitness is now determined by the wall
 time required for an execution and the number of voluntary context switches
-made.  Durning the initialization of phase 2 the proposed fix is run a large
+made.  During the initialization of phase 2 the proposed fix is run a large
 number of times to determine baseline averages for these two values.
 
 \begin{figure}
@@ -1300,9 +1290,14 @@ Pingpong & 0.6 & [3--17] & [0.10--0.14] & [0.9--0.12] & [73--97] & [60--81]
 \end{table*}
 
 
+\section{Challenges}
+\label{sec:challenges}
+
+
 
 
 \section{Threats to Validity}
+\label{sec:threats}
 
 
 
