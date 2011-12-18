@@ -961,9 +961,9 @@ continually update the individual's representation.
 
 As suggested at in the previous section, the mutation step will attempt to
 mutate each individual's current program state. The mutation step begins with
-selecting a mutation operator, then by selecting an instance using the
-individual's representation. When these two options are selected then the
-mutation is applied and the program's state has changed.
+selecting a mutation operator for the current phase, then by selecting an
+instance using the individual's representation. When these two options are
+selected then the mutation is applied and the program's state has changed.
 
 ARC's mutation step involves the context of the current progress to support the
 mutation operator's selection process. We first consider the results calculated
@@ -983,11 +983,108 @@ the next generation for this individual.
 \subsection{Evaluate Individuals}
 \label{sec:evalute_individuals}
 Each individual is now at a new program state, thus they are evaluated to
-determine whether they are in a better state or not.  In the functional phase
-the evaluation criteria is based on the success of test cases. In the
-non-functional phase the evaluation criteria is based on the performance of the
-program, with the condition that it continues to perform the same according the
-functional phase's evaluation criteria.
+determine whether they are in a better state or not. ARC attempts to fix
+concurrency bugs and one key problem is the unpredictability of thread
+interleavings.  If a concurrency bug appears only rarely, how can we gain
+confidence that a proposed fix actually works?  IBM's ConTest
+Tool~\cite{EFN+02} is used to instrument the project and inject noise into it's
+scheduled interleavings. ConTest is then invoked by ARC many times to test each
+member program in turn. By running ConTest multiple times we gain confidence
+enough interleavings are explored to find bugs. Note that running ConTest many
+times for each member of the population at each generation is time intensive.
+
+In the first phase fitness is determined by the number of successful ConTest
+runs. In the first phase fitness is determined by the number of successful
+ConTest runs. We consider timeouts as they could either result in a deadlock or
+a successful execution given more time (though the weighting should be much
+lower then the success weighting). Figure~\ref{fig:functional_fitness} displays
+the functional fitness function.
+
+\begin{figure}
+\begin{footnotesize}
+\begin{center}
+$functional\ fitness(P) = (s \times sw) + (t \times tw)$
+\end{center}
+\end{footnotesize}
+\begin{tiny}
+\begin{center}
+$s = \#\ of\ successful\ executions$ \\
+$sw = success\ weighting$ \\
+$t = \#\ of\ timeout\ executions$ \\
+$tw = timeout\ weighting$
+\end{center}
+\end{tiny}
+\caption{Fitness Function for Functional Phase}
+\label{fig:functional_fitness}
+\end{figure}
+
+If ARC finds an individual that achieves 100\% successful executions, we need
+to ensure that this is truly a fix. Found solutions could still hold a
+concurrency bug but it was just the situation where none of the error-occurring
+thread interleavings were encountered. Our safeguard for this situation is to
+actually run ConTest an additional number of times (default is 10x more runs
+then the original number of runs). If the fix still holds even after the
+safeguard then we can feel confident that the found solution is indeed a true
+solution. ARC has an additional. If any of the test fails then the proposed
+solution is rejected and the evolutionary process continues, otherwise a fix is
+found and we can proceed.
+
+Once a fix is found the second phase begins.  Here the fitness function is
+concerned with optimizing performance.  We uses a combination of the real time
+required for an execution and the number of voluntary context switches made.
+The time taken is an obvious choice to use to measure the performance, while
+the number of voluntary context switches gives us an indication on the amount
+of thread switching. By minimizing unnecessary synchronization the number of
+context switches should also reduce along with the real time taken.
+Figure~\ref{fig:nonfunctional_function} shows the equation used to determine
+the score of an individual in the non-functional phase. Our equation will
+adjust based on the significance and uncertainty of both variables (to be fair
+in situation where either variable are under represented). In addition we
+acquire the worst score from the proposed fix by running it a large number of
+times to determine the performance of the non-optimized program.
+
+\begin{figure}
+\begin{footnotesize}
+\begin{center}
+$non-functional\ fitness(P) = \frac{worst\ score}{[sig_t \times unc(t)] + [sig_c \times unc(c)]}$
+\end{center}
+\vspace{0.1cm} \textit{Where:} \vspace{0.1cm}
+\end{footnotesize}
+\begin{tiny}
+\begin{center}
+$unc(x) = \frac{(x_{max} - x_{min})}{x_{avg}}$ \\ \vspace{0.2cm}
+$
+  sig_t = \left\{
+  \begin{array}{l l}
+    t/c & \quad if\ t\ > c \\
+    c/t & \quad if\ c\ > t \\
+  \end{array} \right.
+$ \\ \vspace{0.2cm}
+$
+  sig_s = \left\{
+  \begin{array}{l l}
+    c/t & \quad if\ t\ > c \\
+    t/c & \quad if\ c\ > t \\
+  \end{array} \right.
+$ \\
+\end{center}
+\end{tiny}
+\caption{Fitness Function for Non-Functional Phase}
+\label{fig:nonfunctional_fitness}
+\end{figure}
+
+Removing and reducing synchronization runs the risk of introducing new bugs in
+to the program. Before every non-functional phase evaluation we need to ensure
+that no bugs are present, thus we re-run the functional phase evaluation again.
+If any deadlock or data race are encountered the proposed optimization is
+rejected as it introduces a bug.  For these individuals that introduce a bug,
+the individual's program is reseted it's state in the previous generation.
+
+As it isn't clear when an individual's program reaches its maximum optimization
+-- and there is no a-priori way to know this, ARC will run the last phase for
+it's full allotment of generations.  At the end it outputs the member program
+with the highest non-functional fitness (from any generation) as the final
+optimized fix.
 
 \subsection{Check Terminating Condition}
 \label{sec:check_terminating_condition}
@@ -1039,106 +1136,6 @@ than zero regardless of performance.. To ensure that this approach is up to
 date the current weighting for each operator is recalculated based on the new
 feedback received from the population.
 
-\subsection{Fitness Functions}
-\label{sec:fitness_functions}
-
-A key problem in parallel programming is the unpredictability of thread
-interleavings.  If a parallel bug appears only rarely, how can we gain
-confidence that a proposed fix actually works?  IBM's ConTest
-Tool~\cite{EFN+02} is used to instrument the project and inject noise into it's
-scheduled interleavings. ConTest is then invoked by ARC many times to test each
-member program in turn. By running ConTest multiple times we gain confidence
-enough interleavings are explored to find bugs. Note that running ConTest many
-times for each member of the population at each generation is time intensive.
-
-In the first phase fitness is determined by the number of successful ConTest
-runs. In the first phase fitness is determined by the number of successful
-ConTest runs. We consider timeouts as they could either result in a deadlock or
-a successful execution given more time.
-
-\begin{figure}
-\begin{footnotesize}
-\begin{center}
-$functional\ fitness(P) = (s \times sw) + (t \times tw)$
-\end{center}
-\end{footnotesize}
-\begin{tiny}
-\begin{center}
-$s = \#\ of\ successful\ executions$ \\
-$sw = success\ weighting$ \\
-$t = \#\ of\ timeout\ executions$ \\
-$tw = timeout\ weighting$
-\end{center}
-\end{tiny}
-\caption{Fitness Function for Functional Phase}
-\label{fig:functional_fitness}
-\end{figure}
-
-Phase one ends when a ES member is found that passes all ConTest runs. There is
-a possibility that the bug isn't truly fixed in the proposed solution.  (By
-chance the proper interleavings were not explored.)  ARC has an additional
-safeguard for this:  Every proposed fix is run a large number of times in
-ConTest. (The default is 10x more runs than a ES member experiences in any
-generation.) If any test fails the solution is rejected and the evolutionary
-process continues.
-
-Once a fix is found the second phase begins.  Here the fitness function is
-concerned with optimizing performance.  Fitness is now determined by the wall
-time required for an execution and the number of voluntary context switches
-made.  During the initialization of phase 2 the proposed fix is run a large
-number of times to determine baseline averages for these two values.
-
-\begin{figure}
-\begin{footnotesize}
-\begin{center}
-$non-functional\ fitness(P) = \frac{worst\ score}{[sig_t \times unc(t)] + [sig_c \times unc(c)]}$
-\end{center}
-\vspace{0.1cm} \textit{Where:} \vspace{0.1cm}
-\end{footnotesize}
-\begin{tiny}
-\begin{center}
-$unc(x) = \frac{(x_{max} - x_{min})}{x_{avg}}$ \\ \vspace{0.2cm}
-$
-  sig_t = \left\{
-  \begin{array}{l l}
-    t/c & \quad if\ t\ > c \\
-    c/t & \quad if\ c\ > t \\
-  \end{array} \right.
-$ \\ \vspace{0.2cm}
-$
-  sig_s = \left\{
-  \begin{array}{l l}
-    c/t & \quad if\ t\ > c \\
-    t/c & \quad if\ c\ > t \\
-  \end{array} \right.
-$ \\
-\end{center}
-\end{tiny}
-\caption{Fitness Function for Non-Functional Phase}
-\label{fig:nonfunctional_fitness}
-\end{figure}
-
-We reason these two metrics are important as excessive synchronization causes
-contention within a program. Contention causes it to take longer. Contention
-will also increase the amount of yielding/context switches in a program. Phase
-two attempts to reduce contention by removing and reducing synchronization.
-
-Removing and reducing synchronization runs the risk of introducing new bugs in
-to the program. Before every phase 2 fitness evaluation is performed, a phase 1
-fitness evaluation is performed again.  If any deadlock or data race is
-encountered the proposed fix is rejected.  That member has it's project reset
-to it's state in the previous generation.
-
-Assuming correctness hasn't suffered the member program is run again a number
-of times in ConTest.  Average wall time and voluntary context switches are
-computed and compared to the baseline values.  Improvements are rewarded with
-higher fitness.
-
-As it isn't clear when a member program is as optimized as it could be - and
-there is no a-priori way to know this, the second phase runs for it's full
-allotment of generations.  At the end it outputs the member program with the
-highest non-functional fitness (from any generation) as the final optimized
-fix.
 
 \section{Experiments}
 \label{sec:experiments}
