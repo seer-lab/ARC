@@ -982,6 +982,7 @@ the next generation for this individual.
 
 \subsection{Evaluate Individuals}
 \label{sec:evalute_individuals}
+
 Each individual is now at a new program state, thus they are evaluated to
 determine whether they are in a better state or not. ARC attempts to fix
 concurrency bugs and one key problem is the unpredictability of thread
@@ -1111,6 +1112,7 @@ individual represents the output of the phase.
 
 \subsection{Replace Weakest Individuals}
 \label{sec:replace_weakest_individuals}
+
 With any evolutionary algorithm it is entirely possible for an individual to
 stray down a path that leads to little or no improvement. To encourage
 individuals to explore more of the potential states we employ a replacement
@@ -1125,17 +1127,23 @@ in $z$ generations.
 
 \subsection{Recalculate All Operator's Weighting}
 \label{sec:recalculate_operator_weighting}
+
 ARC utilizes a heuristic approach for selecting the mutation operator in the
 mutation step. A sliding window of $n$ generations is used while figuring out
 the success of previously used mutation operators. If certain mutation
 operators tend to improve individuals fitness score, then we want to utilize
 these mutation operators more then ones that have not seen such success. The
-sliding window is used to prevent domination of the weighting. The weighting is
+sliding window is used to prevent dominance of operators and to allow for
+flexibility in changing weighting based on the recent history. The weighting is
 designed to ensure that the change of selecting an operator is always greater
-than zero regardless of performance.. To ensure that this approach is up to
-date the current weighting for each operator is recalculated based on the new
+than zero regardless of performance. To ensure that this approach is up to date
+the current weighting for each operator is recalculated based on the new
 feedback received from the population.
 
+As we have two phases we need to ensure that the calculated mutation operator
+weightings are only for the appropriate phase. In addition, when in the
+functional phase we consider a separate weighting for data races and deadlocks
+to remain accurate in the use of this heuristic.
 
 \section{Experiments}
 \label{sec:experiments}
