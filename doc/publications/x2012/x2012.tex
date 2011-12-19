@@ -1252,9 +1252,9 @@ used values for the experimentations.}
 \subsection{Experimental Results}
 \label{sec:experimental_results}
 
-Each program was run through ARC a total of 10 times using the parameters 
+Each program was run through ARC a total of 10 times using the parameters
 described in Table~\ref{tbl:used_parameters}. The results of each
-program is summarized in Table~\ref{tbl:summary_results}.
+program is summarized in Table~\ref{tbl:summary_results}. % TODO
 
 \begin{table*}[!t]
 \begin{center}
@@ -1298,13 +1298,94 @@ Pingpong & 0.6 & [3--17] & [0.10--0.14] & [0.9--0.12] & [73--97] & [60--81]
 \section{Challenges}
 \label{sec:challenges}
 
+ARC has three major challenges to face. These three will be listed along with
+the presented solution:
 
+\textbf{Large Solution Space}: In the related work of Arcuri's
+approach~\cite{AY08}, they were considering the whole program along with a
+large set of mutations. The large space of potential mutations along with the
+large set of possible mutations causes an extremely large search space for
+finding the solution fix. For ARC we are only considering concurrency bugs,
+thus we are focus on mutating only concurrency mechanisms with concurrency
+mutation operators. Inherently ARC will have a much smaller search space to
+explore before finding a solution fix. The search space can be reduced even
+further by considering only the mutation that fall on the error path (used in
+Weimer's approach~\cite{GNFW11}).
 
+\textbf{Dependence on Test Suite}: ARC has a large dependence for requiring a
+comprehensive test suite for the program being repaired. In both Arcuri's and
+Weimer's approach~\cite{AY08,GNFW11} the test suites are used to both guard the
+program's functionality as well to indicate that the bug is present. ARC
+requires a test suit to primarily capture the bug's occurrence, as we are only
+modifying the concurrent aspects the changes to the program's functionality is
+minimized. ARC currently has no solution to dealing with bugs that occur
+outside of the test suite's coverage, Arcuri's and Weimer's approach also has
+no solution for this. There has been some work that attempts to co-evolve the
+test suite at the same time to help check for new situations~\cite{WT10}. We
+currently assume that the provided test suite is comprehensive enough such that
+all bugs are detected. In addition ARC will eventually only consider using
+mutation operators that fall within the coverage of the test suite to avoid
+introducing new bugs that the test suite cannot detect.
+
+\textbf{Program Readability}: The act of automatically fixing and optimizating
+a program raises the question of program readability. None of the related work
+considers the readability of their fixes, yet this is concerning as developers
+want to understand the fix as well. In ARC's situation we are simply
+removing/adding synchronizations as well as moving statements. According to
+Posnett et. al.~\cite{PHD11} their model estimates Java source code
+readability, which states the following:
+
+\begin{itemize}
+  \item Moving lines around does not affect the program's readability
+  \item The addition of existing tokens does not reduce the program's
+readability as much as adding new unique statements
+\end{itemize}
+
+We observe the differences in readability from the program as it evolves from
+its buggy state to its fixed and optimized state using ARC, as seen in
+Tabel~\ref{tbl:readability}. It can be seen that \ldots % TODO
+
+\begin{table*}[!t]
+\begin{center}
+\begin{tabular}{|l|p{2cm}|p{2cm}|p{2cm}|p{2cm}|p{2cm}|}
+\hline
+\textbf{Program} &
+\textbf{Buggy Program's Readability} &
+\textbf{Fixed Program's Readability} &
+\textbf{Optimized Program's Readability} &
+\textbf{Change from Buggy to Fixed} &
+\textbf{Change from Fixed to Optimized}
+\\\hline
+Deadlock2 & 100 & 110 & 105 & +10\% & -4.6\%
+\\\hline
+Account & 100 & 110 & 105 & +10\% & -4.6\%
+\\\hline
+AirlineBug & 100 & 110 & 105 & +10\% & -4.6\%
+\\\hline
+AllocationVector & 100 & 110 & 105 & +10\% & -4.6\%
+\\\hline
+Buffer & 100 & 110 & 105 & +10\% & -4.6\%
+\\\hline
+BubbleSort & 100 & 110 & 105 & +10\% & -4.6\%
+\\\hline
+Deadlock & 100 & 110 & 105 & +10\% & -4.6\%
+\\\hline
+BufWriter & 100 & 110 & 105 & +10\% & -4.6\%
+\\\hline
+BankAccounts & 100 & 110 & 105 & +10\% & -4.6\%
+\\\hline
+Pingpong & 100 & 110 & 105 & +10\% & -4.6\%
+\\\hline
+\end{tabular}
+\caption{The program readability values from the buggy program to the fixed program to the optimized program.}
+\label{tbl:readability}
+\end{center}
+\end{table*}
 
 \section{Threats to Validity}
 \label{sec:threats}
 
-
+% TODO
 
 
 \section{Future Work}
