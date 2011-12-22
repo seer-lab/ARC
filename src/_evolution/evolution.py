@@ -50,8 +50,8 @@ def initialize(functionalPhase, bestIndividual=None):
     population.append(individual)
 
   return population
-  
-  
+
+
 def start():
   """The actual starting process for ARC's evolutionary process."""
 
@@ -180,7 +180,10 @@ def evolve(population, functionalPhase, generation=0, worstScore=0):
       return get_best_individual(population, bestFitness)
 
     # Check to see if we can replace the weakest individuals
-    replace_lowest(population, functionalPhase)
+    print generation,generation % config._EVOLUTION_REPLACE_INTERVAL
+    if generation % config._EVOLUTION_REPLACE_INTERVAL is 0:
+      logger.debug("Performing replacement of weakest individuals")
+      replace_lowest(population, functionalPhase)
 
     # Perform mutation again for those individuals who were replaced or restarted
     for individual in population:
@@ -323,8 +326,7 @@ def evaluate(individual, functionalPhase, worstScore):
   txl_operator.move_local_project_to_original(individual.generation,
                                               individual.id)
   txl_operator.compile_project()
-  
-                                                
+
   if functionalPhase:
     contest.begin_testing(functionalPhase)
 
@@ -378,8 +380,6 @@ def evaluate(individual, functionalPhase, worstScore):
   contest.clear_results()
 
 
-  
-  
 def feedback_selection(individual, functionalPhase, deadlockVotes, dataraceVotes, nonFunctionalVotes):
   """Given the individual this function will find the next operator to apply.
 
@@ -673,8 +673,7 @@ def replace_lowest(population, functionalPhase):
 
   # Replace or restart members who have underperformed for too long
   for i in xrange(0, numUnder):
-    if (sortedMembers[i].turnsUnderperforming <
-        config._EVOLUTION_REPLACE_AFTER_TURNS):
+    if (sortedMembers[i].turnsUnderperforming < config._EVOLUTION_REPLACE_WEAK_MIN_TURNS):
       continue
 
     randomNum = random.randint(1, 100)

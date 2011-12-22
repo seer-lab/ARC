@@ -61,7 +61,8 @@ _NONFUNCTIONAL_MUTATIONS = [_MUTATION_RSAS, _MUTATION_RSAV, _MUTATION_RSM,
 _EVOLUTION_GENERATIONS = 20
 _EVOLUTION_POPULATION = 10
 _EVOLUTION_REPLACE_LOWEST_PERCENT = 10
-_EVOLUTION_REPLACE_AFTER_TURNS = 20
+_EVOLUTION_REPLACE_INTERVAL = 2  # Consider replacement on this generational interval
+_EVOLUTION_REPLACE_WEAK_MIN_TURNS = 1  # Min number of turns of underperforming before replacement
 _EVOLUTION_REPLACE_WITH_BEST_PERCENT = 80
 
 # Dynamic ranking window (number of generations to consider)
