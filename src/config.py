@@ -26,7 +26,7 @@ _PROJECT_BACKUP_DIR = _ROOT_DIR + "project_backup/"
 _PROJECT_OUTPUT_DIR = _ROOT_DIR + "output/"
 _PROJECT_PREFIX = ""
 _PROJECT_TESTSUITE = "DeadlockTest"
-_PROJECT_CLASSPATH = _PROJECT_CLASS_DIR + ":" + _PROJECT_DIR + "test/" + ":" + _JUNIT_JAR
+_PROJECT_CLASSPATH = _PROJECT_CLASS_DIR + ":" + _PROJECT_DIR + "test/"
 _PROJECT_TEST_MB = 2000
 # TODO Consider some automatic way to figure classpath if Ant or MVN exist
 
