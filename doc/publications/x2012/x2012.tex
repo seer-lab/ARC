@@ -1,4 +1,3 @@
-
 %% bare_conf.tex
 %% V1.3
 %% 2007/01/11
@@ -564,11 +563,11 @@ understanding of these topics is required for various parts of the paper.
 \label{sec:concurrency}
 
 Concurrency is the act of having multiple threads executing in parallel.
-Threads in programs are objects that execute statements. Concurrent programs 
-are able to exploit multi-core systems as threads can be distributed across
-each of the CPUs to increase performance. Concurrency introduces a new class
-class of bugs, the \textit{heisenbugs}.  Due to concurrent access to shared 
-memory, threads are able to cause \textit{dataraces} and \textit{deadlocks}.
+Concurrent programs are able to exploit multi-core systems where threads can
+be distributed across each of the CPUs to increase performance. Concurrency
+introduces a new class class of bugs, the \textit{heisenbugs}.  Due to 
+concurrent access to shared memory, threads are able to cause 
+\textit{dataraces} and \textit{deadlocks}.
 
 A \textbf{data race} has been defined as: \textit{``\ldots two or more
 concurrent threads access a shared variable and when at least one access is a
@@ -602,7 +601,7 @@ the problem is encoded as a member of the population. Each is evaluated by a
 fitness function. The more fit a member solution is, the greater the chance
 it will pass it's genetic material (solution) on to the next generation.
 \textit{Selection pressure prefentially selects better solutions.} Crossover
-mixes these solutions to produce new solutions while mutation injects fresh
+mixes these solutions to produce new ones while mutation injects fresh
 information in to the population so it doesn't become stagnant.
 
 EP is a simpler form of search than a genetic algorithm. A population of
@@ -621,8 +620,6 @@ correct, makes sense or even compiles?
 \label{sec:related_works}
 
 There are a number of approaches to automatically hide or fix bugs in programs.
-Attempts to fix single-threaded and multi-threaded software is examined.
-
 Co-evolutionary competition between programs with bugs and test cases is used
 in~\cite{AY08, Arc08, WT10}. Both approaches require formal specifications and
 both use genetic programming to evolve fixes. Co-evolution is used to cause 
@@ -661,7 +658,7 @@ to the program or the specification of the program.
 \section{Motivating Problem}
 \label{sec:motivation}
 
-As described above, concurrency bugs are difficult to detect and fix. Many
+Concurrency bugs are difficult to detect and fix. Many
 tools exist that identify concurrent bugs. The identification of a problem is
 often not enough as multiple code fragments are involved, possibly in different
 units with differently named variables. In this ambiguous scenario the 
@@ -760,14 +757,14 @@ further optimization.}
 \end{figure}
 
 From a developer's standpoint there is a lot of work involved in creating a fix
-for parallel bugs as multiple, unrelated changes are not uncommon. As the example
-illustrated, two changes were required to functionally fix the program. Two
-additional changes were required to improve the non-functional performance.
+for parallel bugs as multiple, unrelated changes are not uncommon. Two changes 
+were required to functionally fix the program. Two additional changes were 
+required to improve the non-functional performance.
 
 Automated tools in software testing and debugging are needed as they have the
 potential to reduce the vast amount of resources spent on software testing
 (upwards to \$59.5 billion)~\cite{RTI02}. ARC provides an automated approach to
-first fixing the \textit{functionality}, and then optimizing the \textit{non-
+fixing the \textit{functionality}, and then optimizing the \textit{non-
 functional} performance of programs with deadlocks and data races.
 
 \section{ARC's Approach}
@@ -776,8 +773,8 @@ functional} performance of programs with deadlocks and data races.
 ARC aims to automatically repair concurrency bugs like the one
 presented in Section~\ref{sec:motivation}. A high-level overview of ARC's
 approach is presented in Figure~\ref{fig:process}. There are two inputs to ARC:
-First, the buggy program and second, a JUnit test suite. This
-test suite is necessary as it acts like an oracle in determining if the bug
+A buggy concurrent program and a JUnit test suite. This
+test suite is necessary as it acts like an oracle determining if the bug
 still exists in the program. One limitation of ARC (and of all automatic bug
 fixing techniques mentioned here) is that it can only fix bugs detectable by 
 the test suite.
@@ -791,16 +788,12 @@ the test suite.
 
 ARC is composed of two major phases, the \textit{Functional Phase} and the
 \textit{Non-Functional Phase}. Both are similar in terms of the steps
-they follow, though there are slight variations to accomplish different goals.
+they follow, with slight variations to accomplish different goals.
 As ARC is using an evolutionary algorithm, the first phase attempts to fix the
 buggy program while the second attempts to optimize its performance. 
 
-The next section details each step in the two phases (as
-shown in Figure~\ref{fig:phases_internals}). Differences between them are 
-indicated.
-
-As ARC uses an evolutionary algorithm to evolve solutions from the buggy
-program, the key aspects of the approach is the mutation and evaluation steps.
+The next section details each step in the two phases, shown in Figure~\ref{fig:phases_internals}. Differences between them are indicated.  Key aspects of the approach are 
+the mutation and evaluation steps.
 
 \begin{figure}[!h]
   \centering
@@ -813,19 +806,19 @@ program, the key aspects of the approach is the mutation and evaluation steps.
 \label{sec:initialize_population}
 
 Arc begins the repair phase by initialize the population of individuals. 
-Thia involves creating a copy of the
-program so that the rest of the phase can mutate these copies. In the
-functional phase the original buggy program is copied into each individual. For
-the non-functional phase ARC has already produced the fixed program, so each 
-individual receives a copy of the fixed program.
+This involves creating a copy of the program for each individual that is
+mutated by the ES. For the non-functional phase ARC has already produced
+the fixed program, so each individual receives a copy of the fixed 
+program to optimize.
 
-\subsection{Update Individual's Representation}
+\subsection{Generate Mutants and Update Individual's Representation}
 \label{sec:update_individual_representation}
 
-An individual is mutated from generation-to-generation based off of its
-current representation. This step updates the representation by creating all 
-the possible mutant variations for the individual. The next step actually 
-applies one of these mutant variants.
+Mutants are generated every round from the previous generation's code.
+Internally the mutants are tracked by type in the representation.  (Member
+x at generation y has z add sync mutants, q expand sync before mutants, ...)
+This step generates all mutants and updates the representation. (A mutant is
+actually applied to the project in the next step.)
 
 The individual's representation consists of an array of the mutation 
 operators applied each round of the ES. Table~\ref{tbl:individual_representation} 
@@ -849,18 +842,17 @@ Mutation 3 & --
 Mutation $n$ & 0 0
 \\\hline
 \end{tabular}
-\caption{Example representation of an individual, each 0 represents an instance
-of where the operator can be applied. There can be up to $n$ mutation operators
-with no-limit to the number of instances per operator.}
+\caption{Example representation of an individual, each 0 represents
+an instance of that mutation type. There can be up to $n$ mutation 
+operators with no-limit to the number of instances per operator.}
 \label{tbl:individual_representation}
 \end{center}
 \end{table}
 
-The set of mutation operators is listed in Table~\ref{tbl:operators}. These
-mutation operators are TXL operators, derived from the
-ConMAn operators~\cite{BCD06}. TXL operators work by looking for a pattern and
-then transforming it according to a set of rules.  An example of one of our
-operators is shown in Figure~\ref{fig:EXSB_example}.
+The set of mutation operators is listed in Table~\ref{tbl:operators}. They are 
+TXL operators derived from the ConMAn operators~\cite{BCD06}. TXL operators 
+work by looking for a pattern and then transforming it according to a set of
+rules.  An example of one of our operators is shown in Figure~\ref{fig:EXSB_example}.
 
 \begin{table*}
 \begin{center}
@@ -897,7 +889,7 @@ Shrink synch. after & SHSA & & $\surd$
 \\\hline
 \end{tabular}
 \caption{Set of mutation operators used by ARC, indicating which phases they
-are considered in for possible mutations.}
+are active mutators.}
 \label{tbl:operators}
 \end{center}
 \end{table*}
@@ -930,61 +922,41 @@ are considered in for possible mutations.}
 \label{fig:EXSB_example}
 \end{figure}
 
-We acquire a complete list of all the mutation instances by using the TXL
-mutation operators on the individual's program. This populates
-the individual's representation with possible instance where the mutation can
-be applied. The side effect of populating the individual's representation is
-that a set of the actual mutations are generated for the individual. For
-example, using the \textit{expand synchronization before} operator (EXSB,
-example mutation in Figure~\ref{fig:EXSB_example}) creates all the mutants
-for this operator for the program and updates the individual's representation.
-
 Mutating the concurrency blocks of the program changes the places where future
-mutations can occur. The search space of possible mutations changes every 
-generation. This is why the representation must be updated to account for this.
+mutations can occur, causing the search space of possible mutations to changes
+every generation. The representation must be updated to account for this.
 
-\subsection{Mutate Individuals}
+\subsection{Apply a Mutation to an Individual}
 \label{sec:mutate_individuals}
 
-As suggested in the previous section, the mutation step mutates each 
-individual's current program state. The mutation step begins by
-selecting a mutation operator for the current phase, then by selecting an
-instance using the individual's representation. When these two options are
-selected then the mutation is applied and the program's state has changed.
+Once all mutations are generated a type of mutation and an instance of that
+type are selected from the representation and applied to the project.
 
-ARC's mutation step involves the context of the current progress to support the
-mutation operator's selection process. We first consider the results calculated
-from the step involved in calculating the operator's weighting. This is further
-detailed in Section~\ref{sec:recalculate_operator_weighting}. As discussed in
-Section~\ref{sec:update_individual_representation}, TXL mutation operators are used
-to discover the number of mutation instances from the individual's
-representation.  ARC also uses historical information about previous
-successes with the mutation operators as well as the current dominating bug type
-to select a mutation operator to apply. By considering historical information and bug
-type information ARC weighs the selection of mutation operators in favour of  ones
-that have been highly succeful in the pas. After the
-mutation operator is selected we randomly select an instance to accept as our final
-mutation for that individual.
+ARC uses historical information about previous successes with the mutation operators
+and the current dominating bug type to select a mutation operator to apply. More 
+weight is given to operators that have been successful in the past. This is further
+detailed in Section~\ref{sec:recalculate_operator_weighting}. We randomly select an 
+instance of the operator to accept as our final mutation for that individual. 
 
 \subsection{Evaluate Individuals}
 \label{sec:evalute_individuals}
 
-Each individual is now at a new program state. Now they are evaluated to
-determine whether they are in a better state or not. One key problem is the
- unpredictability of thread
-interleavings.  If a concurrency bug appears only rarely, how can we gain
-confidence that a proposed fix actually works?  IBM's ConTest
-Tool~\cite{EFN+02} is used to instrument the project and inject noise into it's
-scheduled interleavings. ConTest is invoked by ARC many times to test each
-member program in turn. By running ConTest multiple times we gain confidence
-enough interleavings are explored to find bugs. Note that running ConTest many
-times for each member of the population at each generation is time intensive.
+A mutation may be beneficial, destructive or benign. It must be evaluated to
+determine it's effect on the program. A key problem is the unpredictability of 
+thread interleavings.  If a concurrency bug appears only rarely, how can we gain
+confidence that a proposed fix actually works?  IBM's ConTest Tool~\cite{EFN+02} 
+is used to instrument the project and inject noise into it's scheduled 
+interleavings. ConTest is invoked by ARC many times to test each mutated project
+in turn. By running ConTest multiple times we gain confidence enough interleavings
+are explored to find bugs. Note that running ConTest many times for each member of
+the population at each generation is time intensive.
 
 In the first phase fitness is determined by the number of successful ConTest
-runs. We consider timeouts as they could either result in a deadlock or
-a successful execution given more time (though the weighting should be much
-lower then the success weighting). Figure~\ref{fig:functional_fitness} displays
-the functional fitness function.
+runs. More successes translates in to higher fitness. As a timeout could either 
+result in a deadlock or a successful execution given more time, the are also 
+awarded fitness 'points'. The weighting is less than a successful execution
+though. Figure~\ref{fig:functional_fitness} displays the first phase fitness 
+function.
 
 \begin{figure}
 \begin{footnotesize}
@@ -1005,29 +977,29 @@ $tw = timeout\ weighting$
 \end{figure}
 
 If ARC finds an individual that achieves 100\% successful executions, we need
-to ensure it is truly a fix. Found solutions could still hold a
-concurrency bug but it was just the situation where none of the error-occurring
-thread interleavings were encountered. Our safeguard is to
-run ConTest an additional number of times (default is 10x more runs
-then the original number of runs). If the fix still holds even after the
-safeguard then we feel confident the solution is indeed a true
-solution. If any of these additional test fail, the proposed
-solution is rejected and the evolutionary process continues.
+to ensure it is truly a fix. Any proposed solutions could still hold a
+concurrency bug that escaped detection because the proper interleavings were
+not encountered. Our safeguard is to run ConTest an additional number of times
+(Default is 10x more runs then the original number of runs). If the fix still
+holds even after this safeguard we feel confident the solution is indeed a true
+solution. If any of these additional test fail, the proposed fix is rejected 
+and the evolutionary process continues.
 
-Once a fix is found the second phase begins.  Here the fitness function is
-concerned with optimizing performance.  We uses a combination of the real time
+Once a fix is found the second phase begins.  A new fitness function is used 
+with the goal of optimizing performance.  We uses a combination of the real time
 required for an execution and the number of voluntary context switches made to
 determine fitness.
 The time taken is an obvious choice to use to measure the performance, while
 the number of voluntary context switches gives us an indication on the amount
 of thread switching. By minimizing unnecessary synchronization the number of
 context switches should decrease along with the real time taken.
-Figure~\ref{fig:nonfunctional_function} shows the non-functional fitness function. 
-Our equation will adjust based on the significance and uncertainty of both 
-variables (to be fair
-in situation where either variable are under represented). In addition we
-acquire the worst score from the proposed fix by running it a large number of
-times to determine the performance of the non-optimized program.
+Figure~\ref{fig:nonfunctional_function} shows the phase 2 fitness function. 
+Baseline time and context switches are generated from the newly fixed program by
+running it a large number of times and averaging. This baseline is used by the
+fitness function to evaluate any proposed improvements. Note that the fitness
+function adjusts based on the significance and uncertainty of both 
+variables (to be fair in situations where either variable is under-represented).
+
 
 \begin{figure}
 \begin{footnotesize}
@@ -1062,9 +1034,8 @@ $ \\
 Removing and reducing synchronization runs the risk of introducing new bugs in
 to the program. Before every non-functional phase evaluation we need to ensure
 that no bugs are present. We re-run the functional phase evaluation again.
-If any deadlock or data race are encountered the proposed optimization is
-rejected as it re-introduces a bug. The individual's program is reset to the
-previous generation.
+If any deadlock or data race is encountered the proposed optimization is
+rejected. The individual's program is reset to the previous generation.
 
 As it isn't clear when an individual's program reaches its maximum optimization
 -- and there is no a-priori way to know this, ARC runs phase two for
@@ -1087,43 +1058,37 @@ functional phase:
 
 For the non-functional phase the terminating conditions are the same as the
 functional phase except for the first one. This condition is dropped because
-there is no actual best known solution for optimal performance unlike a fixes
-program in the functional phase.
+there is no actual best known solution for optimal performance.
 
 \subsection{Replace Weakest Individuals}
 \label{sec:replace_weakest_individuals}
 
 With any evolutionary algorithm it is entirely possible for an individual to
 stray down a path leading to little or no improvement. To encourage
-individuals to explore more of the state space we employ a replacement
-strategy that replaces the lower $x$ percentage of individuals with a random
-individual from the upper $x$ percent.  These replacements only
-occur after an individual has seen at least $y$ new changes. We believe
-the original state of the bug is not too far from the solution. To
-prevent individuals from straying too far from the original state an individual
-is reset to the original state if the individual has not seen any improvement
-in $z$ generations.
+individuals to explore more fruitful areas of the state space we employ a
+replacement strategy that replaces the lower $w$ percentage of individuals
+with a random individual from the upper $x$ percent.  These replacements only
+occur after an individual has been stagnant for $y$ generations. We believe
+the correct program isn't very far away in the state space from the original
+buggy program. Alternatively, a straying program may be reset to it's initial
+state if it has not seen any improvement in $y$ generations.
 % TODO Double check that ARC actually does it like this
 
 \subsection{Recalculate All Operator's Weighting}
 \label{sec:recalculate_operator_weighting}
 
-ARC utilizes a heuristic approach for selecting the mutation operator in the
-mutation step. A sliding window of $n$ generations is to determine
-the success of previously used mutation operators. If certain mutation
-operators tend to improve individuals fitness score, then we want to utilize
-these mutation operators more then ones that have not seen such success. The
+ARC utilizes a heuristic approach to select the mutation operator in the
+mutation step. A sliding window of $n$ generations is used to determine
+the success of previously used mutation operators. Operators that improve
+fitness are weighted more heavily and are more likely to be selected. A
 sliding window is used to prevent dominance of operators and to allow for
 flexibility in changing weighting based on recent history. The weighting is
 designed to ensure the chance of selecting an operator is always greater
 than zero regardless of performance. To ensure this approach is up to date
 the current weighting for each operator is recalculated based on the new
-feedback received from the population.
-
-As we have two phases we need to ensure that the calculated mutation operator
-weightings are only for the appropriate phase. In addition, when in the
-functional phase we consider a separate weighting for data races and deadlocks
-to remain accurate in the use of this heuristic.
+feedback received from the population. In the functional phase we consider
+a separate weighting for data races and deadlocks to remain accurate 
+in the use of this heuristic.
 
 \section{Experiments}
 \label{sec:experiments}
@@ -1133,7 +1098,7 @@ evaluation must measure ARC's ability to do so. We are also interested in how
 efficient ARC is at finding these solutions.
 
 Due to the repairing and optimization nature of ARC it is entirely possible for
-a program to perform better or worst then it originally performed. We are
+a program to perform better or worse then it originally performed. We are
 also interested in the effect of performance of the solution produced by ARC.
 
 \subsection{Experimental Setup}
@@ -1281,18 +1246,16 @@ Pingpong & 0.6 & [3--17] & [0.10--0.14] & [0.9--0.12] & [73--97] & [60--81]
 ARC has three major challenges to face:
 
 \textbf{Large Solution Space}: In Arcuri's approach~\cite{AY08}, they were
-considering the whole program along with a
-large set of mutations. The large space of potential mutations along with the
-large set of possible places to apply them causes an extremely large search space for
-finding the solution. In ARC we are only considering concurrency bugs and are 
+considering the whole program along with a large set of mutations. When combined
+with a large number of places to apply them it creates an extremely large search space
+for finding the solution. In ARC we are only considering concurrency bugs and are 
 only mutating concurrency mechanisms with concurrency mutation operators. Inherently
 ARC has a much smaller search space to explore before finding a fix. 
 
-The search space can be reduced even
-further by considering only the mutation that fall on the error path (used in
-Weimer's approach~\cite{GNFW11}). This is future work.
+The search space can be reduced even further by considering only the mutation falling 
+on the error path (Used in Weimer's approach~\cite{GNFW11}). This is future work.
 
-\textbf{Dependence on Test Suite}: ARC depends on a test suite for the 
+\textbf{Dependence on Test Suite}: ARC depends on a minimal test suite for the 
 program being repaired. In both Arcuri's and
 Weimer's approach~\cite{AY08,GNFW11} the test suites are used to both guard the
 program's functionality and to indicate a bug is present. ARC
@@ -1300,19 +1263,25 @@ requires a test suit to exhibit the bug. ARC currently has no solution for
 dealing with bugs that occur outside of the test suite's coverage. Arcuri's 
 and Weimer's approaches also has no solution for this. 
 
-There has been some work that attempts to co-evolve the
-test suite at the same time to help check for new situations~\cite{WT10}. We
+There has been some work that attempts to co-evolve the test suite at the same
+time to help check for new situations~\cite{WT10}. (Be specific.) We
 assume the test suite is comprehensive enough to detect all bugs. ARC will 
 eventually only consider using
 mutation operators that fall within the coverage of the test suite to avoid
 introducing new bugs the test suite cannot detect.
 
-\textbf{Program Readability}: The act of automatically fixing and optimizating
+(What is the challenge/problem here?  That only bugs in test suites can be
+detected? What are we going to do about it?)
+
+\textbf{Program Readability}: Automatically fixing and optimizing
 a program raises the question of source readability. None of the related work
 considers the readability of their fixes. This is a concern as developers
-want to understand the fix as well. For ARC's we are simply adding, removing and
+want to understand the fix as well. In ARC's we are simply adding, removing and
 modifying synchronization statements. Posnett et. al.~\cite{PHD11} use the following
 metrics to estimate readability:
+
+(What is the challenge/problem here?  It sounds like we've fixed the problem
+aready.)
 
 \begin{itemize}
   \item Moving lines around does not affect the program's readability
