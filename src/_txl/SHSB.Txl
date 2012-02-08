@@ -175,8 +175,7 @@ function doShrinkCriticalRegion
 		"SHSB (Shrink Sync Before)"
 
 	by
-		'MUTATED 
-  		/* 'MUTANT: MutantString */
+		'MUTATED /* 'MUTANT: MutantString */
 		Statement1
 		'synchronized '( Expr ') '{
 			Statement2
@@ -229,18 +228,17 @@ function undoShrinkCriticalRegion
 
 	% extract body
 	deconstruct ShrunkStatement 
-		/* 'MUTANT: MutantStr1 [stringlit] */
+		/* 'MUTANT: MutantString1[stringlit] */
 		S1 [repeat declaration_or_statement]
 		'synchronized '( Expr [expression] ') '{
 			S2 [repeat declaration_or_statement]
 		'}
-		/* 'MUTANT: MutantStr2 [stringlit] */
+		/* 'MUTANT: MutantString2[stringlit] */
 
 	by 
 		% replace mutated synchronized block with original but 
 		% leave hidden attribute
-		'MUTATED '
-		synchronized '( Expr ') '{
+		'MUTATED 'synchronized '( Expr ') '{
 			Body
 		'}
 end function

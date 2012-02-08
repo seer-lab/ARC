@@ -19,6 +19,25 @@ import logging
 logger = logging.getLogger('arc')
 
 
+def setup():
+  """Check if the directories and tools are present for testing process."""
+
+  try:
+    _check_directories()
+    _check_tools()
+  except Exception as message:
+    print (message.args)
+    sys.exit()
+
+  # Check if the testsuite can successfully execute with the set parameters
+  logger.debug("Practice testsuite run {} times".format(config._TESTSUITE_AVG))
+  cmd = "test_execution({})".format(config._TESTSUITE_AVG)
+  timer = timeit.Timer(cmd, "from _contest.contester import test_execution")
+
+  averageTime = timer.timeit(1) / config._TESTSUITE_AVG
+  logger.debug("Practice testsuite runs took {}s as an AVG".format(averageTime))
+  
+  
 def test_execution(runs):
   """Test the testsuite to ensure it can run successfully at least once.
 
@@ -65,25 +84,6 @@ def test_execution(runs):
   except Exception as message:
     print (message.args)
     sys.exit()
-
-
-def setup():
-  """Check if the directories and tools are present for testing process."""
-
-  try:
-    _check_directories()
-    _check_tools()
-  except Exception as message:
-    print (message.args)
-    sys.exit()
-
-  # Check if the testsuite can successfully execute with the set parameters
-  logger.debug("Practice testsuite run {} times".format(config._TESTSUITE_AVG))
-  cmd = "test_execution({})".format(config._TESTSUITE_AVG)
-  timer = timeit.Timer(cmd, "from _contest.contester import test_execution")
-
-  averageTime = timer.timeit(1) / config._TESTSUITE_AVG
-  logger.debug("Practice testsuite runs took {}s as an AVG".format(averageTime))
 
 
 def run_contest():

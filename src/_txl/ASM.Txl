@@ -101,14 +101,16 @@ rule MutateSynchronizedInsert
 end rule
 
 %------------------------------------------------------------
-% Create an ASM mutant by adding synchronized to the method 
+% Create an ASK mutant by adding synchronized to the method 
 % modifier list of a method that is not synchronized
 %------------------------------------------------------------
 function doSynchronizedInsertMutation
 	replace * [method_or_constructor_declaration]
 		GenDecl [method_or_constructor_declaration]
+		
 	deconstruct GenDecl
 		MethodDecl [method_declaration]
+		
 	deconstruct MethodDecl
 		MethodModifiers [repeat modifier] 
 		RemainingDelcaration [rest_of_method_declaration]
@@ -132,14 +134,12 @@ function doSynchronizedInsertMutation
 		"ASM (Add Sync around a Method)"
 	by
 		% generate hidden attribute and comment
-		'MUTATED 
-		/* 'MUTANT: MutantString */ 
+		'MUTATED /* 'MUTANT: MutantString */ 
 		% populate new modifier list with all existing modifiers 
 		% plus synchronized
 		NewMethodModifiers
 		% reinsert rest of method declaration
-		RemainingDelcaration
-		/* 'MUTANT: MutantString */ 
+		RemainingDelcaration 
 end function
 
 %------------------------------------------------------------
@@ -159,10 +159,9 @@ function undoSynchronizedInsertMutation
 		SavedMethodDecl [method_declaration]
 
 	deconstruct CurrGenDecl
-		'MUTATED 
-		/* 'MUTANT: MutantStr1 [stringlit] */ 
+		'MUTATED /* 'MUTANT: MutantString [stringlit] */ 
 		CurrMethodDecl [method_declaration]
-		/* 'MUTANT: MutantStr2 [stringlit] */	
+
 	by 
 		% replace mutated declaration with original 
 		% but leave hidden attribute

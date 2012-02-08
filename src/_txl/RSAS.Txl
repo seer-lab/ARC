@@ -189,8 +189,7 @@ function doSynchronizedDelMutation
 
 	by
 		% Replace with empty syncronized statement
-		'MUTATED 
-  		/* 'MUTANT: MutantString */
+		'MUTATED /* 'MUTANT: MutantString */
     		'{
 			OuterBody    
 			'synchronized '( InnerExpr ')

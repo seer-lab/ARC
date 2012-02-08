@@ -171,8 +171,7 @@ function doSynchronizedDelMutation
 
 	by
 		% Replace with empty syncronized statement
-		'MUTATED 
-  		/* 'MUTANT: MutantString */
+		'MUTATED /* 'MUTANT: MutantString */
 		UA AO AE ';
 		/* 'MUTANT: MutantString */
 end function
@@ -204,6 +203,7 @@ function undoSynchronizedDelMutation
 	by 
 		% replace mutated synchronized block with original but 
 		% leave hidden attribute
+		'MUTATED 		
 		'synchronized '( SyncExpr ')
 		'{
 			UA AO AE
