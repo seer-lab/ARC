@@ -187,8 +187,7 @@ function doSynchronizedInsertMutation
 
 	by
 		% Replace with empty syncronized statement
-		'MUTATED 
-  		/* 'MUTANT: MutantString */
+		'MUTATED /* 'MUTANT: MutantString */
 		'synchronized '( ThisExpr ')
     		'{
 			'synchronized '( InnerExpr ')

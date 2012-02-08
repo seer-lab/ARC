@@ -107,8 +107,10 @@ end rule
 function doSynchronizedInsertMutation
 	replace * [method_or_constructor_declaration]
 		GenDecl [method_or_constructor_declaration]
+		
 	deconstruct GenDecl
 		MethodDecl [method_declaration]
+		
 	deconstruct MethodDecl
 		MethodModifiers [repeat modifier] 
 		RemainingDelcaration [rest_of_method_declaration]

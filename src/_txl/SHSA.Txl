@@ -182,8 +182,7 @@ function doShrinkCriticalRegion
 		"SHSA (Shrink Sync After)"
 
 	by
-		'MUTATED 
-  		/* 'MUTANT: MutantString */
+		'MUTATED /* 'MUTANT: MutantString */
 		'synchronized '( Expr ') '{
 			M2
 		'}

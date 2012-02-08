@@ -164,11 +164,10 @@ function doExpandCriticalRegion
 
 	% create mutant comment to appear in source
 	construct MutantString [stringlit]
-		"EXSA (Expand Sync After)"
+		"EXSA (Expand Synch. After)"
 
 	by
-		'MUTATED 
-		/* 'MUTANT: MutantString */
+		'MUTATED /* 'MUTANT: MutantString */
 		'synchronized '( Expr ') '{
 			S2 [. S3_b]
 		'}		
@@ -201,8 +200,7 @@ function undoExpandCriticalRegion
 	by 
 		% replace mutated synchronized block with original but 
 		% leave hidden attribute
-		'MUTATED 
-		'synchronized '( Expr ') '{
+		'MUTATED 'synchronized '( Expr ') '{
         			S2
 		'}
 		S3

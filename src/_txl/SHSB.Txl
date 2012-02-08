@@ -175,8 +175,7 @@ function doShrinkCriticalRegion
 		"SHSB (Shrink Sync Before)"
 
 	by
-		'MUTATED 
-  		/* 'MUTANT: MutantString */
+		'MUTATED /* 'MUTANT: MutantString */
 		Statement1
 		'synchronized '( Expr ') '{
 			Statement2

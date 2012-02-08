@@ -11,6 +11,9 @@ import sys
 sys.path.append("..")  # To allow importing parent directory module
 import config
 
+import logging
+logger = logging.getLogger('arc')
+
 class Individual():
   """A 2D binary string that has a variable width for each row.
 
@@ -43,22 +46,22 @@ class Individual():
     self.lastOperator = ""
     self.appliedOperators = []
 
-    self.successRate = [0]
-    self.timeoutRate = [0]
-    self.dataraceRate = [0]
-    self.deadlockRate = [0]
-    self.errorRate = [0]
+    self.successes = []
+    self.timeouts = []
+    self.dataraces = []
+    self.deadlocks = []
+    self.errors = []
+    self.realTime = []
+    self.wallTime = []
+    self.voluntarySwitches = []
+    self.involuntarySwitches = []
+    self.percentCPU = []
+    self.goodRuns = []  # True || False
 
-    self.functionalScore = [0]
-    self.nonFunctionalScore = [0]
+    self.score = []
+    self.switchGeneration = 0
 
     self.turnsUnderperforming = 0
-
-  def getFitness(self, functionalPhase):
-    if functionalPhase:
-      return self.functionalScore[-1]
-    else:
-      return self.nonFunctionalScore[-1]
 
   def repopulateGenome(self, functionalPhase):
     """This function will re-populate the genome with location values.
@@ -106,29 +109,36 @@ class Individual():
     ret += "\n"
     ret += " Id: {}\n".format(self.id)
     ret += " Generation: {}\n".format(self.generation)
+    ret += " Switch Generation: {}\n".format(self.switchGeneration)
     ret += " Last Operator: {}\n".format(self.lastOperator)
     ret += " Applied Operators: {}\n".format(self.appliedOperators)
-    # TODO Fix me
-    # ret += " Last Success Rate: {}\n".format(self.lastSuccessRate)
-    # ret += " Last Timeout Rate: {}\n".format(self.lastTimeoutRate)
-    # ret += " Last Datarace Rate: {}\n".format(self.lastDataraceRate)
-    # ret += " Last Deadlock Rate: {}\n".format(self.lastDeadlockRate)
-    # ret += " Last Error Rate: {}\n".format(self.lastErrorRate)
+    ret += " Successes: {}\n".format(self.successes)
+    ret += " Real Time: {}\n".format(self.realTime)
+    ret += " Wall Time: {}\n".format(self.wallTime)
+    ret += " Voluntary Switches: {}\n".format(self.voluntarySwitches)
+    ret += " Involuntary Switches: {}\n".format(self.involuntarySwitches)
+    ret += " Percent CPU {}\n".format(self.percentCPU)
+    ret += " Score: {}\n".format(self.score)
     return ret
 
 
   def clone(self, height, i):
-    print height
     newIndividual = Individual(height, 0)
     newIndividual.id = i
     newIndividual.generation = self.generation
     newIndividual.lastOperator = self.lastOperator
     newIndividual.appliedOperators = self.appliedOperators[:]
-    newIndividual.successRate = self.successRate[:]
-    newIndividual.timeoutRate = self.timeoutRate[:]
-    newIndividual.dataraceRate = self.dataraceRate[:]
-    newIndividual.deadlockRate = self.deadlockRate[:]
-    newIndividual.errorRate = self.errorRate[:]
-    newIndividual.functionalScore = self.functionalScore[:]
-    newIndividual.nonFunctionalScore = self.nonFunctionalScore[:]
+    newIndividual.successes = self.successes[:]
+    newIndividual.timeouts = self.timeouts[:]
+    newIndividual.dataraces = self.dataraces[:]
+    newIndividual.deadlocks = self.deadlocks[:]
+    newIndividual.errors = self.errors[:]
+    newIndividual.realTime = self.realTime[:]
+    newIndividual.wallTime = self.wallTime[:]
+    newIndividual.voluntarySwitches = self.voluntarySwitches[:]
+    newIndividual.involuntarySwitches = self.involuntarySwitches[:]
+    newIndividual.percentCPU = self.percentCPU[:]
+    newIndividual.goodRuns = self.goodRuns[:]
+    newIndividual.score = self.score[:]
+    newIndividual.switchGeneration = self.switchGeneration
     return newIndividual
