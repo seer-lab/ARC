@@ -143,7 +143,7 @@ rule MutateExpandCriticalRegion
 end rule
 
 %------------------------------------------------------------
-% Create an EXSB mutant by expanding a critical region
+% Create an EXCR mutant by expanding a critical region
 %------------------------------------------------------------
 function doExpandCriticalRegion
 	replace * [synchronized_statement]
@@ -165,15 +165,13 @@ function doExpandCriticalRegion
 
 	% create mutant comment to appear in source
 	construct MutantString [stringlit]
-		"EXSB (Expand Synch Before)"
+		"EXSB (Expand Synch. Before)"
 
 	by
-		'MUTATED 
-		/* 'MUTANT: MutantString */
+		'MUTATED /* 'MUTANT: MutantString */
 		'synchronized '( Expr ') '{
 			S1_b S2 
-		'}
-		/* 'MUTANT: MutantString */		
+		'}		
 end function
 
 %------------------------------------------------------------
@@ -195,11 +193,10 @@ function undoExpandCriticalRegion
 
 	% extract body
 	deconstruct ExpandedStatement 
-		/* 'MUTANT: MutantStr1 [stringlit] */
+		/* 'MUTANT: MutantString1[stringlit] */
 		'synchronized '( Expr [expression] ') '{
 			NewBody [repeat declaration_or_statement]
 		'}
-		/* 'MUTANT: MutantStr2 [stringlit] */
 		
 	by 
 		% replace mutated synchronized block with original but 

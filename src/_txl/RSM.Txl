@@ -125,14 +125,12 @@ function doSynchronizedDelMutation
 
 	by
 		% generate hidden attribute and comment
-		'MUTATED 
-		/* 'MUTANT: MutantString */ 
+		'MUTATED /* 'MUTANT: MutantString */ 
 		% populate new modifier list with all modifiers 
 		% except synchronized
 		NewMethodModifiers [generateModifiers each MethodModifiers] 
 		% reinsert rest of method declaration
-		RemainingDelcaration
-		/* 'MUTANT: MutantString */ 
+		RemainingDelcaration 
 end function
 
 %------------------------------------------------------------
@@ -152,10 +150,9 @@ function undoSynchronizedDelMutation
 		SavedMethodDecl [method_declaration]
 
 	deconstruct CurrGenDecl
-		'MUTATED 
-                /* 'MUTANT: MutantStr1 [stringlit] */ 
+		'MUTATED /* 'MUTANT: MutantString [stringlit] */ 
 		CurrMethodDecl [method_declaration]
-		/* 'MUTANT: MutantStr2 [stringlit] */
+
 	by 
 		% replace mutated declaration with original but 
 		% leave hidden attribute
