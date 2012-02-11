@@ -10,7 +10,7 @@
 %  -- In "constructor_declarator", changed "type_name" to "class_name".
 %  -- In "implements_clause", changed "class_name+" to "qualified_name+".
 %  -- Defined a new nonterminal type called "method_or_constructor_declaration".
-%  -- In "member_declaration", removed "field_declaration" and changed  
+%  -- In "member_declaration", removed "field_declaration" and changed
 %         "method_declaration" to "method_or_constructor_declaration".
 %  -- In "class_body_declaration", removed "constructor_declaration" and
 %         added "field_declaration".
@@ -31,7 +31,7 @@
 %  -- Added 'strictfp in defintion of modifier.
 
 
-% Lexical conventions of Java 
+% Lexical conventions of Java
 
 #pragma -width 128
 
@@ -48,7 +48,7 @@ end comments
 
 compounds
     !=  '%=  &&  &=  *=  ++  +=   --  -=  /=  ^=  |=  ||
-    <<  <<=  <=  ==  >=  >>  >>=  >>>  >>>=  
+    <<  <<=  <=  ==  >=  >>  >>=  >>>  >>>=
 end compounds
 
 
@@ -56,14 +56,14 @@ end compounds
 keys
     'abstract 'boolean 'break 'byte 'case 'cast 'catch 'char 'class 'const 'continue
     'default 'do 'double 'else 'extends 'false 'final 'finally 'float 'for 'future
-    'goto 'if 'implements 'import 'inner 'instanceof 'int 'interface 'long 
+    'goto 'if 'implements 'import 'inner 'instanceof 'int 'interface 'long
     'native 'new 'null 'package 'private 'protected 'public 'return
-    'short 'static  'switch 'synchronized 
+    'short 'static  'switch 'synchronized
      'throw 'throws 'transient 'true 'try 'void 'volatile 'while
 end keys
 
 
-% Syntax of Java 1.1 
+% Syntax of Java 1.1
 
 define program
     [package_declaration]
@@ -74,7 +74,7 @@ end define
 
 define package_declaration
     [opt package_header]
-    [repeat import_declaration] 
+    [repeat import_declaration]
     [repeat type_declaration]
 end define
 
@@ -178,7 +178,7 @@ define class_body_declaration
     |   [member_declaration]
     |   [instance_initializer]
     |   [static_initializer]
-    |   [field_declaration] 
+    |   [field_declaration]
 end define
 
 define empty_declaration
@@ -216,7 +216,7 @@ define constructor_body
 end define
 
 
-% Field declarations 
+% Field declarations
 
 define field_declaration
     [variable_declaration]
@@ -252,14 +252,14 @@ define array_initializer
 end define
 
 
-% Method declarations 
+% Method declarations
 
 define method_declaration
     [NL] [repeat modifier] [type_specifier] [method_declarator] [opt throws] [method_body]
 end define
 
 define method_declarator
-    [method_name] '( [list formal_parameter] ') [repeat dimension]    
+    [method_name] '( [list formal_parameter] ') [repeat dimension]
 end define
 
 define method_name
@@ -287,8 +287,8 @@ end define
 % Type specifiers
 
 define type_specifier
-        [type_name] 
-    |    [array_type_specifier] 
+        [type_name]
+    |    [array_type_specifier]
 end define
 
 define array_type_specifier
@@ -316,13 +316,13 @@ end define
 % Statements
 
 define block
-    '{                                        [NL][IN] 
+    '{                                        [NL][IN]
         [repeat declaration_or_statement]     [EX]
     '}
 end define
 
 define declaration_or_statement
-        [local_variable_declaration] 
+        [local_variable_declaration]
     |   [class_declaration]
     |   [statement]
 end define
@@ -332,7 +332,7 @@ define local_variable_declaration
 end define
 
 define statement
-        [label_statement]        
+        [label_statement]
     |   [empty_statement]
     |   [expression_statement]
     |   [if_statement]
@@ -366,7 +366,7 @@ define expression_statement
 end define
 
 define if_statement
-    'if '( [expression] ')     
+    'if '( [expression] ')
         [statement]
     [opt else_clause]      [NL]
 end define
@@ -383,7 +383,7 @@ end define
 define switch_block
     '{                                         [IN][NL]
         [repeat switch_alternative]            [EX]
-    '} 
+    '}
 end define
 
 define switch_alternative
@@ -392,13 +392,13 @@ define switch_alternative
 end define
 
 define switch_label
-        'case [constant_expression] ':  
+        'case [constant_expression] ':
     |   'default ':
 end define
 
 define while_statement
-    'while '( [expression] ') 
-        [statement]                            [NL]                         
+    'while '( [expression] ')
+        [statement]                            [NL]
 end define
 
 define do_statement
@@ -413,12 +413,12 @@ define for_statement
 end define
 
 define for_init
-        [list expression] ';    
+        [list expression] ';
     |   [local_variable_declaration]
 end define
 
 define for_expression
-    [opt expression] ';    
+    [opt expression] ';
 end define
 
 define for_update
@@ -451,12 +451,12 @@ define try_statement
 end define
 
 define catch_clause
-%    'catch '( [type_specifier] [reference] ') [block] 
+%    'catch '( [type_specifier] [reference] ') [block]
     'catch '( [type_specifier] [variable_name] ') [block]  % July 15
 end define
 
 define finally_clause
-    'finally [block] 
+    'finally [block]
 end define
 
 
@@ -472,7 +472,7 @@ end define
 
 define assignment_expression
         [conditional_expression]
-    |   [unary_expression] [assignment_operator] [assignment_expression]    
+    |   [unary_expression] [assignment_operator] [assignment_expression]
 end define
 
 define assignment_operator
@@ -572,7 +572,7 @@ define shift_additive_expression
 end define
 
 define shift_op
-    '<< | '>> | '>>> 
+    '<< | '>> | '>>>
 end define
 
 define additive_expression
@@ -584,7 +584,7 @@ define add_op_multiplicative_expression
 end define
 
 define add_op
-    '+ | '- 
+    '+ | '-
 end define
 
 define multiplicative_expression
@@ -596,7 +596,7 @@ define mult_op_unary_expression
 end define
 
 define mult_op
-    '* | '/ | '% 
+    '* | '/ | '%
 end define
 
 define unary_expression
@@ -627,7 +627,7 @@ define post_inc_dec
 end define
 
 define subscript
-    '[ [expression] ']        
+    '[ [expression] ']
 end define
 
 define primary
@@ -698,11 +698,11 @@ end define
 define component
      [dot_id]
    | [method_argument]
-   | [subscript] 
+   | [subscript]
 end define
 
 define method_argument
-   '( [list argument] ')   
+   '( [list argument] ')
 end define
 
 define dot_id

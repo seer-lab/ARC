@@ -1,10 +1,10 @@
 %***********************************************************
 % RSM (Remove Sync around a Method) Mutator for ARC
 % (Automatic Repair of Concurrency Bugs)
-% 
+%
 % Kevin Jalbert and David Kelk, Sept. 2011
 % SBSE Reading Course Project
-% 
+%
 % Based on RSK by J.S. Bradbury
 %***********************************************************
 
@@ -14,9 +14,9 @@
 
 % Copyright 2006 J.S. Bradbury
 
-% Description: This mutation operator removes the 
+% Description: This mutation operator removes the
 % the synchronizied keyword from methods.
-% We do not remove the synchronized keyword from constructors 
+% We do not remove the synchronized keyword from constructors
 % because a constructor method can not be synchronized.
 %***********************************************************
 
@@ -47,19 +47,19 @@ end define
 % Main rule, followed by other rules in topological order
 %------------------------------------------------------------
 function main
-	% initialize and export a mutant count that will be used in 
+	% initialize and export a mutant count that will be used in
 	% file name / folder name generation
     	construct MutantCount [number]
 		0
     	export MutantCount
 
-	% initialize and export the name of the current mutant which 
+	% initialize and export the name of the current mutant which
 	% will be used for folder name generation
 	construct MutantOpName [stringlit]
 		"RSM"
 	export MutantOpName
 
-	replace [program] 
+	replace [program]
         		P [program]
 
     	by
@@ -69,9 +69,9 @@ function main
 end function
 
 %------------------------------------------------------------
-% Match all methods that have both a synchronized keyword 
+% Match all methods that have both a synchronized keyword
 % and then perform the following 3 steps for each:
-%	1. Create mutant of program with synchronized modifier 
+%	1. Create mutant of program with synchronized modifier
 %      removed
 %	2. Write mutant to a file
 %	3. Reinsert synchronized modifier that was removed
@@ -84,19 +84,19 @@ rule MutateSynchronizedDel
 	% (i.e. methods that have a synchronized modifier)
 	where
 		P 	[?doSynchronizedDelMutation]
-	
-	by 
-		P	
+
+	by
+		P
 			% Create the mutant version of the program
-			[doSynchronizedDelMutation] 
-			%[print] 	
+			[doSynchronizedDelMutation]
+			%[print]
 			[writeToFile]
 			% Undo mutation and return to original program
 			[undoSynchronizedDelMutation]
 end rule
 
 %------------------------------------------------------------
-% Create an RSK mutant by removing synchronized from the 
+% Create an RSK mutant by removing synchronized from the
 % method modifier list
 %------------------------------------------------------------
 function doSynchronizedDelMutation
@@ -105,7 +105,7 @@ function doSynchronizedDelMutation
 	deconstruct GenDecl
 		MethodDecl [method_declaration]
 	deconstruct MethodDecl
-		MethodModifiers [repeat modifier] 
+		MethodModifiers [repeat modifier]
 		RemainingDelcaration [rest_of_method_declaration]
 
 	% check that synchronized modifier is present
@@ -115,7 +115,7 @@ function doSynchronizedDelMutation
 	% create empty list of modifiers
 	construct NewMethodModifiers [repeat modifier]
 
-	% export the old declaration and reinsert it 
+	% export the old declaration and reinsert it
 	% once the mutant has been created and saved
 	export GenDecl
 
@@ -125,16 +125,16 @@ function doSynchronizedDelMutation
 
 	by
 		% generate hidden attribute and comment
-		'MUTATED /* 'MUTANT: MutantString */ 
-		% populate new modifier list with all modifiers 
+		'MUTATED /* 'MUTANT: MutantString */
+		% populate new modifier list with all modifiers
 		% except synchronized
-		NewMethodModifiers [generateModifiers each MethodModifiers] 
+		NewMethodModifiers [generateModifiers each MethodModifiers]
 		% reinsert rest of method declaration
-		RemainingDelcaration 
+		RemainingDelcaration
 end function
 
 %------------------------------------------------------------
-% Reinsert the orginal method declaration but leave the 
+% Reinsert the orginal method declaration but leave the
 % MUTATED attribute to indicate that the mutant has already
 % been created.
 %------------------------------------------------------------
@@ -150,11 +150,11 @@ function undoSynchronizedDelMutation
 		SavedMethodDecl [method_declaration]
 
 	deconstruct CurrGenDecl
-		'MUTATED /* 'MUTANT: MutantString [stringlit] */ 
+		'MUTATED /* 'MUTANT: MutantString [stringlit] */
 		CurrMethodDecl [method_declaration]
 
-	by 
-		% replace mutated declaration with original but 
+	by
+		% replace mutated declaration with original but
 		% leave hidden attribute
 		'MUTATED SavedMethodDecl
 end function

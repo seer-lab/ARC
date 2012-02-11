@@ -4,7 +4,7 @@
 
 % Copyright 2006-2007 J.S. Bradbury
 
-% Description: 
+% Description:
 % Include rules for writing mutants to files
 
 % Limitations:
@@ -33,11 +33,11 @@ function constructDirectory
 	import MutantOpName [stringlit]
 
 	construct sep [stringlit]
-		"_" 
+		"_"
 
 	% get the input file name
 	import TXLinput [stringlit]
-		
+
 	by
 		DirValue [+MutantOpName] [+ sep] [+ FileValue] [+ sep] [+ MutantCount] [print]
 end function
@@ -45,10 +45,10 @@ end function
 %------------------------------------------------------------
 % Write mutant to a file
 %------------------------------------------------------------
-function writeToFile 
+function writeToFile
 	replace [program]
 		P [program]
-	
+
 	% get the input file name
 	import TXLinput [stringlit]
 
@@ -65,7 +65,7 @@ function writeToFile
 
 	% create new mutant directory
 	construct mkdirCmd [stringlit]
-		"mkdir " 
+		"mkdir "
 
 	construct mkdirCmd2 [stringlit]
 		mkdirCmd [+ dirname]
@@ -82,7 +82,7 @@ function writeToFile
 	construct filename [stringlit]
 		dirname [+ slash] [+ FileValue]
 
-	by 
+	by
 		P 	[system mkdirCmd2]
 			[system dirCmd]
 			[system cdCmd2]

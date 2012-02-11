@@ -44,13 +44,13 @@ def mutate_project(generation, memberNum, mutationOperators):
 
   Attributes:
   generation (int): Current generation of the evolutionary strategy
-  memberNum (int): Which member of the population we are mutating 
-  mutationOperators ([list]): one of {config._FUNCTIONAL_MUTATIONS, 
+  memberNum (int): Which member of the population we are mutating
+  mutationOperators ([list]): one of {config._FUNCTIONAL_MUTATIONS,
     config._NONFUNCTIONAL_MUTATIONS}
   """
 
   #logger.debug("Arguments received: {} {} {}".format(generation, memberNum, mutationOperators))
-  
+
   destDir = config._TMP_DIR + str(generation) + os.sep + str(memberNum) + os.sep
 
   if generation == 1:
@@ -73,10 +73,10 @@ def recursively_mutate_project(generation, memberNum, sourceDir, destDir,
 
   Attributes:
   generation (int): Current generation of the evolutionary strategy
-  memberNum (int): Which member of the population we are mutating 
+  memberNum (int): Which member of the population we are mutating
   sourceDir (string): Where the project is coming from, depends on the generation
   destDir (string): Where the project is being copied to
-  mutationOperators ([list]): one of {config._FUNCTIONAL_MUTATIONS, 
+  mutationOperators ([list]): one of {config._FUNCTIONAL_MUTATIONS,
     config._NONFUNCTIONAL_MUTATIONS}
   """
 
@@ -118,11 +118,11 @@ def generate_mutants(generation, memberNum, txlOperator, sourceFile, destDir,
 
   Attributes:
   generation (int): Current generation of the evolutionary strategy
-  memberNum (int): Which member of the population we are mutating 
+  memberNum (int): Which member of the population we are mutating
   txlOperator (string): One of _MUTATION_ASAS, etc... from config.py
   sourceFile (string): The specific file from the source project we are mutating
   destDir (string): Where the project is being copied to
-  mutationOperators ([list]): one of {config._FUNCTIONAL_MUTATIONS, 
+  mutationOperators ([list]): one of {config._FUNCTIONAL_MUTATIONS,
     config._NONFUNCTIONAL_MUTATIONS}
   """
 
@@ -167,35 +167,35 @@ def generate_mutants(generation, memberNum, txlOperator, sourceFile, destDir,
 
   outFile = tempfile.SpooledTemporaryFile()
   errFile = tempfile.SpooledTemporaryFile()
-  
+
   #logger.debug("Generating mutant at: {}".format(txlDestDir))
   #logger.debug("sourceFile: {}".format(sourceFile))
   #logger.debug("txlOperator[4]: {}".format(txlOperator[4]))
   #logger.debug("sourceNameOnly + sourceExtOnly: {}".format(sourceNameOnly + sourceExtOnly))
-  #logger.debug("txlDestDir: {}".format(txlDestDir))  
-  
+  #logger.debug("txlDestDir: {}".format(txlDestDir))
+
   process = subprocess.Popen(['txl', sourceFile, txlOperator[4], '-',
             '-outfile', sourceNameOnly + sourceExtOnly, '-outdir', txlDestDir],
             stdout=outFile, stderr=errFile, cwd=config._PROJECT_DIR, shell=False)
   process.wait()
-  
+
   #logger.debug("stdout: {}".format(outFile))
   #logger.debug("stderr: {}".format(errFile))
 
 
 def generate_representation(generation, memberNum, mutationOperators):
-  """Generate the representation for a member.  
+  """Generate the representation for a member.
   Generate the dictionary for use here.
   Returns a list ints where each int corresponds to the number of mutations
   of one type.  eg: {5, 7, 3, ...} = 5 of type ASAS, 7 of type ASAV
-  The order of the mutation types is the same as that in the two 
+  The order of the mutation types is the same as that in the two
   config.**_MUTATIONS.
 
   Attributes:
   generation (int): Current generation of the evolutionary strategy
-  memberNum (int): Which member of the population we are mutating 
-  mutationOperators ([list]): one of {config._FUNCTIONAL_MUTATIONS, 
-    config._NONFUNCTIONAL_MUTATIONS}  
+  memberNum (int): Which member of the population we are mutating
+  mutationOperators ([list]): one of {config._FUNCTIONAL_MUTATIONS,
+    config._NONFUNCTIONAL_MUTATIONS}
   """
 
   logger.debug("Arguments received: {} {}".format(generation, memberNum))
@@ -239,7 +239,7 @@ def backup_project():
   """
 
   logger.debug("Backing up (global) project:")
-  logger.debug("\nSrc: {} \nDst: {}".format(config._PROJECT_SRC_DIR, 
+  logger.debug("\nSrc: {} \nDst: {}".format(config._PROJECT_SRC_DIR,
     config._PROJECT_BACKUP_DIR))
 
   if os.path.exists(config._PROJECT_BACKUP_DIR):
@@ -251,7 +251,7 @@ def restore_project():
   """At the end of an ARC run, restore the project to it's pristine state."""
 
   logger.debug("Restoring (global) project:")
-  logger.debug("\nSrc: {} \nDst: {}".format(config._PROJECT_BACKUP_DIR, 
+  logger.debug("\nSrc: {} \nDst: {}".format(config._PROJECT_BACKUP_DIR,
     config._PROJECT_SRC_DIR))
 
   if os.path.exists(config._PROJECT_SRC_DIR):
@@ -271,7 +271,7 @@ def create_local_project(generation, memberNum, restart):
 
   Attributes:
   generation (int): Current generation of the evolutionary strategy
-  memberNum (int): Which member of the population we are dealing with   
+  memberNum (int): Which member of the population we are dealing with
   restart (boolean): Do we want to reset the member project back to the pristine one?
   """
 
@@ -298,19 +298,19 @@ def create_local_project(generation, memberNum, restart):
   shutil.copytree(srcDir, destDir)
 
 
-def copy_local_project_a_to_b(generationSrc, memberNumSrc, generationDst, 
+def copy_local_project_a_to_b(generationSrc, memberNumSrc, generationDst,
                               memberNumDst):
   """When an underperforming member is replaced by a higher performing one
   we have to replace their local project with the higher performing project
 
   Attributes:
   generationSrc (int): Source generation
-  memberNumSrc (int): Source member 
+  memberNumSrc (int): Source member
   generationDst (int): Destination generation
-  memberNumDst (int): Destination member     
+  memberNumDst (int): Destination member
   """
 
-  logger.debug("Gen: {} Mem: {}  ->  Gen: {} Mem: {} ".format(generationSrc, 
+  logger.debug("Gen: {} Mem: {}  ->  Gen: {} Mem: {} ".format(generationSrc,
                                 memberNumSrc, generationDst, memberNumDst))
 
   staticPart = os.sep + 'project' + os.sep
@@ -335,9 +335,9 @@ def move_mutant_to_local_project(generation, memberNum, txlOperator, mutantNum):
 
   Attributes:
   generation (int): Current generation of the evolutionary strategy
-  memberNum (int): Which member of the population we are dealing with 
-  txlOperator (string): Selected TXL operator (eg: ASAS) 
-  mutantNum (int): Mutant number selected from the mutant dir 
+  memberNum (int): Which member of the population we are dealing with
+  txlOperator (string): Selected TXL operator (eg: ASAS)
+  mutantNum (int): Mutant number selected from the mutant dir
   """
 
   logger.debug("Op: {} -> Gen: {} Mem: {} ".format(txlOperator, generation, memberNum))
@@ -367,7 +367,7 @@ def move_mutant_to_local_project(generation, memberNum, txlOperator, mutantNum):
   # print 'mmtlp relPath:        ' + relPath
   # print 'mmtlp src:            ' + sourceDir
   # print 'mmtlp dst:            ' + dst
- 
+
   if not os.path.exists(dst):
     os.makedirs(dst)
 
@@ -384,7 +384,7 @@ def move_local_project_to_original(generation, memberNum):
 
   Attributes:
   generation (int): Current generation of the evolutionary strategy
-  memberNum (int): Which member of the population we are dealing with  
+  memberNum (int): Which member of the population we are dealing with
   """
 
   # Check for existence of a backup
@@ -410,7 +410,7 @@ def move_best_project_to_output(generation, memberNum):
 
   Attributes:
   generation (int): Generation of the best solution
-  memberNum (int): Which member of the population   
+  memberNum (int): Which member of the population
   """
 
   srcDir = (config._TMP_DIR + str(generation) + os.sep + str(memberNum) + os.sep \
@@ -437,20 +437,19 @@ def compile_project():
     if os.path.exists(config._PROJECT_CLASS_DIR):
       shutil.rmtree(config._PROJECT_CLASS_DIR)
     os.mkdir(config._PROJECT_CLASS_DIR)
-    
+
     # Make an ant call to compile the program
     #os.chdir(config._PROJECT_DIR)
-    antProcess = subprocess.Popen(['ant', 'compile'], stdout=outFile,
+    antProcess = subprocess.Popen(['ant', config._PROJECT_COMPILE], stdout=outFile,
                         stderr=errFile, cwd=config._PROJECT_DIR, shell=False)
     antProcess.wait()
 
     # Look for a compilation error
     errFile.seek(0)
-    errorText = errFile.read()
+    errorText = errFile.read().lower()
     errFile.close()
 
-    #if (errorText.find(b"BUILD FAILED") >= 0):
-    if (errorText.find("Build failed") >= 0):
+    if (errorText.find("build failed") >= 0):
       logger.error("ant 'compile' command failed, could not compile (global) project")
       return False
     else:
