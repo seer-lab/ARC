@@ -37,6 +37,8 @@ def setup():
       line = "targetClasses = {} ".format(config._PROJECT_PREFIX.replace(".", "/"))
     elif line.find("sourceDirs =") is 0:
       line = "sourceDirs = {} ".format(config._PROJECT_SRC_DIR)
+    elif line.find("keepBackup =") is 0:
+      line = "keepBackup = false "
     print(line[0:-1])  # Remove extra newlines (a trailling-space must exists in modified lines)
 
 
