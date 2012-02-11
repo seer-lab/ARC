@@ -11,6 +11,7 @@ import tester
 import os
 import timeit
 import tempfile
+import fileinput
 
 sys.path.append("..")  # To allow importing parent directory module
 import config
@@ -29,6 +30,19 @@ def setup():
     print (message.args)
     sys.exit()
 
+  # Configure KingProperties file
+  logger.info("Configuring ConTest's KingProperties file")
+  for line in fileinput.FileInput(config._CONTEST_KINGPROPERTY, inplace=1):
+    if line.find("targetClasses =") is 0:
+      line = "targetClasses = {} ".format(config._PROJECT_PREFIX.replace(".", "/"))
+    elif line.find("sourceDirs =") is 0:
+      line = "sourceDirs = {} ".format(config._PROJECT_SRC_DIR)
+    elif line.find("keepBackup =") is 0:
+      line = "keepBackup = false "
+    print(line[0:-1])  # Remove extra newlines (a trailling-space must exists in modified lines)
+
+
+def run_test_execution():
   # Check if the testsuite can successfully execute with the set parameters
   logger.debug("Practice testsuite run {} times".format(config._TESTSUITE_AVG))
   cmd = "test_execution({})".format(config._TESTSUITE_AVG)
@@ -36,8 +50,8 @@ def setup():
 
   averageTime = timer.timeit(1) / config._TESTSUITE_AVG
   logger.debug("Practice testsuite runs took {}s as an AVG".format(averageTime))
-  
-  
+
+
 def test_execution(runs):
   """Test the testsuite to ensure it can run successfully at least once.
 
@@ -89,7 +103,7 @@ def test_execution(runs):
 def run_contest():
   """Run the testsuite with ConTest using the approach in tester.py."""
   testRunner = tester.Tester()
-  testRunner.begin_testing()
+  testRunner.begin_testing(True)
 
 
 def _check_tools():
@@ -129,9 +143,6 @@ def _check_directories():
 
   if(not os.path.isdir(config._PROJECT_TEST_DIR)):
     raise Exception('ERROR MISSING DIRECTORY', 'test')
-
-  if(not os.path.isdir(config._PROJECT_CLASS_DIR)):
-    raise Exception('ERROR MISSING DIRECTORY', 'class')
 
   return True
 

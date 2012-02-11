@@ -96,8 +96,8 @@ def start():
       # Here "worst" is the average of a large number of executions
       txl_operator.move_local_project_to_original(bestFunctional.generation,
                                                   bestFunctional.id)
-      txl_operator.compile_project()                                            
-      worstScore = get_average_non_functional_score(bestFunctional, 
+      txl_operator.compile_project()
+      worstScore = get_average_non_functional_score(bestFunctional,
         config._CONTEST_RUNS * 3)
 
       # Evolve the population to find the best non-functional individual
@@ -108,11 +108,11 @@ def start():
       logger.info("******************************************************")
       logger.info("Best individual found during the non-functional phase:")
       logger.info(bestNonFunctional)
-      logger.info("******************************************************")      
+      logger.info("******************************************************")
       logger.info("")
 
       logger.info("Copying fixed project to {}".format(config._PROJECT_OUTPUT_DIR))
-      txl_operator.move_best_project_to_output(bestNonFunctional.generation, 
+      txl_operator.move_best_project_to_output(bestNonFunctional.generation,
         bestNonFunctional.id)
     else:
       logger.info("No individual was found that functions correctly")
@@ -148,7 +148,7 @@ def evolve(population, functionalPhase, generation=0, worstScore=0):
     # Mutate each individual
     for individual in population:
       individual.generation = generation
-      moreMutations = mutation(individual, functionalPhase, deadlockVotes, 
+      moreMutations = mutation(individual, functionalPhase, deadlockVotes,
         dataraceVotes, nonFunctionalVotes)
 
     # Evaluate each individual
@@ -188,7 +188,7 @@ def evolve(population, functionalPhase, generation=0, worstScore=0):
     # Perform mutation again for those individuals who were replaced or restarted
     for individual in population:
       if generation == individual.generation - 1:
-        mutation(individual, functionalPhase, deadlockVotes, dataraceVotes, 
+        mutation(individual, functionalPhase, deadlockVotes, dataraceVotes,
           nonFunctionalVotes)
 
     # Adjust weighting of mutation operators
@@ -249,7 +249,7 @@ def mutation(individual, functionalPhase, deadlockVotes, dataraceVotes, nonFunct
   # Keep trying to find a successful mutant within the retry limits
   while limit is not 0 and not successfulCompile:
     # Acquire operator, one of config._MUTATIONS (ASAV, ...)
-    selectedOperator = feedback_selection(individual, functionalPhase, 
+    selectedOperator = feedback_selection(individual, functionalPhase,
       deadlockVotes, dataraceVotes, nonFunctionalVotes)
 
     # Find the integer index of the selectedOperator
@@ -347,16 +347,16 @@ def evaluate(individual, functionalPhase, worstScore):
     # to the original before testing for both phases
     #txl_operator.move_local_project_to_original(individual.generation,
     #                                            individual.id)
-    #txl_operator.compile_project()    
+    #txl_operator.compile_project()
     if contest.begin_testing(functionalPhase, True):
       logger.debug("Functionality was unchanged")
       contest.clear_results()
       contest.begin_testing(functionalPhase)  # Measure performance
       individual.realTime.append(float(sum(contest.realTime)) / len(contest.realTime))
       individual.wallTime.append(float(sum(contest.wallTime)) / len(contest.wallTime))
-      individual.voluntarySwitches.append(float(sum(contest.voluntarySwitches)) / 
+      individual.voluntarySwitches.append(float(sum(contest.voluntarySwitches)) /
         len(contest.voluntarySwitches))
-      individual.involuntarySwitches.append(float(sum(contest.involuntarySwitches)) / 
+      individual.involuntarySwitches.append(float(sum(contest.involuntarySwitches)) /
         len(contest.involuntarySwitches))
       individual.percentCPU.append(float(sum(contest.percentCPU)) / len(contest.percentCPU))
 
@@ -495,7 +495,7 @@ def get_average_non_functional_score(individual, numberOfRuns = config._CONTEST_
   # Find the uncertainties in the measurements
   maxRT = max(contest.realTime)
   minRT = min(contest.realTime)
-  maxVS = max(contest.voluntarySwitches) 
+  maxVS = max(contest.voluntarySwitches)
   minVS = min(contest.voluntarySwitches)
   uncRT = (maxRT - minRT) / avgRealTime
   uncVS = (maxVS - minVS) / avgVoluntarySwitches
@@ -619,7 +619,7 @@ def terminate(population, generation, generationLimit, functionalPhase):
 
       txl_operator.move_local_project_to_original(individual.generation,
                                                   individual.id)
-      txl_operator.compile_project() 
+      txl_operator.compile_project()
       if tester.Tester().begin_testing(True, True, config._CONTEST_RUNS * 2):
         tester.Tester().clear_results()
         logger.info("Found best individual {}".format(individual.id))
@@ -718,7 +718,7 @@ def replace_lowest(population, functionalPhase):
         # Reset the local project to it's pristine state
         logger.debug("Case 2: Reseting ID {} generation {} back to the pristine project".
           format(sortedMembers[i].id, sortedMembers[i].generation))
-        txl_operator.create_local_project(sortedMembers[i].generation, 
+        txl_operator.create_local_project(sortedMembers[i].generation,
           sortedMembers[i].id, True)
       else:
         # Reset to best individual
