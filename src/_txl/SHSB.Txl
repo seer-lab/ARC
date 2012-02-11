@@ -1,10 +1,10 @@
 %***********************************************************
 % SHSB (SHrink Sync region Before) Mutator for ARC
 % (Automatic Repair of Concurrency Bugs)
-% 
+%
 % Kevin Jalbert and David Kelk, Sept. 2011
 % SBSE Reading Course Project
-% 
+%
 % Based on SKCR by J.S. Bradbury
 %***********************************************************
 
@@ -34,7 +34,7 @@ redefine statement
 end redefine
 
 define other_statements
-    	[label_statement]        
+    	[label_statement]
     |   [empty_statement]
     |   [expression_statement]
     |   [if_statement]
@@ -50,7 +50,7 @@ define other_statements
 end define
 
 define declaration_or_other_statements
-        [local_variable_declaration] 
+        [local_variable_declaration]
 %   |   [class_declaration]     DK
     |   [other_statements]
 end define
@@ -59,12 +59,12 @@ redefine declaration_or_statement
 	 	[synchronized_statement]
 	|	[declaration_or_other_statements]
 	|       [block]
-	|	[comment_NL] 
+	|	[comment_NL]
 end redefine
 
 redefine synchronized_statement
           [attr labelM] [synchronized_statement_2]
-	| [attr labelM] [shrunk_synchronized_statement] 
+	| [attr labelM] [shrunk_synchronized_statement]
 	| ...
 end redefine
 
@@ -72,7 +72,7 @@ end redefine
 
 define synchronized_statement_2
     'synchronized '( [expression] ')
-    '{                                        [NL][IN] 
+    '{                                        [NL][IN]
 	[repeat declaration_or_statement] [NL][EX]% DK
     '}   [NL]
 end define
@@ -82,12 +82,12 @@ end define
 define shrunk_synchronized_statement
     /* 'MUTANT: [stringlit] */ 				[NL]
 	[repeat declaration_or_statement]  [NL]     % DK
-	'synchronized '( [expression] ')  
-	'{                                        [NL][IN] 
+	'synchronized '( [expression] ')
+	'{                                        [NL][IN]
     		[repeat declaration_or_statement]         [EX] % DK
 	'}	[NL]
 	/* 'MUTANT: [stringlit] */ 				[NL]
-	
+
 end define
 
 
@@ -99,28 +99,28 @@ end define
 % Main rule, followed by other rules in topological order
 %------------------------------------------------------------
 function main
-	% initialize and export a mutant count that will be used in 
+	% initialize and export a mutant count that will be used in
 	% file name / folder name generation
     	construct MutantCount [number]
 		0
    	 export MutantCount
 
-	% initialize and export the name of the current mutant that 
+	% initialize and export the name of the current mutant that
 	% will be used for folder name generation
 	construct MutantOpName [stringlit]
 		"SHSB"
 	export MutantOpName
-	
-	replace [program] 
+
+	replace [program]
         		P [program]
 
-   	 by	% shrink all instances of synchronized blocks one at 
+   	 by	% shrink all instances of synchronized blocks one at
 		% a time
         		P [MutateShrinkCriticalRegion]
 end function
 
 %------------------------------------------------------------
-% Match all methods that have a synchronized block 
+% Match all methods that have a synchronized block
 % and then perform the following 3 steps for each:
 %	1. Create mutant of program with synchronized block
 %          shrunk before (only)
@@ -136,10 +136,10 @@ rule MutateShrinkCriticalRegion
 	where
 		P 	[?doShrinkCriticalRegion]
 
-	by 
+	by
 		P	% Create the mutant version of the program
-			[doShrinkCriticalRegion] 
-			%[print] 	
+			[doShrinkCriticalRegion]
+			%[print]
 			[writeToFile]
 			% Undo mutation and return to original program
 			[undoShrinkCriticalRegion]
@@ -147,14 +147,14 @@ end rule
 
 %------------------------------------------------------------
 % Create an SHSB mutant by shrinking a critical region
-% before.  That is, move the first line of code in the critical 
+% before.  That is, move the first line of code in the critical
 % region outside (before) the critical region.
 %------------------------------------------------------------
 function doShrinkCriticalRegion
 
 	replace * [synchronized_statement]
 		SynchStatement [synchronized_statement]
-	
+
 	deconstruct SynchStatement
 		SynchStatement2 [synchronized_statement_2]
 
@@ -166,7 +166,7 @@ function doShrinkCriticalRegion
 	deconstruct Body
 		Statement1 [declaration_or_statement] % Single statement
 		Statement2 [repeat declaration_or_statement] % Group of statements
-	
+
 	% export the old body of the synchronized block
 	export Body
 
@@ -179,7 +179,7 @@ function doShrinkCriticalRegion
 		Statement1
 		'synchronized '( Expr ') '{
 			Statement2
-		'}		
+		'}
 		/* 'MUTANT: MutantString */
 end function
 
@@ -187,25 +187,25 @@ end function
 % Recursive function to generate new shrunk critical region
 %------------------------------------------------------------
 function generateMiddle Statement2 [repeat declaration_or_statement]
-	
+
 	deconstruct Statement2
 		First [declaration_or_statement] % Single statement
 		Rest [repeat declaration_or_statement] % Multiple statements
-	
+
 	deconstruct Rest
-		Second [declaration_or_statement] 
+		Second [declaration_or_statement]
 		More [repeat declaration_or_statement]
 
 	export Second
 
-	construct 
+	construct
 		Temp [repeat declaration_or_statement]
 
-	replace  
+	replace
 		[repeat declaration_or_statement]
 		X [repeat declaration_or_statement]
 
-	by 
+	by
 		First Temp [generateMiddle Rest]
 
 end function
@@ -219,7 +219,7 @@ function undoShrinkCriticalRegion
 	replace * [synchronized_statement]
 		SynchStatement [synchronized_statement]
 
-	deconstruct SynchStatement 
+	deconstruct SynchStatement
 		'MUTATED
 		ShrunkStatement [shrunk_synchronized_statement]
 
@@ -227,7 +227,7 @@ function undoShrinkCriticalRegion
 	import Body [repeat declaration_or_statement]
 
 	% extract body
-	deconstruct ShrunkStatement 
+	deconstruct ShrunkStatement
 		/* 'MUTANT: MutantString1[stringlit] */
 		S1 [repeat declaration_or_statement]
 		'synchronized '( Expr [expression] ') '{
@@ -235,8 +235,8 @@ function undoShrinkCriticalRegion
 		'}
 		/* 'MUTANT: MutantString2[stringlit] */
 
-	by 
-		% replace mutated synchronized block with original but 
+	by
+		% replace mutated synchronized block with original but
 		% leave hidden attribute
 		'MUTATED 'synchronized '( Expr ') '{
 			Body

@@ -14,8 +14,8 @@ logger = logging.getLogger('arc')
 def main():
   """The entry point to ARC, to start the evolutionary approach."""
 
-  # Run Contest on the test program
-  #contester.setup()
+  # Setup ConTest
+  contester.setup()
 
   # Run evolution
   evolution.start()

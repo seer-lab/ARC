@@ -1,10 +1,10 @@
 %***********************************************************
 % CSO (Change Sync Order) Mutator for ARC
 % (Automatic Repair of Concurrency Bugs)
-% 
+%
 % Kevin Jalbert and David Kelk, Sept. 2011
 % SBSE Reading Course Project
-% 
+%
 % Based on ESP by J.S. Bradbury
 %***********************************************************
 
@@ -47,19 +47,19 @@ end define
 % Main rule, followed by other rules in topological order
 %------------------------------------------------------------
 function main
-	% initialize and export a mutant count that will be used in 
+	% initialize and export a mutant count that will be used in
 	% file name / folder name generation
     	construct MutantCount [number]
 		0
     	export MutantCount
 
-	% initialize and export the name of the current mutant which 
+	% initialize and export the name of the current mutant which
 	% will be used for folder name generation
 	construct MutantOpName [stringlit]
 		"CSO"
 	export MutantOpName
 
-	replace [program] 
+	replace [program]
         		P [program]
 
     	by	% Exchange all nested synchronization block parameters
@@ -67,7 +67,7 @@ function main
 end function
 
 %------------------------------------------------------------
-% Match all methods that have nested synchronized blocks 
+% Match all methods that have nested synchronized blocks
 % and then perform the following 3 steps for each:
 %	1. Create mutant of program with synchronized block
 %      parameters switched
@@ -81,11 +81,11 @@ rule ExchangeSynchBlockParameter
 	% only proceed for methods that satisfy the exchange requirements
 	where
 		P 	[?doExchangeLocks]
-	
-	by 
+
+	by
 		P	% Create the mutant version of the program
-			[doExchangeLocks] 
-			%[print] 	
+			[doExchangeLocks]
+			%[print]
 			[writeToFile]
 			% Undo mutation and return to original program
 			[undoExchangeLocks]
@@ -97,36 +97,36 @@ end rule
 %------------------------------------------------------------
 function doExchangeLocks
 	replace * [synchronized_statement]
-		SynchStatement [synchronized_statement] 
+		SynchStatement [synchronized_statement]
 
 	deconstruct SynchStatement
 		SynchStatement2 [synchronized_statement2]
 
 	export SynchStatement2
-		
+
 	deconstruct SynchStatement2
 	    'synchronized '(  SynchExpr [synch_expression] ')
         		SynchBody [statement]
 
-	%Only switch the first synch statement			
+	%Only switch the first synch statement
 	deconstruct * [statement] SynchBody
-		SynchStatementB [synchronized_statement]	
+		SynchStatementB [synchronized_statement]
 
 	deconstruct SynchStatementB
 		SynchStatementB2 [synchronized_statement2]
-		
+
 	deconstruct SynchStatementB2
 	    'synchronized '(  SynchExprB [synch_expression] ')
         		SynchBodyB [statement]
-		
+
 	% Check that the inner and outer synchronized block
-	%parameters are not the same	
+	%parameters are not the same
 	where not
 		SynchExpr [isSameParam SynchExprB]
-		
+
 	construct SynchStmt_new [synchronized_statement2]
 	 	'synchronized '(  SynchExprB ')
-        			SynchBody [replaceInnerLock SynchExpr] 	
+        			SynchBody [replaceInnerLock SynchExpr]
 
 	% create mutant comment to appear in source
 	construct MutantString [stringlit]
@@ -151,7 +151,7 @@ end rule
 function replaceInnerLock SynchExpr [synch_expression]
 	replace * [synchronized_statement2]
 		SStmt [synchronized_statement2]
-	
+
 	deconstruct SStmt
    		 'synchronized '(  SynchExpr2 [synch_expression] ')
         			SynchBody2 [statement]
@@ -161,17 +161,17 @@ function replaceInnerLock SynchExpr [synch_expression]
 end function
 
 %------------------------------------------------------------
-% Switch back the synchronization block parameters but leave the 
+% Switch back the synchronization block parameters but leave the
 % MUTATED attribute to indicate that the mutant has already
 % been created.
 %------------------------------------------------------------
 function undoExchangeLocks
 	replace * [synchronized_statement]
 		'MUTATED /* 'MUTANT: MutantString [stringlit] */ SynchStatement [synchronized_statement2]
-	
+
 	import SynchStatement2 [synchronized_statement2]
 
-	by 
+	by
 		'MUTATED SynchStatement2
 end function
 

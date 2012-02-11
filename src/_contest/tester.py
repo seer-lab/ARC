@@ -178,7 +178,7 @@ class Tester():
         if faults is not None:
           # Check to see if any tests failed, and if so how many?
           totalFaults = int(faults.groups()[0])
-          logger.debug("Test {} - Datarace Encountered ({} errors)".format(i, 
+          logger.debug("Test {} - Datarace Encountered ({} errors)".format(i,
                                                                   totalFaults))
           self.dataraces += 1
           self.goodRuns.append(False)

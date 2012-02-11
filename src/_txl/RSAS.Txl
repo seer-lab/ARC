@@ -1,10 +1,10 @@
 %***********************************************************
 % RSAS (Remove Sync Around Sync) Mutator for ARC
 % (Automatic Repair of Concurrency Bugs)
-% 
+%
 % Kevin Jalbert and David Kelk, Sept. 2011
 % SBSE Reading Course Project
-% 
+%
 % Based on RSB by J.S. Bradbury
 %***********************************************************
 
@@ -14,7 +14,7 @@
 
 % Copyright 2006 J.S. Bradbury
 
-% Description: This mutation operator removes the 
+% Description: This mutation operator removes the
 % the synchronizied block around a group of statements.
 %***********************************************************
 
@@ -32,7 +32,7 @@ redefine statement
 end redefine
 
 define other_statements
-    	[label_statement]        
+    	[label_statement]
     |   [empty_statement]
     |   [expression_statement]
     |   [if_statement]
@@ -48,7 +48,7 @@ define other_statements
 end define
 
 define declaration_or_other_statements
-        [local_variable_declaration] 
+        [local_variable_declaration]
 %   |   [class_declaration]     DK
     |   [other_statements]
 end define
@@ -57,14 +57,14 @@ redefine declaration_or_statement
 	 	[synchronized_statement]
 	|	[declaration_or_other_statements]
 	|       [block]
-	|	[comment_NL] 
+	|	[comment_NL]
 end redefine
 
 % Our choices of sync statements for RSAS
 
 redefine synchronized_statement
           [attr labelM] [double_sync]
-	| [attr labelM] [decapitated_double_sync] 
+	| [attr labelM] [decapitated_double_sync]
 	| ...
 end redefine
 
@@ -72,13 +72,13 @@ end redefine
 
 define double_sync
     'synchronized '( [expression] ')
-    '{ [NL][IN] 
-	[repeat declaration_or_statement] [NL][EX]       
+    '{ [NL][IN]
+	[repeat declaration_or_statement] [NL][EX]
 	'synchronized '( [expression] ')
- 	'{ [NL][IN] 
+ 	'{ [NL][IN]
 		[repeat declaration_or_statement] [NL][EX]
 	'}   [NL]
-	[repeat declaration_or_statement] [NL][EX]  
+	[repeat declaration_or_statement] [NL][EX]
     '}   [NL]
 end define
 
@@ -86,15 +86,15 @@ end define
 
 define decapitated_double_sync
     /* 'MUTANT: [stringlit] */ 	[NL]
-    '{ [NL][IN] 
-	[repeat declaration_or_statement] [NL][EX]   
+    '{ [NL][IN]
+	[repeat declaration_or_statement] [NL][EX]
 	'synchronized '( [expression] ')
- 	'{ [NL][IN] 
+ 	'{ [NL][IN]
 		[repeat declaration_or_statement] [NL][EX]
 	'}   [NL]
 	[repeat declaration_or_statement] [NL][EX]      % DK
     '}   [NL]
-    /* 'MUTANT: [stringlit] */ 	[NL]	
+    /* 'MUTANT: [stringlit] */ 	[NL]
 end define
 
 define labelM
@@ -105,7 +105,7 @@ end define
 % Main rule, followed by other rules in topological order
 %------------------------------------------------------------
 function main
-	% initialize and export a mutant count that will be used in 
+	% initialize and export a mutant count that will be used in
 	% file name / folder name generation
     	construct MutantCount [number]
 		0
@@ -117,17 +117,17 @@ function main
 		"RSAS"
 	export MutantOpName
 
-	replace [program] 
+	replace [program]
         		P [program]
 
     	by
-		% Remove all instances of synchronized blocks one at 
+		% Remove all instances of synchronized blocks one at
 		% a time
         		P [MutateSynchronizedDel]
 end function
 
 %------------------------------------------------------------
-% Match all methods that have a synchronized block 
+% Match all methods that have a synchronized block
 % and then perform the following 3 steps for each:
 %	1. Create mutant of program with synchronized block
 %      removed
@@ -142,12 +142,12 @@ rule MutateSynchronizedDel
 	% (i.e. methods that have a synchronized modifier)
 	where
 		P 	[?doSynchronizedDelMutation]
-	
-	by 
-		P	
+
+	by
+		P
 			% Create the mutant version of the program
-			[doSynchronizedDelMutation] 
-			%[print] 	
+			[doSynchronizedDelMutation]
+			%[print]
 			 [writeToFile]
 			% Undo mutation and return to original program
 			[undoSynchronizedDelMutation]
@@ -167,7 +167,7 @@ function doSynchronizedDelMutation
 	deconstruct SynchStatement2
     		'synchronized '( OuterExpr [expression] ')
     		'{
-			OuterBody [repeat declaration_or_statement]   
+			OuterBody [repeat declaration_or_statement]
 			'synchronized '( InnerExpr [expression] ')
  			'{
 				InnerBody [repeat declaration_or_statement]
@@ -175,7 +175,7 @@ function doSynchronizedDelMutation
 			OuterAfterBody [repeat declaration_or_statement]
     		'}
 
-	% export the old synchronized expression and reinsert it 
+	% export the old synchronized expression and reinsert it
 	% once the mutant has been created and saved
 	export OuterExpr
 	export OuterBody
@@ -191,9 +191,9 @@ function doSynchronizedDelMutation
 		% Replace with empty syncronized statement
 		'MUTATED /* 'MUTANT: MutantString */
     		'{
-			OuterBody    
+			OuterBody
 			'synchronized '( InnerExpr ')
- 			'{ 
+ 			'{
 				InnerBody
 			'}
 			OuterAfterBody
@@ -202,7 +202,7 @@ function doSynchronizedDelMutation
 end function
 
 %------------------------------------------------------------
-% Reinsert the orginal method declaration but leave the 
+% Reinsert the orginal method declaration but leave the
 % MUTATED attribute to indicate that the mutant has already
 % been created.
 %------------------------------------------------------------
@@ -219,26 +219,26 @@ function undoSynchronizedDelMutation
 
 	% extract body
 	deconstruct SynchStatement
-		'MUTATED Decapitated [decapitated_double_sync]	
+		'MUTATED Decapitated [decapitated_double_sync]
 	deconstruct Decapitated
-    		/* 'MUTANT: MutantStr1 [stringlit] */ 
+    		/* 'MUTANT: MutantStr1 [stringlit] */
     		'{
-			OB [repeat declaration_or_statement]  
+			OB [repeat declaration_or_statement]
 			'synchronized '( IE [expression] ')
  			'{
 				IB [repeat declaration_or_statement]
 			'}
 			OAB [repeat declaration_or_statement]
     		'}
-    		/* 'MUTANT: MutantStr2 [stringlit] */ 	
+    		/* 'MUTANT: MutantStr2 [stringlit] */
 
-	by 
-		% replace mutated synchronized block with original but 
+	by
+		% replace mutated synchronized block with original but
 		% leave hidden attribute
-		'MUTATED     
+		'MUTATED
 		'synchronized '( OuterExpr ')
     		'{
-			OuterBody  
+			OuterBody
 			'synchronized '( InnerExpr ')
  			'{
 				InnerBody

@@ -1,10 +1,10 @@
 %***********************************************************
 % RSAV (Remove Sync Around Variable) Mutator for ARC
 % (Automatic Repair of Concurrency Bugs)
-% 
+%
 % Kevin Jalbert and David Kelk, Sept. 2011
 % SBSE Reading Course Project
-% 
+%
 % Based on RSB by J.S. Bradbury
 %***********************************************************
 
@@ -14,7 +14,7 @@
 
 % Copyright 2006 J.S. Bradbury
 
-% Description: This mutation operator removes the 
+% Description: This mutation operator removes the
 % the synchronizied block around a group of statements.
 %***********************************************************
 
@@ -32,7 +32,7 @@ redefine statement
 end redefine
 
 define other_statements
-    	[label_statement]        
+    	[label_statement]
     |   [empty_statement]
     |   [expression_statement]
     |   [if_statement]
@@ -48,7 +48,7 @@ define other_statements
 end define
 
 define declaration_or_other_statements
-        [local_variable_declaration] 
+        [local_variable_declaration]
 %   |   [class_declaration]     DK
     |   [other_statements]
 end define
@@ -57,14 +57,14 @@ redefine declaration_or_statement
 	 	[synchronized_statement]
 	|	[declaration_or_other_statements]
 	|       [block]
-	|	[comment_NL] 
+	|	[comment_NL]
 end redefine
 
 % Our choices of sync statements for RSAS
 
 redefine synchronized_statement
           [attr labelM] [single_sync]
-	| [attr labelM] [single_sync_removed] 
+	| [attr labelM] [single_sync_removed]
 	| ...
 end redefine
 
@@ -72,7 +72,7 @@ end redefine
 
 define single_sync
 	'synchronized '( [expression] ')
- 	'{ [NL][IN] 
+ 	'{ [NL][IN]
 		[unary_expression] [assignment_operator] [assignment_expression] [NL]
 	'}   [NL]
 end define
@@ -82,7 +82,7 @@ end define
 define single_sync_removed
     /* 'MUTANT: [stringlit] */ 	[NL]
     [unary_expression] [assignment_operator] [assignment_expression] '; [NL]
-    /* 'MUTANT: [stringlit] */ 	[NL]	
+    /* 'MUTANT: [stringlit] */ 	[NL]
 end define
 
 define labelM
@@ -93,7 +93,7 @@ end define
 % Main rule, followed by other rules in topological order
 %------------------------------------------------------------
 function main
-	% initialize and export a mutant count that will be used in 
+	% initialize and export a mutant count that will be used in
 	% file name / folder name generation
     	construct MutantCount [number]
 		0
@@ -105,17 +105,17 @@ function main
 		"RSAV"
 	export MutantOpName
 
-	replace [program] 
+	replace [program]
         		P [program]
 
     	by
-		% Remove all instances of synchronized blocks one at 
+		% Remove all instances of synchronized blocks one at
 		% a time
         		P [MutateSynchronizedDel]
 end function
 
 %------------------------------------------------------------
-% Match all methods that have a synchronized block 
+% Match all methods that have a synchronized block
 % and then perform the following 3 steps for each:
 %	1. Create mutant of program with synchronized block
 %      removed
@@ -130,12 +130,12 @@ rule MutateSynchronizedDel
 	% (i.e. methods that have a synchronized modifier)
 	where
 		P 	[?doSynchronizedDelMutation]
-	
-	by 
-		P	
+
+	by
+		P
 			% Create the mutant version of the program
-			[doSynchronizedDelMutation] 
-			%[print] 	
+			[doSynchronizedDelMutation]
+			%[print]
 			 [writeToFile]
 			% Undo mutation and return to original program
 			[undoSynchronizedDelMutation]
@@ -152,13 +152,13 @@ function doSynchronizedDelMutation
 	deconstruct SyncStatement
 		'synchronized '( SyncExpr [expression] ')
 		'{
-	    		UA [unary_expression] 
-			AO [assignment_operator] 
+	    		UA [unary_expression]
+			AO [assignment_operator]
 			AE [assignment_expression] ';
 		'}
 
 
-	% export the old synchronized expression and reinsert it 
+	% export the old synchronized expression and reinsert it
 	% once the mutant has been created and saved
 	export UA
 	export AO
@@ -177,7 +177,7 @@ function doSynchronizedDelMutation
 end function
 
 %------------------------------------------------------------
-% Reinsert the orginal method declaration but leave the 
+% Reinsert the orginal method declaration but leave the
 % MUTATED attribute to indicate that the mutant has already
 % been created.
 %------------------------------------------------------------
@@ -186,24 +186,24 @@ function undoSynchronizedDelMutation
 		SynchStatement [synchronized_statement]
 
 	% Import the old expression
-	import UA [unary_expression] 
-	import AO [assignment_operator] 
+	import UA [unary_expression]
+	import AO [assignment_operator]
 	import AE [assignment_expression]
 	import SyncExpr [expression]
 	% extract body
 	deconstruct SynchStatement
-		'MUTATED SyncRemoved [single_sync_removed]	
+		'MUTATED SyncRemoved [single_sync_removed]
 	deconstruct SyncRemoved
-    		/* 'MUTANT: MutantStr1 [stringlit] */ 
-	    		UA2 [unary_expression] 
-			AO2 [assignment_operator] 
+    		/* 'MUTANT: MutantStr1 [stringlit] */
+	    		UA2 [unary_expression]
+			AO2 [assignment_operator]
 			AE2 [assignment_expression] ';
-    		/* 'MUTANT: MutantStr2 [stringlit] */ 	
+    		/* 'MUTANT: MutantStr2 [stringlit] */
 
-	by 
-		% replace mutated synchronized block with original but 
+	by
+		% replace mutated synchronized block with original but
 		% leave hidden attribute
-		'MUTATED 		
+		'MUTATED
 		'synchronized '( SyncExpr ')
 		'{
 			UA AO AE
