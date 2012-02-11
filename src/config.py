@@ -18,14 +18,14 @@ _LOG_FILE = "log.txt"  # If None then use stdout, otherwise specify a file
 _RANDOM_SEED = 0  # 0 means use the system time, non-zero is fixed
 
 # Target project variables
-_PROJECT_DIR = _ROOT_DIR + "input/"
+_PROJECT_DIR = _ROOT_DIR + "input/airline/"
 _PROJECT_SRC_DIR = _PROJECT_DIR + "source/"
-_PROJECT_TEST_DIR = _PROJECT_DIR + "source/"
+_PROJECT_TEST_DIR = _PROJECT_DIR + "test/"
 _PROJECT_CLASS_DIR = _PROJECT_DIR + "class/"
 _PROJECT_BACKUP_DIR = _ROOT_DIR + "project_backup/"
 _PROJECT_OUTPUT_DIR = _ROOT_DIR + "output/"
-_PROJECT_PREFIX = ""
-_PROJECT_TESTSUITE = "DeadlockTest"
+_PROJECT_PREFIX = "org.example.project,AirlineBug"  # Comma separated fully-qualifying class names or package prefixes
+_PROJECT_TESTSUITE = "AirlineTest"
 _PROJECT_CLASSPATH = _PROJECT_CLASS_DIR + ":" + _PROJECT_DIR + "test/"
 _PROJECT_TEST_MB = 2000
 # TODO Consider some automatic way to figure classpath if Ant or MVN exist
@@ -72,7 +72,7 @@ _DYNAMIC_RANKING_WINDOW = 20
 _SUCCESS_WEIGHT = 100
 _TIMEOUT_WEIGHT = 50
 
-# Convergence criteria, considering the window size ensure there is at least 
+# Convergence criteria, considering the window size ensure there is at least
 # a fitness score movement of delta
 _GENERATIONAL_IMPROVEMENT_WINDOW = 20
 _AVG_FITNESS_MIN_DELTA = 0.01
