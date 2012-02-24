@@ -37,6 +37,7 @@ _CONTEST_KINGPROPERTY = _CONTEST_DIR + "KingProperties"
 _CONTEST_JAR = _CONTEST_DIR + "ConTest.jar"
 _CONTEST_RUNS = 3
 _CONTEST_TIMEOUT_SEC = 3 # Aim for around x2-3 desirable performance
+_CONTEST_VALIDATION_MULTIPLIER = 10  # Allows for validation of functionality 
 _TESTSUITE_AVG = 3  # Number of test executions for finding the average time
 
 # Mutation operator variables

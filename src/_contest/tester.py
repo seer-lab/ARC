@@ -42,10 +42,7 @@ class Tester():
   errors = 0
 
   realTime = []
-  wallTime = []
   voluntarySwitches = []
-  involuntarySwitches = []
-  percentCPU = []
   goodRuns = []  # True || False
 
 
@@ -90,10 +87,7 @@ class Tester():
     logger.debug("Deadlock: {}".format(self.deadlocks))
     logger.debug("Errors: {}".format(self.errors))
     logger.debug("Real Time: {}".format(self.realTime))
-    logger.debug("Wall Time: {}".format(self.wallTime))
     logger.debug("Voluntary Switches: {}".format(self.voluntarySwitches))
-    logger.debug("Involuntary Switches: {}".format(self.involuntarySwitches ))
-    logger.debug("Percent CPU: {}".format(self.percentCPU))
     logger.debug("Good Runs: {}".format(self.goodRuns))
     return True
 
@@ -150,7 +144,7 @@ class Tester():
             self.timeouts += 1
           else:
             # If on non-functional, we cannot tell when deadlock thus assume it
-            logger.info("Test {} - Deadlock/Timeout Encountered".format(i))
+            logger.debug("Test {} - Deadlock/Timeout Encountered".format(i))
             self.deadlocks += 1
         self.goodRuns.append(False)
 
@@ -178,18 +172,18 @@ class Tester():
         if faults is not None:
           # Check to see if any tests failed, and if so how many?
           totalFaults = int(faults.groups()[0])
-          logger.debug("Test {} - Datarace Encountered ({} errors)".format(i,
+          logger.info("Test {} - Datarace Encountered ({} errors)".format(i,
                                                                   totalFaults))
           self.dataraces += 1
           self.goodRuns.append(False)
         else:
           # Check to see if ant test was successful
           if re.search("OK \((\d+) test", output) is None:
-            logger.debug("Test {} - Error in Execution".format(i))
+            logger.info("Test {} - Error in Execution".format(i))
             self.errors += 1
             self.goodRuns.append(False)
           else:
-            logger.debug("Test {} - Successful Execution".format(i))
+            logger.info("Test {} - Successful Execution".format(i))
             self.successes += 1
             self.goodRuns.append(True)
 
@@ -197,15 +191,9 @@ class Tester():
               # Take the performance measures of exection
               userTime = re.search("User time \(seconds\): (\d+\.\d+)", error).groups()[0]
               systemTime = re.search("System time \(seconds\): (\d+\.\d+)", error).groups()[0]
-              wallTime = re.search("\(h:mm:ss or m:ss\): (\d+):(\d+).(\d+)", error).groups()
               voluntarySwitches = re.search("Voluntary context switches: (\d+)", error).groups()[0]
-              involuntarySwitches = re.search("Involuntary context switches: (\d+)", error).groups()[0]
-              percentCPU = re.search("this job got: (\d+)%", error).groups()[0]
               self.realTime.append(float(userTime) + float(systemTime))
-              self.wallTime.append((((float(wallTime[0]) * 60) + float(wallTime[1])) * 60) + (float(wallTime[2])/100))
               self.voluntarySwitches.append(float(voluntarySwitches))
-              self.involuntarySwitches.append(float(involuntarySwitches))
-              self.percentCPU.append(float(percentCPU))
 
   def clear_results(self):
     """Clears the results of the test runs thus far."""
@@ -216,8 +204,5 @@ class Tester():
     self.deadlocks = 0
     self.errors = 0
     del self.realTime [:]
-    del self.wallTime [:]
     del self.voluntarySwitches [:]
-    del self.involuntarySwitches [:]
-    del self.percentCPU [:]
     del self.goodRuns [:]
