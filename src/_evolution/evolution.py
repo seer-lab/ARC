@@ -39,17 +39,19 @@ def initialize(bestIndividual=None):
   global _population
   global _functionalPhase
 
+  if config._RANDOM_MUTATION:
+    setOfOperators = config._ALL_MUTATIONS
+  elif _functionalPhase:
+    setOfOperators = config._FUNCTIONAL_MUTATIONS
+  else:
+    setOfOperators = config._NONFUNCTIONAL_MUTATIONS 
+    _population = []  # Reset population if on next phase
+
   # The number of enabled mutation operators
   mutationOperators = 0
-  if _functionalPhase:
-    for operator in config._FUNCTIONAL_MUTATIONS:
-      if operator[1]:
-        mutationOperators += 1
-  else:
-    _population = []  # Reset population if on next phase
-    for operator in config._NONFUNCTIONAL_MUTATIONS:
-      if operator[1]:
-        mutationOperators += 1
+  for operator in setOfOperators:
+    if operator[1]:
+      mutationOperators += 1
 
   # Create and initialize the population of individuals
   for i in xrange(1, config._EVOLUTION_POPULATION + 1):
@@ -198,17 +200,20 @@ def evolve(generation=0, worstScore=0):
       logger.info("Terminating evolution process, there are no more possible mutations")
       return get_best_individual()
 
-    # Make note of the under-performers and replace them if it falls in the interval
-    replace_lowest(generation)
+    # Avoid huristics when doing random
+    if not config._RANDOM_MUTATION:
 
-    # Perform mutation again for those individuals who were replaced or restarted
-    for individual in _population:
-      if generation == individual.generation - 1:
-        mutation(individual, deadlockVotes, dataraceVotes,
-          nonFunctionalVotes)
+      # Make note of the under-performers and replace them if it falls in the interval
+      replace_lowest(generation)
 
-    # Adjust weighting of mutation operators
-    deadlockVotes, dataraceVotes, nonFunctionalVotes = adjust_operator_weighting(generation)
+      # Perform mutation again for those individuals who were replaced or restarted
+      for individual in _population:
+        if generation == individual.generation - 1:
+          mutation(individual, deadlockVotes, dataraceVotes,
+            nonFunctionalVotes)
+
+      # Adjust weighting of mutation operators
+      deadlockVotes, dataraceVotes, nonFunctionalVotes = adjust_operator_weighting(generation)
 
 
 def mutation(individual, deadlockVotes, dataraceVotes, nonFunctionalVotes):
@@ -218,13 +223,15 @@ def mutation(individual, deadlockVotes, dataraceVotes, nonFunctionalVotes):
                                                          individual.generation))
 
   # Acquire set of operators to use
-  if _functionalPhase:
+  if config._RANDOM_MUTATION:
+    mutationOperators = config._ALL_MUTATIONS
+  elif _functionalPhase:
     mutationOperators = config._FUNCTIONAL_MUTATIONS
   else:
-    mutationOperators = config._NONFUNCTIONAL_MUTATIONS
+    mutationOperators = config._NONFUNCTIONAL_MUTATIONS 
 
   # Repopulate the individual's genome with new possible mutation locations
-  individual.repopulateGenome(_functionalPhase)
+  individual.repopulateGenome(_functionalPhase) 
 
   # Definite check to see if ANY mutants exists for an individual
   checkInd = -1
@@ -402,69 +409,82 @@ def feedback_selection(individual, deadlockVotes, dataraceVotes, nonFunctionalVo
 
   global _functionalPhase
 
-  # Acquire set of operators to use
-  if _functionalPhase:
-    mutationOperators = config._FUNCTIONAL_MUTATIONS
-  else:
-    mutationOperators = config._NONFUNCTIONAL_MUTATIONS
-
-  opType = 'race'
   # candidateChoices is a list of config._MUTATIONS
   candatateChoices = []
 
-  # Acquire the deadlock and datarace rates
-  if len(individual.deadlocks) == 0:
-    deadlockRate = .5
-    dataraceRate = .5
+  # Acquire set of operators to use
+  if config._RANDOM_MUTATION:
+    mutationOperators = config._ALL_MUTATIONS
+  elif _functionalPhase:
+    mutationOperators = config._FUNCTIONAL_MUTATIONS
   else:
-    deadlockRate = individual.deadlocks[-1] / config._CONTEST_RUNS
-    dataraceRate = individual.dataraces[-1] / config._CONTEST_RUNS
+    mutationOperators = config._NONFUNCTIONAL_MUTATIONS 
 
-  # Acquire a random value that is less then the total of the bug rates
-  totalBugRate = (deadlockRate + dataraceRate)
-  choice = random.uniform(0, totalBugRate)
+  # Handle mutation selection (using random or heuristics)
+  if config._RANDOM_MUTATION:
 
-  # Determine which it bug type to use
-  if (dataraceRate > deadlockRate):
-    # If choice falls past the datarace range then type is lock
-    if choice >= dataraceRate:
-      opType = 'lock'
-  else:
-    # If choice falls under the deadlock range then type is lock
-    if choice <= deadlockRate:
-      opType = 'lock'
-
-  # Select the appropriate operator based on enable/type/functional
-  if opType is 'race':
     for operator in mutationOperators:
-      if operator[1] and operator[2]:
-        candatateChoices.append(operator)
-  elif opType is 'lock':
-    for operator in mutationOperators:
-      if operator[1] and operator[3]:
-        candatateChoices.append(operator)
+        if operator[1]:
+          candatateChoices.append(operator)
 
-  # Acquire the operator chances based on what voting condition we have
-  if _functionalPhase and opType is 'lock':
-    operatorChances = get_operator_chances(candatateChoices, deadlockVotes)
-    logger.debug("Voting for functional phase with deadlocks: {}".format(operatorChances))
-  elif _functionalPhase and opType is 'race':
-    operatorChances = get_operator_chances(candatateChoices, dataraceVotes)
-    logger.debug("Voting for functional phase with dataraces: {}".format(operatorChances))
+    return candatateChoices[random.randint(0,len(candatateChoices)-1)]
+
   else:
-    operatorChances = get_operator_chances(candatateChoices, nonFunctionalVotes)
-    logger.debug("Voting for non-functional phase: {}".format(operatorChances))
+    opType = 'race'
 
-  # Make selection of operator based on the adjusted weighting
-  randomChance = random.randint(0,sum(operatorChances))
-  currentRunning = 0  # Keeps track of sum (when we exceed this we are done)
-  for i in xrange(len(operatorChances)):
-    currentRunning += operatorChances[i]
-    if randomChance <= currentRunning:
-      selectedOperator = candatateChoices[i]
-      break
+    # Acquire the deadlock and datarace rates
+    if len(individual.deadlocks) == 0:
+      deadlockRate = .5
+      dataraceRate = .5
+    else:
+      deadlockRate = individual.deadlocks[-1] / config._CONTEST_RUNS
+      dataraceRate = individual.dataraces[-1] / config._CONTEST_RUNS
 
-  return selectedOperator
+    # Acquire a random value that is less then the total of the bug rates
+    totalBugRate = (deadlockRate + dataraceRate)
+    choice = random.uniform(0, totalBugRate)
+
+    # Determine which it bug type to use
+    if (dataraceRate > deadlockRate):
+      # If choice falls past the datarace range then type is lock
+      if choice >= dataraceRate:
+        opType = 'lock'
+    else:
+      # If choice falls under the deadlock range then type is lock
+      if choice <= deadlockRate:
+        opType = 'lock'
+
+    # Select the appropriate operator based on enable/type/functional
+    if opType is 'race':
+      for operator in mutationOperators:
+        if operator[1] and operator[2]:
+          candatateChoices.append(operator)
+    elif opType is 'lock':
+      for operator in mutationOperators:
+        if operator[1] and operator[3]:
+          candatateChoices.append(operator)
+
+    # Acquire the operator chances based on what voting condition we have
+    if _functionalPhase and opType is 'lock':
+      operatorChances = get_operator_chances(candatateChoices, deadlockVotes)
+      logger.debug("Voting for functional phase with deadlocks: {}".format(operatorChances))
+    elif _functionalPhase and opType is 'race':
+      operatorChances = get_operator_chances(candatateChoices, dataraceVotes)
+      logger.debug("Voting for functional phase with dataraces: {}".format(operatorChances))
+    else:
+      operatorChances = get_operator_chances(candatateChoices, nonFunctionalVotes)
+      logger.debug("Voting for non-functional phase: {}".format(operatorChances))
+
+    # Make selection of operator based on the adjusted weighting
+    randomChance = random.randint(0,sum(operatorChances))
+    currentRunning = 0  # Keeps track of sum (when we exceed this we are done)
+    for i in xrange(len(operatorChances)):
+      currentRunning += operatorChances[i]
+      if randomChance <= currentRunning:
+        selectedOperator = candatateChoices[i]
+        break
+
+    return selectedOperator
 
 
 def get_operator_chances(candatateChoices, votes):
@@ -716,10 +736,12 @@ def replace_lowest(generation):
     logger.debug("Performing replacement of weakest individuals")
 
     # Acquire set of operators to use
-    if _functionalPhase:
+    if config._RANDOM_MUTATION:
+      mutationOperators = config._ALL_MUTATIONS
+    elif _functionalPhase:
       mutationOperators = config._FUNCTIONAL_MUTATIONS
     else:
-      mutationOperators = config._NONFUNCTIONAL_MUTATIONS
+      mutationOperators = config._NONFUNCTIONAL_MUTATIONS 
 
     # Replace or restart members who have underperformed for too long
     for i in xrange(0, numUnder):
