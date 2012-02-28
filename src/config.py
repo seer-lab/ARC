@@ -63,9 +63,8 @@ _ALL_MUTATIONS = [_MUTATION_ASAS, _MUTATION_ASAV, _MUTATION_ASM,
                          _MUTATION_RSAS, _MUTATION_RSAV, _MUTATION_RSM,
                          _MUTATION_SHSA, _MUTATION_SHSB]
 
-
 # Enable random mutation
-_RANDOM_MUTATION = True
+_RANDOM_MUTATION = False
 
 # Evolution variables
 _EVOLUTION_GENERATIONS = 20

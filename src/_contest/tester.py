@@ -160,40 +160,52 @@ class Tester():
         errFile.close()
 
         # Acquire the number of faults (accoring to ant test)
-        #logger.debug("Test, Output text:\n")
-        #logger.debug(output)
-        #logger.debug("Test, Error text:\n")
-        #logger.debug(error)
+        # logger.error("Test, Output text:\n")
+        # logger.error(output)
+        # logger.debug("Test, Error text:\n")
+        # logger.debug(error)
 
-        faults = re.search("Tests run: \d+,\s+Failures: (\d+)", output)
+        faultTests = re.search("Tests run: \d+,\s+Failures: (\d+)", output)
+        successTests = re.search("OK \((\d+) test", output)
 
-        #logger.debug("Faults found: {}".format(faults))
-
-        if faults is not None:
-          # Check to see if any tests failed, and if so how many?
-          totalFaults = int(faults.groups()[0])
+        # Tests have faults 
+        if faultTests is not None:
+          totalFaults = int(faultTests.groups()[0])
           logger.info("Test {} - Datarace Encountered ({} errors)".format(i,
                                                                   totalFaults))
           self.dataraces += 1
           self.goodRuns.append(False)
-        else:
-          # Check to see if ant test was successful
-          if re.search("OK \((\d+) test", output) is None:
-            logger.info("Test {} - Error in Execution".format(i))
+
+        # Tests have no faults and no successes
+        elif faultTests is None and successTests is None:
+          logger.info("Test {} - Deadlock Encountered".format(i))
+          self.deadlocks += 1
+          self.goodRuns.append(False)
+
+        # Tests have successes
+        elif successTests is not None:
+          totalSuccesses = int(successTests.groups()[0])
+
+          # No tests were ran, thus some error occurred
+          if totalSuccesses is 0:
+            logger.info("Test {} - Error, no tests ran".format(i))
             self.errors += 1
             self.goodRuns.append(False)
+          
+          # Successful tests were encounted
           else:
             logger.info("Test {} - Successful Execution".format(i))
             self.successes += 1
             self.goodRuns.append(True)
 
+            # Take the performance measures of exection
             if not functional:
-              # Take the performance measures of exection
               userTime = re.search("User time \(seconds\): (\d+\.\d+)", error).groups()[0]
               systemTime = re.search("System time \(seconds\): (\d+\.\d+)", error).groups()[0]
               voluntarySwitches = re.search("Voluntary context switches: (\d+)", error).groups()[0]
               self.realTime.append(float(userTime) + float(systemTime))
               self.voluntarySwitches.append(float(voluntarySwitches))
+
 
   def clear_results(self):
     """Clears the results of the test runs thus far."""

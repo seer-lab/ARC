@@ -125,14 +125,14 @@ def start():
       logger.info(bestNonFunctional)
       logger.info("******************************************************")
       logger.info("")
-      print _population
+      logger.info(_population)
 
       logger.info("Copying fixed project Individual:{} Generation:{} to {}".format(bestNonFunctional.id, bestNonFunctionalGeneration, config._PROJECT_OUTPUT_DIR))
       txl_operator.move_best_project_to_output(bestNonFunctionalGeneration,
         bestNonFunctional.id)
     else:
       logger.info("No individual was found that functions correctly")
-      print _population
+      logger.info(_population)
 
   except:
     logger.error("Unexpected error:\n", traceback.print_exc(file=sys.stdout))
@@ -265,7 +265,7 @@ def mutation(individual, deadlockVotes, dataraceVotes, nonFunctionalVotes):
       return False
 
   # Pick a mutation operator to apply
-  limit = 100  # Number of attempts to find a valid mutation
+  limit = individual.stateSpace[-1] * 2  # Number of attempts to find a valid mutation
   successfulCompile = False
 
   # Keep trying to find a successful mutant within the retry limits
