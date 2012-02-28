@@ -80,9 +80,9 @@ end define
 % How it looks after removing
 
 define single_sync_removed
-    /* 'MUTANT: [stringlit] */ 	[NL]
-    [unary_expression] [assignment_operator] [assignment_expression] '; [NL]
-    /* 'MUTANT: [stringlit] */ 	[NL]
+  /* 'MUTANT: [stringlit] */ 	[NL]
+  [unary_expression] [assignment_operator] [assignment_expression] '; [NL]
+  /* 'MUTANT: [stringlit] */ 	[NL]
 end define
 
 define labelM
@@ -152,7 +152,7 @@ function doSynchronizedDelMutation
 	deconstruct SyncStatement
 		'synchronized '( SyncExpr [expression] ')
 		'{
-	    		UA [unary_expression]
+	    UA [unary_expression]
 			AO [assignment_operator]
 			AE [assignment_expression] ';
 		'}
@@ -194,11 +194,11 @@ function undoSynchronizedDelMutation
 	deconstruct SynchStatement
 		'MUTATED SyncRemoved [single_sync_removed]
 	deconstruct SyncRemoved
-    		/* 'MUTANT: MutantStr1 [stringlit] */
-	    		UA2 [unary_expression]
+    /* 'MUTANT: MutantStr1 [stringlit] */
+	  	UA2 [unary_expression]
 			AO2 [assignment_operator]
 			AE2 [assignment_expression] ';
-    		/* 'MUTANT: MutantStr2 [stringlit] */
+    /* 'MUTANT: MutantStr2 [stringlit] */
 
 	by
 		% replace mutated synchronized block with original but

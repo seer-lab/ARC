@@ -76,16 +76,17 @@ define synchronized_statement_2
 	[opt declaration_or_other_statements]  [NL]
 	'synchronized '( [expression] ')
 	'{                                        [NL][IN]
-    		[repeat declaration_or_statement]         [NL][EX]
+     [repeat declaration_or_statement]         [NL][EX]
 	'}	[NL]
 end define
 
 define expanded_synchronized_statement
-    /* 'MUTANT: [stringlit] */ 				[NL]
+  /* 'MUTANT: [stringlit] */ 				[NL]
 	'synchronized '( [expression] ')
 	'{                                        [NL][IN]
-    		[repeat declaration_or_statement]         [NL][EX]
+     [repeat declaration_or_statement]         [NL][EX]
 	'}	[NL]
+  /* 'MUTANT: [stringlit] */  [NL]
 end define
 
 define labelM
@@ -172,6 +173,8 @@ function doExpandCriticalRegion
 		'synchronized '( Expr ') '{
 			S1_b S2
 		'}
+    /* 'MUTANT: MutantString */
+
 end function
 
 %------------------------------------------------------------
@@ -197,7 +200,7 @@ function undoExpandCriticalRegion
 		'synchronized '( Expr [expression] ') '{
 			NewBody [repeat declaration_or_statement]
 		'}
-
+    /* 'MUTANT: MutantString */
 	by
 		% replace mutated synchronized block with original but
 		% leave hidden attribute

@@ -42,7 +42,7 @@ define labelM
 end define
 
 redefine method_declaration
-    	[NL] [repeat modifier] [rest_of_method_declaration]
+  [NL] [repeat modifier] [rest_of_method_declaration]
 end redefine
 
 define rest_of_method_declaration
@@ -140,6 +140,7 @@ function doSynchronizedInsertMutation
 		NewMethodModifiers
 		% reinsert rest of method declaration
 		RemainingDelcaration
+    /* 'MUTANT: [stringlit] */ 	[NL]
 end function
 
 %------------------------------------------------------------
@@ -161,7 +162,7 @@ function undoSynchronizedInsertMutation
 	deconstruct CurrGenDecl
 		'MUTATED /* 'MUTANT: MutantString [stringlit] */
 		CurrMethodDecl [method_declaration]
-
+    /* 'MUTANT: MutantString [stringlit] */
 	by
 		% replace mutated declaration with original
 		% but leave hidden attribute

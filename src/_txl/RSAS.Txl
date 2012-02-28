@@ -71,15 +71,15 @@ end redefine
 % How it looks when we started
 
 define double_sync
-    'synchronized '( [expression] ')
-    '{ [NL][IN]
-	[repeat declaration_or_statement] [NL][EX]
-	'synchronized '( [expression] ')
- 	'{ [NL][IN]
-		[repeat declaration_or_statement] [NL][EX]
-	'}   [NL]
-	[repeat declaration_or_statement] [NL][EX]
-    '}   [NL]
+  'synchronized '( [expression] ')
+  '{ [NL][IN]
+	  [repeat declaration_or_statement] [NL][EX]
+	  'synchronized '( [expression] ')
+ 	  '{ [NL][IN]
+		  [repeat declaration_or_statement] [NL][EX]
+	  '}   [NL]
+	  [repeat declaration_or_statement] [NL][EX]
+  '}   [NL]
 end define
 
 % How it looks after removing
@@ -190,14 +190,14 @@ function doSynchronizedDelMutation
 	by
 		% Replace with empty syncronized statement
 		'MUTATED /* 'MUTANT: MutantString */
-    		'{
+    '{
 			OuterBody
 			'synchronized '( InnerExpr ')
  			'{
 				InnerBody
 			'}
 			OuterAfterBody
-    		'}
+    '}
 		/* 'MUTANT: MutantString */
 end function
 
@@ -221,30 +221,30 @@ function undoSynchronizedDelMutation
 	deconstruct SynchStatement
 		'MUTATED Decapitated [decapitated_double_sync]
 	deconstruct Decapitated
-    		/* 'MUTANT: MutantStr1 [stringlit] */
-    		'{
+    /* 'MUTANT: MutantStr1 [stringlit] */
+    '{
 			OB [repeat declaration_or_statement]
 			'synchronized '( IE [expression] ')
  			'{
 				IB [repeat declaration_or_statement]
 			'}
 			OAB [repeat declaration_or_statement]
-    		'}
-    		/* 'MUTANT: MutantStr2 [stringlit] */
+    '}
+    /* 'MUTANT: MutantStr2 [stringlit] */
 
 	by
 		% replace mutated synchronized block with original but
 		% leave hidden attribute
 		'MUTATED
 		'synchronized '( OuterExpr ')
-    		'{
+    '{
 			OuterBody
 			'synchronized '( InnerExpr ')
  			'{
 				InnerBody
 			'}
 			OuterAfterBody
-    		'}
+    '}
 end function
 
 %Include rules for writing mutants to files

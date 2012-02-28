@@ -35,8 +35,8 @@ define synch_expression
 end define
 
 define synchronized_statement2
-    'synchronized '( [synch_expression] ')
-        [statement]                  [NL]
+  'synchronized '( [synch_expression] ')
+    [statement] [NL]
 end define
 
 define labelM
@@ -133,7 +133,9 @@ function doExchangeLocks
 		"CSO (Change Sync Order)"
 
 	by
-		'MUTATED /* 'MUTANT: MutantString */ SynchStmt_new
+		'MUTATED /* 'MUTANT: MutantString */ 
+    SynchStmt_new
+    /* 'MUTANT: MutantString */
 end function
 
 %------------------------------------------------------------
@@ -167,7 +169,9 @@ end function
 %------------------------------------------------------------
 function undoExchangeLocks
 	replace * [synchronized_statement]
-		'MUTATED /* 'MUTANT: MutantString [stringlit] */ SynchStatement [synchronized_statement2]
+		'MUTATED /* 'MUTANT: MutantString [stringlit] */ 
+    SynchStatement [synchronized_statement2]
+    /* 'MUTANT: MutantString */
 
 	import SynchStatement2 [synchronized_statement2]
 

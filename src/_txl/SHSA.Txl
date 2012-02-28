@@ -71,19 +71,19 @@ end redefine
 % How it looks when we started
 
 define synchronized_statement_2
-    'synchronized '( [expression] ')
-    '{                                        [NL][IN]
-	[repeat declaration_or_statement] [NL][EX]% DK
-    '}	[NL]
+  'synchronized '( [expression] ')
+  '{                                        [NL][IN]
+	  [repeat declaration_or_statement] [NL][EX]% DK
+  '}	[NL]
 end define
 
 % How it looks after shrinking
 
 define shrunk_synchronized_statement
-        /* 'MUTANT: [stringlit] */ 				[NL]
+   /* 'MUTANT: [stringlit] */ 				[NL]
 	'synchronized '( [expression] ')
 	'{                                        [NL][IN]
-    		[repeat declaration_or_statement]         [EX]
+    [repeat declaration_or_statement]         [EX]
 	'}   [NL]
 	[repeat declaration_or_statement]    [NL]   % DK
 	/* 'MUTANT: [stringlit] */ 				[NL]
@@ -159,7 +159,7 @@ function doShrinkCriticalRegion
 
 	deconstruct SynchStatement2
 	'synchronized '( Expr [expression] ') '{
-                Body [repeat declaration_or_statement]
+     Body [repeat declaration_or_statement]
 	'}
 
 	% export the old body of the synchronized block

@@ -86,12 +86,12 @@ end define
 % How it looks after
 
 define sync_asgn_stmt
-    /* 'MUTANT: [stringlit] */ 	[NL]
-    'synchronized '( [expression] ')
-    '{ [NL][IN]
-	[unary_expression] [assignment_operator] [assignment_expression] '; [NL][EX]
-    '}   [NL]
-    /* 'MUTANT: [stringlit] */ 	[NL]
+  /* 'MUTANT: [stringlit] */ 	[NL]
+  'synchronized '( [expression] ')
+  '{ [NL][IN]
+	  [unary_expression] [assignment_operator] [assignment_expression] '; [NL][EX]
+  '}   [NL]
+  /* 'MUTANT: [stringlit] */ 	[NL]
 end define
 
 define labelM
@@ -161,7 +161,7 @@ function doSynchronizedInsertMutation
 		AsgnStatement [asgn_stmt]
 
 	deconstruct AsgnStatement
-    		UA [unary_expression]
+    UA [unary_expression]
 		AO [assignment_operator]
 		AE [assignment_expression] ';
 
@@ -179,9 +179,9 @@ function doSynchronizedInsertMutation
 		% Replace with empty syncronized statement
 		'MUTATED /* 'MUTANT: MutantString */
 		'synchronized '( ThisExpr ')
-    		'{
+    '{
 			UA AO AE ';
-    		'}
+    '}
 		/* 'MUTANT: MutantString */
 end function
 
@@ -202,14 +202,14 @@ function undoSynchronizedInsertMutation
 		'MUTATED DoubleSync [sync_asgn_stmt]
 
 	deconstruct DoubleSync
-    		/* 'MUTANT: MutantStr1 [stringlit] */
+    /* 'MUTANT: MutantStr1 [stringlit] */
 		'synchronized '( ThisExpr [expression] ')
-    		'{
-    			UA [unary_expression]
+    '{
+    	UA [unary_expression]
 			AO [assignment_operator]
 			AE [assignment_expression] ';
-    		'}
-    		/* 'MUTANT: MutantStr2 [stringlit] */
+    '}
+    /* 'MUTANT: MutantStr2 [stringlit] */
 
 	by
 		% replace mutated synchronized block with original but

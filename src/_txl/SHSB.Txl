@@ -71,20 +71,20 @@ end redefine
 % How it looks when we started
 
 define synchronized_statement_2
-    'synchronized '( [expression] ')
-    '{                                        [NL][IN]
-	[repeat declaration_or_statement] [NL][EX]% DK
-    '}   [NL]
+  'synchronized '( [expression] ')
+  '{                                        [NL][IN]
+	  [repeat declaration_or_statement] [NL][EX]% DK
+  '}   [NL]
 end define
 
 % How it looks after shrinking
 
 define shrunk_synchronized_statement
-    /* 'MUTANT: [stringlit] */ 				[NL]
+  /* 'MUTANT: [stringlit] */ 				[NL]
 	[repeat declaration_or_statement]  [NL]     % DK
 	'synchronized '( [expression] ')
 	'{                                        [NL][IN]
-    		[repeat declaration_or_statement]         [EX] % DK
+    [repeat declaration_or_statement]         [EX] % DK
 	'}	[NL]
 	/* 'MUTANT: [stringlit] */ 				[NL]
 
