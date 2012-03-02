@@ -176,6 +176,9 @@ function doInsertStaticLock
        ClassBodyDec [repeat class_body_declaration]
     '}
 
+  % Check if it has been applied already
+  where ClassBodyDec [hasLockAlready]
+
    % create mutant comment to appear in source
   construct MutantString [stringlit]
     "ALAM (Add Lock Around a Method)"
@@ -200,6 +203,9 @@ function doSynchronizedInsertMutation
 
   deconstruct SyncStatement
     AsgnStatement [asgn_stmt]
+
+  % check if this operator has been applied before
+    AsgnStatement [IsALAMAlready]
 
   deconstruct AsgnStatement
     UA [unary_expression]
@@ -258,6 +264,24 @@ function undoSynchronizedInsertMutation
     'MUTATED
       AsgnStatement
 end function
+
+%------------------------------------------------------------
+% Check if the ARCLock variable has already been added to
+% the class
+%------------------------------------------------------------
+rule hasLockAlready
+  match * [ARCLock]
+    'static 'Object 'ARCLock '= 'new 'Object() ';
+end rule
+
+%------------------------------------------------------------
+% Check if the method has already been synchronized by this op
+%------------------------------------------------------------
+rule IsALAMAlready
+  match * [ARCLockSynch]
+    'synchronized '( 'ARCLock ')
+
+end rule
 
 %------------------------------------------------------------
 % Check if current parameter is "this"

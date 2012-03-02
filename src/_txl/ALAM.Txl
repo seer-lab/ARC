@@ -32,6 +32,14 @@ include "JavaCommentOverrides.Grm"
 
 % Local grammar overrides
 
+define ARCLock
+  'static 'Object 'ARCLock '= 'new 'Object() ';
+end define
+
+define ARCLockSynch
+  'synchronized '( 'ARCLock ')
+end define
+
 redefine class_or_interface_body
     '{                                    [NL][IN]
        [repeat class_body_declaration]    [EX]
@@ -39,7 +47,7 @@ redefine class_or_interface_body
   |
     '{                                    [NL][IN]
        [attr labelM] /* 'MUTANT: [stringlit] */ [NL]
-       'static 'Object 'ARCLock '= 'new 'Object() '; [NL]
+       [ARCLock] [NL]
        /* 'MUTANT: [stringlit] */         [NL]
        [repeat class_body_declaration]    [EX]
     '} [opt ';]                           [NL][NL]
@@ -93,7 +101,7 @@ function main
   % initialize and export the name of the current mutant which
   % will be used for folder name generation
   construct MutantOpName [stringlit]
-    "ASM"
+    "ALAM"
   export MutantOpName
 
   replace [program]
@@ -133,8 +141,8 @@ rule MutateSynchronizedInsert
 end rule
 
 %------------------------------------------------------------
-% Create an ASK mutant by adding synchronized to the method
-% modifier list of a method that is not synchronized
+% Insert the lock as a static object at the class level.
+%
 %------------------------------------------------------------
 function doInsertStaticLock
   replace * [class_or_interface_body]
@@ -145,7 +153,10 @@ function doInsertStaticLock
        ClassBodyDec [repeat class_body_declaration]
     '}
 
-   % create mutant comment to appear in source
+  % Check if this has been done already
+  where ClassBodyDec [hasLockAlready]
+
+  % create mutant comment to appear in source
   construct MutantString [stringlit]
     "ALAM (Add Lock Around a Method)"
 
@@ -192,14 +203,13 @@ function doSynchronizedInsertMutation
         DOS [repeat declaration_or_statement]
     '}
 
-  % check that the synchronized modifier is not present
-  where not
+  % check if this operator has been applied before
     DOS [IsALAMAlready]
 
   % create new block
   construct SynchBlock [block]
     '{
-      synchronized '( 'ARCLock ')
+      'synchronized '( 'ARCLock ')
       '{
         DOS
       '}
@@ -257,11 +267,20 @@ function undoSynchronizedInsertMutation
 end function
 
 %------------------------------------------------------------
-% Check if method modifier list includes synchronized
+% Check if the ARCLock variable has already been added to
+% the class
+%------------------------------------------------------------
+rule hasLockAlready
+  match * [ARCLock]
+    'static 'Object 'ARCLock '= 'new 'Object() ';
+end rule
+
+%------------------------------------------------------------
+% Check if the method has already been synchronized by this op
 %------------------------------------------------------------
 rule IsALAMAlready
-  match * [modifier]
-      'synchronized
+  match * [ARCLockSynch]
+    'synchronized '( 'ARCLock ')
 
 end rule
 
