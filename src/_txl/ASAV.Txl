@@ -1,5 +1,5 @@
 %***********************************************************
-% ASAS (Add Sync Around Sync) Mutator for ARC
+% ASAV (Add Sync Around Sync) Mutator for ARC
 % (Automatic Repair of Concurrency Bugs)
 %
 % Kevin Jalbert and David Kelk, Sept. 2011
@@ -195,7 +195,7 @@ function undoSynchronizedInsertMutation
 		SyncStatement [synchronized_statement]
 
 	% Import the old expression
-	import  AsgnStatement [asgn_stmt]
+	import AsgnStatement [asgn_stmt]
 
 	% extract body
 	deconstruct SyncStatement

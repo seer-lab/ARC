@@ -33,7 +33,7 @@ include "JavaCommentOverrides.Grm"
 % Local grammar overrides
 redefine method_or_constructor_declaration
 	[attr labelM] [method_declaration]
-	| [attr labelM] /* 'MUTANT: [stringlit] */ [method_declaration]
+	| [attr labelM] /* 'MUTANT: [stringlit] */ [method_declaration] /* 'MUTANT: [stringlit] */
 	| [attr labelM] [constructor_declaration]
 end redefine
 
@@ -140,7 +140,7 @@ function doSynchronizedInsertMutation
 		NewMethodModifiers
 		% reinsert rest of method declaration
 		RemainingDelcaration
-    /* 'MUTANT: [stringlit] */ 	[NL]
+    /* 'MUTANT: MutantString */
 end function
 
 %------------------------------------------------------------
@@ -160,9 +160,9 @@ function undoSynchronizedInsertMutation
 		SavedMethodDecl [method_declaration]
 
 	deconstruct CurrGenDecl
-		'MUTATED /* 'MUTANT: MutantString [stringlit] */
+		'MUTATED /* 'MUTANT: MutantString1 [stringlit] */
 		CurrMethodDecl [method_declaration]
-    /* 'MUTANT: MutantString [stringlit] */
+    /* 'MUTANT: MutantString2 [stringlit] */
 	by
 		% replace mutated declaration with original
 		% but leave hidden attribute

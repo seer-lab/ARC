@@ -194,11 +194,11 @@ function undoExpandCriticalRegion
 
 	% extract body
 	deconstruct ExpandedStatement
-		/* 'MUTANT: MutantString1[stringlit] */
+		/* 'MUTANT: MutantString1 [stringlit] */
 		'synchronized '( Expr [expression] ') '{
 			NewBody [repeat declaration_or_statement]
 		'}
-    /* 'MUTANT: MutantString */
+    /* 'MUTANT: MutantString2 [stringlit] */
 	by
 		% replace mutated synchronized block with original but
 		% leave hidden attribute

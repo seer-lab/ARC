@@ -1,8 +1,8 @@
 %***********************************************************
-% ALAM (Add Lock Around Method) Mutator for ARC
+% ALAM (Add Lock Around a Method) Mutator for ARC
 % (Automatic Repair of Concurrency Bugs)
 %
-% Kevin Jalbert and David Kelk, Sept. 2011
+% Kevin Jalbert and David Kelk, March 2012
 % SBSE Reading Course Project
 %
 % Based on ASK by J.S. Bradbury
@@ -32,242 +32,200 @@ include "JavaCommentOverrides.Grm"
 
 % Local grammar overrides
 
-redefine statement
-        	[synchronized_statement]
-	| 	[other_statements]
-   	|   	[block]
-	|	[comment_NL]
+redefine class_or_interface_body
+    '{                                    [NL][IN]
+       [repeat class_body_declaration]    [EX]
+    '} [opt ';]
+  |
+    '{                                    [NL][IN]
+       [attr labelM] /* 'MUTANT: [stringlit] */ [NL]
+       'static 'Object 'ARCLock '= 'new 'Object() '; [NL]
+       /* 'MUTANT: [stringlit] */         [NL]
+       [repeat class_body_declaration]    [EX]
+    '} [opt ';]                           [NL][NL]
+end define
+
+redefine method_or_constructor_declaration
+    [attr labelM] [method_declaration]
+  |
+    [attr labelM] /* 'MUTANT: [stringlit] */
+    [method_declaration]
+    /* 'MUTANT: [stringlit] */ [NL]
+  |
+    [attr labelM] [constructor_declaration]
 end redefine
-
-define other_statements
-    	[label_statement]
-    |   [empty_statement]
-    |   [expression_statement]
-    |   [if_statement]
-    |   [switch_statement]
-    |   [while_statement]
-    |   [do_statement]
-    |   [for_statement]
-    |   [break_statement]
-    |   [continue_statement]
-    |   [return_statement]
-    |   [throw_statement]
-    |   [try_statement]
-end define
-
-define declaration_or_other_statements
-        [local_variable_declaration]
-%   |   [class_declaration]     DK
-    |   [other_statements]
-end define
-
-redefine declaration_or_statement
-	 	[synchronized_statement]
-	|	[declaration_or_other_statements]
-	|       [block]
-	|	[comment_NL]
-end redefine
-
-% Our choices of sync statements for RSAS
-
-redefine synchronized_statement
-          [attr labelM] [asgn_stmt]
-	| [attr labelM] [sync_asgn_stmt]
-	| ...
-end redefine
-
-% How it looks when we started
-
-define asgn_stmt
-    % Assignment expression (From Java.grm)
-    [unary_expression] [assignment_operator] [assignment_expression] ';
-end define
-
-% How it looks after
-
-define sync_asgn_stmt
-  /* 'MUTANT: [stringlit] */ 	[NL]
-  'synchronized '( [expression] ')
-  '{ [NL][IN]
-	  [unary_expression] [assignment_operator] [assignment_expression] '; [NL][EX]
-  '}   [NL]
-  /* 'MUTANT: [stringlit] */ 	[NL]
-end define
 
 define labelM
-	'MUTATED
+  'MUTATED
 end define
+
+redefine method_declaration
+  [NL] [repeat modifier] [type_specifier] [rest_of_method_declaration]
+end redefine
+
+define rest_of_method_declaration
+  [method_declarator] [opt throws] [method_body]
+end define
+
+redefine block
+    '{                                        [NL][IN]
+        [repeat declaration_or_statement]     [EX]
+    '}
+   |
+    '{ [NL][IN]
+        'synchronized '( 'ARCLock ') [NL]
+        '{ [NL][IN]
+          [repeat declaration_or_statement]     [EX]
+        '}
+    '}
+end redefine
 
 %------------------------------------------------------------
 % Main rule, followed by other rules in topological order
 %------------------------------------------------------------
 function main
-	% initialize and export a mutant count that will be used in
-	% file name / folder name generation
-    	construct MutantCount [number]
-		0
-    	export MutantCount
+  % initialize and export a mutant count that will be used in
+  % file name / folder name generation
+      construct MutantCount [number]
+    0
+      export MutantCount
 
-	% initialize and export the name of the current mutant which
-	% will be used for folder name generation
-	construct MutantOpName [stringlit]
-		"AVSAV"
-	export MutantOpName
+  % initialize and export the name of the current mutant which
+  % will be used for folder name generation
+  construct MutantOpName [stringlit]
+    "ASM"
+  export MutantOpName
 
-	replace [program]
-        		P [program]
+  replace [program]
+            P [program]
 
-    	by
-		% Add synchronized modifier to all non-synchronized
-		% methods one at a time
-        		P [MutateSynchronizedInsert]
+      by
+    % Add synchronized modifier to all non-synchronized
+    % methods one at a time
+            P [MutateSynchronizedInsert]
 end function
 
 %------------------------------------------------------------
 % Match all methods that do not have a synchronized modifier
 % and then perform the following 3 steps for each:
-%	1. Create mutant of program with synchronized modifier added
-%	2. Write mutant to a file
-%	3. Remove synchronized modifier that was inserted
+% 1. Create mutant of program with synchronized modifier added
+% 2. Write mutant to a file
+% 3. Remove synchronized modifier that was inserted
 %------------------------------------------------------------
 rule MutateSynchronizedInsert
-	replace [program]
-		P 	[program]
+  replace [program]
+    P   [program]
 
-	% only proceed for methods that satisfy the requirements
-	% (i.e. methods that are not synchronized)
-	where
-		P 	[?doSynchronizedInsertMutation]
+  % only proceed for methods that satisfy the requirements
+  % (i.e. methods that are not synchronized)
+  where
+    P   [?doSynchronizedInsertMutation]
 
-	by
-		P
-			% Create the mutant version of the program
-			[doSynchronizedInsertMutation]
-			% [print]
-			[writeToFile]
-			% Undo mutation and return to original program
-			[undoSynchronizedInsertMutation]
+  by
+    P
+      % Create the mutant version of the program
+      [doInsertStaticLock]
+      [doSynchronizedInsertMutation]
+      % [print]
+      [writeToFile]
+      % Undo mutation and return to original program
+      [undoSynchronizedInsertMutation]
 end rule
 
 %------------------------------------------------------------
-% 
+% Create an ASK mutant by adding synchronized to the method
+% modifier list of a method that is not synchronized
+%------------------------------------------------------------
+function doInsertStaticLock
+  replace * [class_or_interface_body]
+    ClassBody [class_or_interface_body]
+
+  deconstruct ClassBody
+    '{
+       ClassBodyDec [repeat class_body_declaration]
+    '}
+
+   % create mutant comment to appear in source
+  construct MutantString [stringlit]
+    "ALAM (Add Lock Around a Method)"
+
+  by
+    % generate hidden attribute and comment
+    '{
+       'MUTATED /* 'MUTANT: MutantString */
+       'static 'Object 'ARCLock '= 'new 'Object() ';
+       /* 'MUTANT: MutantString */
+       ClassBodyDec
+    '}
+end function
+
+%------------------------------------------------------------
+% Create an ASK mutant by adding synchronized to the method
+% modifier list of a method that is not synchronized
 %------------------------------------------------------------
 function doSynchronizedInsertMutation
-	replace * [class_declaration]
-    TheClass [class_declaration]
+  replace * [method_or_constructor_declaration]
+    GenDecl [method_or_constructor_declaration]
 
-  % 1. First we want to get [class name].[method name]
-  %    so we can match it up with the list of shared
-  %    variables generated by contest.  They are of the
-  %    form:   [class name].[method name] [variable name]
-  
-  % 2. Start at "TheClass" and drill down
-  deconstruct TheClass
-    ClassHdr [class_header] 
-    ClassBdy [class_body]
+  deconstruct GenDecl
+    MethodDecl [method_declaration]
 
-  deconstruct ClassHdr
-    HdrMods [repeat modifier] 
-    'class 
-    ClassName [class_name] 
-    ClassExt [opt extends_clause] 
-    ClassImp [opt implements_clause]
-    
-  export ClassName
+  % export the old declaration and reinsert it
+  % once the mutant has been created and saved
+  export GenDecl
 
-  % 3. Now that we have the class name, keep going until we
-  %    get the method name
-  deconstruct ClassBdy
-    ClassBOI [class_or_interface_body]
+  deconstruct MethodDecl
+    MethodModifiers [repeat modifier]
+    TypeSpec [type_specifier]
+    RemainingDeclaration [rest_of_method_declaration]
 
-  deconstruvt ClassBOI
-    '{                                   
-       ClassDec [repeat class_body_declaration]   
-    '} 
-     ClassSemi [opt ';]                          
+  deconstruct RemainingDeclaration
+    MD [method_declarator]
+    OT [opt throws]
+    MB [method_body]
 
-  deconstruct ClassDec
-    DecEmpty  [empty_declaration]
-    DecMember [member_declaration]
-    InitInst  [instance_initializer]
-    InitStat  [static_initializer]
-    DecField  [field_declaration]
+  deconstruct MB
+    BL [block]
 
-  deconstruct DecMember
-    AMethod [method_or_constructor_declaration]
-    AType   [type_declaration]  
-
-  deconstruct AMethod
-    DeclMethod [method_declaration]
-    DeclConstr [constructor_declaration]
-
-  deconstruct DeclMethod
-    MethMods [repeat modifier] 
-    MethType [type_specifier] 
-    MethDecl [method_declarator] 
-    MethThro [opt throws]
-    MethBody [method_body]
-
-  deconstruct MethDecl
-    MethName [method_name] 
-    '( 
-    MethParm [list formal_parameter] 
-    ') 
-    MethDim  [repeat dimension]
-
-  % 4. Now we have the class and method names.
-  export MethName
-  
-  % 5. We're still not done.  We have to drill in to the method call to
-  %    identify the lines
-  deconstruct MethBody
-    MethBlock [block]  
-    ';
-          
-  deconstruct MethBlock
+  deconstruct BL
     '{
-    MethStmts [repeat declaration_or_statement] 
+        DOS [repeat declaration_or_statement]
     '}
 
-  deconstruct MethStmts
-    MethLocVar [local_variable_declaration]
-    MethClsDec [class_declaration]
-    MethStmts  [statement]
+  % check that the synchronized modifier is not present
+  where not
+    DOS [IsALAMAlready]
 
-  % 6. Read in a variable from the contest file.
-  %    Find a line 'Var :=' to synchronize
-  deconstruct MethStmts
-    % Fun stuff occurs here
-
-  deconstruct [synchronized_statement]
-		SyncStatement [synchronized_statement]
-
-	deconstruct SyncStatement
-		AsgnStatement [asgn_stmt]
-
-	deconstruct AsgnStatement
-    UA [unary_expression]
-		AO [assignment_operator]
-		AE [assignment_expression] ';
-
-	% export the old synchronized expression and reinsert it
-	% once the mutant has been created and saved
-	export AsgnStatement
-
-	% create mutant comment to appear in source
-	construct MutantString [stringlit]
-		"ALAM (Added Lock Around Method)"
-
-	construct ThisExpr [expression]
-		'this
-	by
-		% Replace with empty syncronized statement
-		'MUTATED /* 'MUTANT: MutantString */
-		'synchronized '( ThisExpr ')
+  % create new block
+  construct SynchBlock [block]
     '{
-			UA AO AE ';
+      synchronized '( 'ARCLock ')
+      '{
+        DOS
+      '}
     '}
-		/* 'MUTANT: MutantString */
+
+  construct NewBody [method_body]
+    SynchBlock
+
+  construct NewRemDecl [rest_of_method_declaration]
+    MD OT NewBody
+
+  construct NewMethodDecl [method_declaration]
+    MethodModifiers TypeSpec NewRemDecl
+
+  construct NewGenDecl [method_declaration]
+    NewMethodDecl
+
+  % create mutant comment to appear in source
+  construct MutantString [stringlit]
+    "ASM (Add Sync around a Method)"
+
+  by
+    % generate hidden attribute and comment
+    'MUTATED /* 'MUTANT: MutantString */
+    NewMethodDecl
+    /* 'MUTANT: MutantString */
 end function
 
 %------------------------------------------------------------
@@ -276,39 +234,35 @@ end function
 % been created.
 %------------------------------------------------------------
 function undoSynchronizedInsertMutation
-	replace * [synchronized_statement]
-		SyncStatement [synchronized_statement]
+  replace * [method_or_constructor_declaration]
+    CurrGenDecl [method_or_constructor_declaration]
 
-	% Import the old expression
-	import  AsgnStatement [asgn_stmt]
+  % Import the old declaration
+  import GenDecl [method_or_constructor_declaration]
 
-	% extract body
-	deconstruct SyncStatement
-		'MUTATED DoubleSync [sync_asgn_stmt]
+  % extract method declaration
+  deconstruct GenDecl
+    SavedMethodDecl [method_declaration]
 
-	deconstruct DoubleSync
-    /* 'MUTANT: MutantStr1 [stringlit] */
-		'synchronized '( ThisExpr [expression] ')
-    '{
-    	UA [unary_expression]
-			AO [assignment_operator]
-			AE [assignment_expression] ';
-    '}
-    /* 'MUTANT: MutantStr2 [stringlit] */
+  deconstruct CurrGenDecl
+    'MUTATED /* 'MUTANT: MutStr1 [stringlit] */
+    CurMethDecl [method_declaration]
+    /* 'MUTANT: MutStr2 [stringlit] */
 
-	by
-		% replace mutated synchronized block with original but
-		% leave hidden attribute
-		'MUTATED
-			AsgnStatement
+  by
+    % replace mutated declaration with original
+    % but leave hidden attribute
+    'MUTATED SavedMethodDecl
+
 end function
 
 %------------------------------------------------------------
-% Check if current parameter is "this"
+% Check if method modifier list includes synchronized
 %------------------------------------------------------------
-rule isThis
-	match [expression]
-		'this
+rule IsALAMAlready
+  match * [modifier]
+      'synchronized
+
 end rule
 
 %Include rules for writing mutants to files
