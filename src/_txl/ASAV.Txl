@@ -1,11 +1,22 @@
 %***********************************************************
-% ASAV (Add Sync Around Sync) Mutator for ARC
+% ASAV (Add Sync Around Variable from Contest) Mutator for ARC
 % (Automatic Repair of Concurrency Bugs)
 %
-% Kevin Jalbert and David Kelk, Sept. 2011
+% Kevin Jalbert, David Kelk and Jeremy Bradbury, Mar. 2012
 % SBSE Reading Course Project
 %
 % Based on ASK by J.S. Bradbury
+%
+% Typical invocation:
+% txl ManageAccount.java ASAV.Txl - -outfile ManageAccount_1.java -outdir ASAV/
+% -contestfile sharedVars.txt -class ManageAccount -var account
+%
+% Notes:
+% - Only adds synchronization block around A := B statements
+% - Java files must be named _1.java, _2.java due to the fact that
+%   the second invocation of mutant generation will overwrite the first.
+% - Output directory must already exist.
+% - Class and variable name from ConTest are passed as arguments to TXL.
 %***********************************************************
 
 %***********************************************************
@@ -33,14 +44,14 @@ include "JavaCommentOverrides.Grm"
 % Local grammar overrides
 
 redefine statement
-        	[synchronized_statement]
-	| 	[other_statements]
-   	|   	[block]
-	|	[comment_NL]
+    [synchronized_statement]
+  | [other_statements]
+  | [block]
+  | [comment_NL]
 end redefine
 
 define other_statements
-    	[label_statement]
+      [label_statement]
     |   [empty_statement]
     |   [expression_statement]
     |   [if_statement]
@@ -56,24 +67,23 @@ define other_statements
 end define
 
 define declaration_or_other_statements
-        [local_variable_declaration]
-%   |   [class_declaration]     DK
-    |   [other_statements]
+      [local_variable_declaration]
+    | [other_statements]
 end define
 
 redefine declaration_or_statement
-	 	[synchronized_statement]
-	|	[declaration_or_other_statements]
-	|       [block]
-	|	[comment_NL]
+    [synchronized_statement]
+  | [declaration_or_other_statements]
+  | [block]
+  | [comment_NL]
 end redefine
 
-% Our choices of sync statements for RSAS
+% Our choices of sync statements for ASAV
 
 redefine synchronized_statement
-          [attr labelM] [asgn_stmt]
-	| [attr labelM] [sync_asgn_stmt]
-	| ...
+    [attr labelM] [asgn_stmt]
+  | [attr labelM] [sync_asgn_stmt]
+  | ...
 end redefine
 
 % How it looks when we started
@@ -86,145 +96,148 @@ end define
 % How it looks after
 
 define sync_asgn_stmt
-  /* 'MUTANT: [stringlit] */ 	[NL]
-  'synchronized '( [expression] ')
+  /* 'MUTANT: [stringlit] */  [NL]
+  'synchronized '( [id] ')
   '{ [NL][IN]
-	  [unary_expression] [assignment_operator] [assignment_expression] '; [NL][EX]
+    [unary_expression] [assignment_operator] [assignment_expression] '; [NL][EX]
   '}   [NL]
-  /* 'MUTANT: [stringlit] */ 	[NL]
+  /* 'MUTANT: [stringlit] */  [NL]
 end define
 
 define labelM
-	'MUTATED
+  'MUTATED
 end define
 
 %------------------------------------------------------------
 % Main rule, followed by other rules in topological order
 %------------------------------------------------------------
 function main
-	% initialize and export a mutant count that will be used in
-	% file name / folder name generation
-    	construct MutantCount [number]
-		0
-    	export MutantCount
+  % initialize and export a mutant count that will be used in
+  % file name / folder name generation
+  construct MutantCount [number]
+    0
+  export MutantCount
 
-	% initialize and export the name of the current mutant which
-	% will be used for folder name generation
-	construct MutantOpName [stringlit]
-		"ASAV"
-	export MutantOpName
+  % initialize and export the name of the current mutant which
+  % will be used for folder name generation
+  construct MutantOpName [stringlit]
+    "ASAV"
+  export MutantOpName
 
-	replace [program]
-        		P [program]
+  % Read in name of class and variable from ConTest
+  import TXLargs [repeat stringlit]
+    deconstruct * TXLargs
+      "-contestfile" contestFile [stringlit] "-class" clsNm [stringlit] "-var" varNm [stringlit] MoreOptions [repeat stringlit]
 
-    	by
-		% Add synchronized modifier to all non-synchronized
-		% methods one at a time
-        		P [MutateSynchronizedInsert]
+  construct className [id]
+    _ [unquote clsNm]
+
+  construct varName [id]
+    _ [unquote varNm]
+
+  export className
+  export varName
+
+  replace [program]
+    P [program]
+
+  by
+    P [MutateSynchronizedInsert]
 end function
 
 %------------------------------------------------------------
-% Match all methods that do not have a synchronized modifier
+% Add synchronization blocks around statments of the form, A := B
 % and then perform the following 3 steps for each:
-%	1. Create mutant of program with synchronized modifier added
-%	2. Write mutant to a file
-%	3. Remove synchronized modifier that was inserted
+% 1. Create mutant of program with synchronized modifier added
+% 2. Write mutant to a file
+% 3. Remove synchronized modifier that was inserted
 %------------------------------------------------------------
 rule MutateSynchronizedInsert
-	replace [program]
-		P 	[program]
+  replace [program]
+    P   [program]
 
-	% only proceed for methods that satisfy the requirements
-	% (i.e. methods that are not synchronized)
-	where
-		P 	[?doSynchronizedInsertMutation]
+  % only proceed for methods that satisfy the requirements
+  where
+    P   [?doSynchronizedInsertMutation]
 
-	by
-		P
-			% Create the mutant version of the program
-			[doSynchronizedInsertMutation]
-			% [print]
-			[writeToFile]
-			% Undo mutation and return to original program
-			[undoSynchronizedInsertMutation]
+  by
+    P
+      % Create the mutant version of the program
+      [doSynchronizedInsertMutation]
+      % [print]
+      [writeToFile]
+      % Undo mutation and return to original program
+      [undoSynchronizedInsertMutation]
 end rule
 
 %------------------------------------------------------------
-% Create an ASK mutant by adding synchronized to the method
-% modifier list of a method that is not synchronized
+% Create an ASAV mutant by synchronizing on an A := B statement
 %------------------------------------------------------------
 function doSynchronizedInsertMutation
-	replace * [synchronized_statement]
-		SyncStatement [synchronized_statement]
 
-	deconstruct SyncStatement
-		AsgnStatement [asgn_stmt]
+  import className [id]
+  import varName [id]
 
-	deconstruct AsgnStatement
-    UA [unary_expression]
-		AO [assignment_operator]
-		AE [assignment_expression] ';
+  replace * [synchronized_statement]
+    SyncStatement [synchronized_statement]
 
-	% export the old synchronized expression and reinsert it
-	% once the mutant has been created and saved
-	export AsgnStatement
+    deconstruct SyncStatement
+      AsgnStatement [asgn_stmt]
 
-	% create mutant comment to appear in source
-	construct MutantString [stringlit]
-		"ASAV (Added Sync Around Variable)"
+    deconstruct AsgnStatement
+      UA [unary_expression]
+      AO [assignment_operator]
+      AE [assignment_expression] ';
 
-	construct ThisExpr [expression]
-		'this
-	by
-		% Replace with empty syncronized statement
-		'MUTATED /* 'MUTANT: MutantString */
-		'synchronized '( ThisExpr ')
+    % export the old synchronized expression and reinsert it
+    % once the mutant has been created and saved
+    export AsgnStatement
+
+    % create mutant comment to appear in source
+    construct MutantString [stringlit]
+      "ASAV (Added Sync Around Variable)"
+
+  by
+    'MUTATED /* 'MUTANT: MutantString */
+    'synchronized '( varName ')
     '{
-			UA AO AE ';
+      UA AO AE ';
     '}
-		/* 'MUTANT: MutantString */
+    /* 'MUTANT: MutantString */
 end function
 
 %------------------------------------------------------------
-% Reinsert the orginal method declaration but leave the
+% Reinsert the orginal statement declaration but leave the
 % MUTATED attribute to indicate that the mutant has already
 % been created.
 %------------------------------------------------------------
 function undoSynchronizedInsertMutation
-	replace * [synchronized_statement]
-		SyncStatement [synchronized_statement]
+  replace * [synchronized_statement]
+    SyncStatement [synchronized_statement]
 
-	% Import the old expression
-	import AsgnStatement [asgn_stmt]
+  % Import the old expression
+  import AsgnStatement [asgn_stmt]
 
-	% extract body
-	deconstruct SyncStatement
-		'MUTATED DoubleSync [sync_asgn_stmt]
+  % extract body
+  deconstruct SyncStatement
+    'MUTATED DoubleSync [sync_asgn_stmt]
 
-	deconstruct DoubleSync
+  deconstruct DoubleSync
     /* 'MUTANT: MutantStr1 [stringlit] */
-		'synchronized '( ThisExpr [expression] ')
+    'synchronized '( varName [id] ')
     '{
-    	UA [unary_expression]
-			AO [assignment_operator]
-			AE [assignment_expression] ';
+      UA [unary_expression]
+      AO [assignment_operator]
+      AE [assignment_expression] ';
     '}
     /* 'MUTANT: MutantStr2 [stringlit] */
 
-	by
-		% replace mutated synchronized block with original but
-		% leave hidden attribute
-		'MUTATED
-			AsgnStatement
+  by
+    % replace mutated statement with original but
+    % leave hidden attribute
+    'MUTATED
+      AsgnStatement
 end function
-
-%------------------------------------------------------------
-% Check if current parameter is "this"
-%------------------------------------------------------------
-rule isThis
-	match [expression]
-		'this
-end rule
 
 %Include rules for writing mutants to files
 include "WriteMutants.Txl"

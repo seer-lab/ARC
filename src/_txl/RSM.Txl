@@ -1,11 +1,19 @@
 %***********************************************************
-% RSM (Remove Sync around a Method) Mutator for ARC
+% RSM (Remove Sync on a Method) Mutator for ARC
 % (Automatic Repair of Concurrency Bugs)
 %
-% Kevin Jalbert and David Kelk, Sept. 2011
+% Kevin Jalbert, David Kelk and Jeremy Bradbury, Mar. 2012
 % SBSE Reading Course Project
 %
 % Based on RSK by J.S. Bradbury
+%
+% Typical invocation:
+% txl ManageAccount.java RSM.Txl - -outfile ManageAccount.java -outdir RSM/
+%
+% Notes:
+% - Output directory must already exist.
+% - Removes the synchronized modifier from a method.  Doesn't remove
+%   the synchronized modifier inserted by ASM yet.
 %***********************************************************
 
 %***********************************************************
@@ -26,8 +34,8 @@ include "JavaCommentOverrides.Grm"
 
 % Local grammar overrides
 redefine method_or_constructor_declaration
-	[attr labelM] [method_declaration]
-	| [attr labelM] /* 'MUTANT: [stringlit] */ [method_declaration]
+	  [attr labelM] [method_declaration]
+	| [attr labelM] /* 'MUTANT: [stringlit] */ [method_declaration] /* 'MUTANT: [stringlit] */ [NL]
 	| [attr labelM] [constructor_declaration]
 end redefine
 
@@ -36,7 +44,7 @@ define labelM
 end define
 
 redefine method_declaration
-    	[NL] [repeat modifier] [rest_of_method_declaration]
+  [NL] [repeat modifier] [rest_of_method_declaration]
 end redefine
 
 define rest_of_method_declaration
@@ -49,9 +57,9 @@ end define
 function main
 	% initialize and export a mutant count that will be used in
 	% file name / folder name generation
-    	construct MutantCount [number]
+  construct MutantCount [number]
 		0
-    	export MutantCount
+  export MutantCount
 
 	% initialize and export the name of the current mutant which
 	% will be used for folder name generation
@@ -60,19 +68,19 @@ function main
 	export MutantOpName
 
 	replace [program]
-        		P [program]
+    P [program]
 
-    	by
-		% Remove all instances of synchronized modifiers in
-		%methods one at a time
-        		P [MutateSynchronizedDel]
+  by
+		% Remove all instances of synchronized modifiers on
+		% methods one at a time
+    P [MutateSynchronizedDel]
 end function
 
 %------------------------------------------------------------
 % Match all methods that have both a synchronized keyword
 % and then perform the following 3 steps for each:
 %	1. Create mutant of program with synchronized modifier
-%      removed
+%    removed
 %	2. Write mutant to a file
 %	3. Reinsert synchronized modifier that was removed
 %------------------------------------------------------------
@@ -96,14 +104,16 @@ rule MutateSynchronizedDel
 end rule
 
 %------------------------------------------------------------
-% Create an RSK mutant by removing synchronized from the
+% Create an RSM mutant by removing synchronized from the
 % method modifier list
 %------------------------------------------------------------
 function doSynchronizedDelMutation
 	replace * [method_or_constructor_declaration]
 		GenDecl [method_or_constructor_declaration]
+
 	deconstruct GenDecl
 		MethodDecl [method_declaration]
+
 	deconstruct MethodDecl
 		MethodModifiers [repeat modifier]
 		RemainingDelcaration [rest_of_method_declaration]
@@ -121,7 +131,7 @@ function doSynchronizedDelMutation
 
 	% create mutant comment to appear in source
 	construct MutantString [stringlit]
-		"RSM (Removed Synch around a Method)"
+		"RSM (Removed Synch on a Method)"
 
 	by
 		% generate hidden attribute and comment
@@ -131,6 +141,7 @@ function doSynchronizedDelMutation
 		NewMethodModifiers [generateModifiers each MethodModifiers]
 		% reinsert rest of method declaration
 		RemainingDelcaration
+		/* 'MUTANT: MutantString */
 end function
 
 %------------------------------------------------------------
@@ -152,7 +163,7 @@ function undoSynchronizedDelMutation
 	deconstruct CurrGenDecl
 		'MUTATED /* 'MUTANT: MutantString [stringlit] */
 		CurrMethodDecl [method_declaration]
-
+    /* 'MUTANT: MutantString */
 	by
 		% replace mutated declaration with original but
 		% leave hidden attribute

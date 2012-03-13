@@ -2,10 +2,16 @@
 % CSO (Change Sync Order) Mutator for ARC
 % (Automatic Repair of Concurrency Bugs)
 %
-% Kevin Jalbert and David Kelk, Sept. 2011
+% Kevin Jalbert, David Kelk and Jeremy Bradbury, Mar. 2012
 % SBSE Reading Course Project
 %
 % Based on ESP by J.S. Bradbury
+%
+% Typical invocation:
+% txl ManageAccount.java CSO.Txl - -outfile ManageAccount_1.java -outdir CSO/
+%
+% Notes:
+% - Output directory must already exist.
 %***********************************************************
 
 %***********************************************************
@@ -29,9 +35,9 @@ redefine synchronized_statement
 	  [attr labelM] [double_sync_before]
 	|
     [attr labelM] [double_sync_after]
-%  |
-%    ...
 end redefine
+
+% How it looks before
 
 define double_sync_before
   'synchronized '( [expression] ')
@@ -42,6 +48,8 @@ define double_sync_before
      '} [NL]
   '} [NL]
 end define
+
+% How it looks after
 
 define double_sync_after
   /* 'MUTANT: [stringlit] */ [NL]
@@ -65,9 +73,9 @@ end define
 function main
 	% initialize and export a mutant count that will be used in
 	% file name / folder name generation
-    	construct MutantCount [number]
+  construct MutantCount [number]
 		0
-    	export MutantCount
+  export MutantCount
 
 	% initialize and export the name of the current mutant which
 	% will be used for folder name generation
@@ -76,19 +84,19 @@ function main
 	export MutantOpName
 
 	replace [program]
-        		P [program]
+    P [program]
 
-    	by	% Exchange all nested synchronization block parameters
-    		P [ExchangeSynchBlockParameter]
+  by	% Exchange all nested synchronization block parameters
+    P [ExchangeSynchBlockParameter]
 end function
 
 %------------------------------------------------------------
 % Match all methods that have nested synchronized blocks
 % and then perform the following 3 steps for each:
 %	1. Create mutant of program with synchronized block
-%      parameters switched
+%    with parameters switched
 %	2. Write mutant to a file
-%	3. Switch back synchronized block  parameters
+%	3. Switch back synchronized block parameters
 %------------------------------------------------------------
 rule ExchangeSynchBlockParameter
 	replace [program]
@@ -138,21 +146,20 @@ function doExchangeLocks
     'MUTATED /* 'MUTANT: MutantString */
 	 	'synchronized '(  InnerSynchExpr ')
     '{
-       'synchronized '( OuterSynchExpr ')
+      'synchronized '( OuterSynchExpr ')
         '{
-              InnerSynchBody
+          InnerSynchBody
         '}
     '}
     /* 'MUTANT: MutantString */
 
 	by
-
     SynchStmtNew
 
 end function
 
 %------------------------------------------------------------
-% Check that outer parameter is not the same as
+% Check that outer parameter is not the same as the
 % inner parameter
 %------------------------------------------------------------
 rule isSameParam InnerParam [expression]
@@ -173,34 +180,22 @@ rule undoExchangeLocks
     'MUTATED /* 'MUTANT: MutantString1 [stringlit] */
     'synchronized '(  InnerSynchExpr [expression] ')
     '{
-       'synchronized '( OuterSynchExpr [expression] ')
-        '{
-              InnerSynchBody [repeat declaration_or_statement]
-        '}
+      'synchronized '( OuterSynchExpr [expression] ')
+      '{
+        InnerSynchBody [repeat declaration_or_statement]
+      '}
     '}
     /* 'MUTANT: MutantString2 [stringlit] */
 
 	by
 		'MUTATED 'synchronized '(  OuterSynchExpr ')
     '{
-       'synchronized '( InnerSynchExpr ')
-        '{
-              InnerSynchBody
-        '}
+      'synchronized '( InnerSynchExpr ')
+      '{
+        InnerSynchBody
+      '}
     '}
 end rule
-
-%------------------------------------------------------------
-%Remove MUTATED attributes for another pass
-%------------------------------------------------------------
-%rule Clean
-%	replace [synchronized_statement]
-%		LStmt [synchronized_statement]
-%	deconstruct LStmt
-%		'MUTATED LStmt2 [synchronized_statement]
-%	by
-%		LStmt2
-%end rule
 
 %Include rules for writing mutants to files
 include "WriteMutants.Txl"

@@ -2,10 +2,16 @@
 % SHSA (SHrink Sync region After) Mutator for ARC
 % (Automatic Repair of Concurrency Bugs)
 %
-% Kevin Jalbert and David Kelk, Sept. 2011
+% Kevin Jalbert, David Kelk and Jeremy Bradbury, Mar. 2012
 % SBSE Reading Course Project
 %
 % Based on SKCR by J.S. Bradbury
+%
+% Typical invocation:
+% txl ManageAccount.java SHSA.Txl - -outfile ManageAccount.java -outdir SHSA/
+%
+% Notes:
+% - Output directory must already exist.
 %***********************************************************
 
 %***********************************************************
@@ -27,9 +33,9 @@ include "JavaCommentOverrides.Grm"
 % Local grammar overrides
 
 redefine statement
-        	[synchronized_statement]
-	| 	[other_statements]
-   	|   	[block]
+    [synchronized_statement]
+	| [other_statements]
+  | [block]
 	|	[comment_NL]
 end redefine
 
@@ -50,20 +56,19 @@ define other_statements
 end define
 
 define declaration_or_other_statements
-        [local_variable_declaration]
-%   |   [class_declaration]     DK
-    |   [other_statements]
+    [local_variable_declaration]
+  | [other_statements]
 end define
 
 redefine declaration_or_statement
 	 	[synchronized_statement]
 	|	[declaration_or_other_statements]
-	|       [block]
+	| [block]
 	|	[comment_NL]
 end redefine
 
 redefine synchronized_statement
-	[attr labelM] [synchronized_statement_2]
+	  [attr labelM] [synchronized_statement_2]
 	| [attr labelM] [shrunk_synchronized_statement]
 	| ...
 end redefine
@@ -73,8 +78,8 @@ end redefine
 define synchronized_statement_2
   'synchronized '( [expression] ')
   '{                                        [NL][IN]
-	  [repeat declaration_or_statement] [NL][EX]% DK
-  '}	[NL]
+	  [repeat declaration_or_statement] [EX]
+  '} [NL]
 end define
 
 % How it looks after shrinking
@@ -85,9 +90,8 @@ define shrunk_synchronized_statement
 	'{                                        [NL][IN]
     [repeat declaration_or_statement]         [EX]
 	'}   [NL]
-	[repeat declaration_or_statement]    [NL]   % DK
-	/* 'MUTANT: [stringlit] */ 				[NL]
-
+	[repeat declaration_or_statement]
+	/* 'MUTANT: [stringlit] */
 end define
 
 define labelM
@@ -100,9 +104,9 @@ end define
 function main
 	% initialize and export a mutant count that will be used in
 	% file name / folder name generation
-    	construct MutantCount [number]
+  construct MutantCount [number]
 		0
-   	 export MutantCount
+   export MutantCount
 
 	% initialize and export the name of the current mutant that
 	% will be used for folder name generation
@@ -111,18 +115,19 @@ function main
 	export MutantOpName
 
 	replace [program]
-        		P [program]
+    P [program]
 
-   	 by	% shrink all instances of synchronized blocks one at
+  by
+    % shrink all instances of synchronized blocks one at
 		% a time
-        		P [MutateShrinkCriticalRegion]
+    P [MutateShrinkCriticalRegion]
 end function
 
 %------------------------------------------------------------
 % Match all methods that have a synchronized block
 % and then perform the following 3 steps for each:
 %	1. Create mutant of program with synchronized block
-%          shrunk after (only)
+%    shrunk after (only)
 %	2. Write mutant to a file
 %	3. Expand synchronized block that was shrunk
 %------------------------------------------------------------
