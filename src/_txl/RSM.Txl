@@ -8,8 +8,7 @@
 % Based on ASK by J.S. Bradbury
 %
 % Typical invocation:
-% txl ManageAccount.java ASM.Txl - -outfile ManageAccount_1.java -outdir ASM/
-% -contestfile sharedVars.txt -class ManageAccount -var account
+% txl ManageAccountForRSM.java RSM.Txl - -outfile ManageAccount.java -outdir RSM/
 %
 % Notes:
 % - Java files must be named _1.java, _2.java due to the fact that
@@ -97,18 +96,18 @@ function main
 
   % Get the class and variable name from ConTest
 
-  import TXLargs [repeat stringlit]
-    deconstruct * TXLargs
-      "-contestfile" contestFile [stringlit] "-class" clsNm [stringlit] "-var" varNm [stringlit] MoreOptions [repeat stringlit]
+  %import TXLargs [repeat stringlit]
+  %  deconstruct * TXLargs
+  %    "-class" clsNm [stringlit] "-var" varNm [stringlit] MoreOptions [repeat stringlit]
 
-  construct className [id]
-    _ [unquote clsNm]
+  %construct className [id]
+  %  _ [unquote clsNm]
 
-  construct varName [id]
-    _ [unquote varNm]
+  %construct varName [id]
+  %  _ [unquote varNm]
 
-  export className
-  export varName
+  %export className
+  %export varName
 
 	replace [program]
     P [program]
@@ -149,8 +148,8 @@ end rule
 %------------------------------------------------------------
 function doSynchronizedInsertMutation
 
-  import className [id]
-  import varName [id]
+  %import className [id]
+  %import varName [id]
 
   replace * [method_or_constructor_declaration]
     GenDecl [method_or_constructor_declaration]
@@ -177,7 +176,7 @@ function doSynchronizedInsertMutation
 
   deconstruct BL
     '{
-      'synchronized '( varName ')
+      'synchronized '( varName [id] ')
       '{
         DOS [repeat declaration_or_statement]
       '}
