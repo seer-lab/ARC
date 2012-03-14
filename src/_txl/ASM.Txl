@@ -98,7 +98,7 @@ function main
 
   import TXLargs [repeat stringlit]
     deconstruct * TXLargs
-      "-contestfile" contestFile [stringlit] "-class" clsNm [stringlit] "-var" varNm [stringlit] MoreOptions [repeat stringlit]
+      "-class" clsNm [stringlit] "-var" varNm [stringlit] MoreOptions [repeat stringlit]
 
   construct className [id]
     _ [unquote clsNm]

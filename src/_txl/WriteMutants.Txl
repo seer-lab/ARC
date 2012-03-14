@@ -57,9 +57,7 @@ function writeToFile
 
 	import TXLargs [repeat stringlit]
 		deconstruct * TXLargs
-			"-outfile" FileValue [stringlit] "-outdir" DirValue [stringlit]
-			  otherarge [repeat stringlit] %"-contestfile" ConFile [stringlit] "-class" %TheClass [stringlit] "-var"
-			  %VarName [stringlit]
+			"-outfile" FileValue [stringlit] "-outdir" DirValue [stringlit] otherarge [repeat stringlit]
 
 	construct slash [stringlit]
 		"/"
@@ -88,7 +86,8 @@ function writeToFile
 		dirname [+ slash] [+ FileValue]
 
 	by
-		P 	[system mkdirCmd2]
+		P
+		  [system mkdirCmd2]
 			%[system dirCmd]
 			[system cdCmd2]
 			%[system dirCmd]
