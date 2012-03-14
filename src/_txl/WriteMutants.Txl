@@ -23,7 +23,10 @@ function constructDirectory
 
 	import TXLargs [repeat stringlit]
 		deconstruct * TXLargs
-			"-outfile" FileValue [stringlit] "-outdir" DirValue [stringlit]% MoreOptions [repeat stringlit]
+			"-outfile" FileValue [stringlit] "-outdir" DirValue [stringlit]
+			otherarge [repeat stringlit] %"-contestfile"
+			 %ConFile [stringlit] "-class" TheClass [stringlit] "-var"
+			  %VarName [stringlit]
 
 	% get the current mutant count and update it.
 	import MutantCount [number]
@@ -54,14 +57,16 @@ function writeToFile
 
 	import TXLargs [repeat stringlit]
 		deconstruct * TXLargs
-			"-outfile" FileValue [stringlit] "-outdir" DirValue [stringlit] % MoreOptions [repeat stringlit]
+			"-outfile" FileValue [stringlit] "-outdir" DirValue [stringlit]
+			  otherarge [repeat stringlit] %"-contestfile" ConFile [stringlit] "-class" %TheClass [stringlit] "-var"
+			  %VarName [stringlit]
 
 	construct slash [stringlit]
 		"/"
 
 	% get current mutant's  directory name
 	construct dirname [stringlit]
-		_ [ constructDirectory]
+		_ [constructDirectory]
 
 	% create new mutant directory
 	construct mkdirCmd [stringlit]
@@ -84,8 +89,8 @@ function writeToFile
 
 	by
 		P 	[system mkdirCmd2]
-			[system dirCmd]
+			%[system dirCmd]
 			[system cdCmd2]
-			[system dirCmd]
+			%[system dirCmd]
 			[write filename]
 end function
