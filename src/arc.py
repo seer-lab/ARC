@@ -4,9 +4,11 @@ The entry point for ARC is found in this module. The configurations are held
 within the config.py module.
 """
 
+import config
 import argparse
 from _contest import contester
 from _evolution import evolution
+from _txl import txl_operator
 
 import logging
 logger = logging.getLogger('arc')
@@ -16,6 +18,12 @@ def main():
 
   # Setup ConTest
   contester.setup()
+
+  # Compiling initial project
+  txl_operator.compile_project()
+
+  # Initial run for ConTest
+  contester.test_execution(config._CONTEST_RUNS * config._CONTEST_VALIDATION_MULTIPLIER)
 
   # Run evolution
   evolution.start()

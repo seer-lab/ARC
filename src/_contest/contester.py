@@ -65,32 +65,20 @@ def test_execution(runs):
   testRunner = tester.Tester()
   logger.info("Check if testsuite runs with ConTest (will retry if needed)")
   try:
-    for i in range(1, runs + 1):
-
-      # Testsuite with ConTest noise (to ensure timeout parameter is alright)
-      outFile = tempfile.SpooledTemporaryFile()
-      errFile = tempfile.SpooledTemporaryFile()
-      testSuite = subprocess.Popen(['java',
-                        '-Xmx{}m'.format(config._PROJECT_TEST_MB), '-cp',
-                        config._PROJECT_CLASSPATH, '-javaagent:' +
-                        config._CONTEST_JAR, '-Dcontest.verbose=0',
-                        config._PROJECT_TESTSUITE], stdout=outFile,
-                        stderr=errFile, cwd=config._PROJECT_DIR, shell=False)
-
-      testRunner.run_test(testSuite, outFile, errFile, i)
-
+    testRunner.begin_testing(True,runs=runs)
+  
     logger.info("Testing Runs Results...")
-    logger.info("Successes ", testRunner.get_successes())
-    logger.info("Timeouts ", testRunner.get_timeouts())
-    logger.info("Dataraces ", testRunner.get_dataraces())
-    logger.info("Deadlock ", testRunner.get_deadlocks())
-    logger.info("Errors ", testRunner.get_errors())
+    logger.info("Successes: {}".format(testRunner.successes))
+    logger.info("Timeouts: {}".format(testRunner.timeouts))
+    logger.info("Dataraces: {}".format(testRunner.dataraces))
+    logger.info("Deadlock: {}".format(testRunner.deadlocks))
+    logger.info("Errors: {}".format(testRunner.errors))
 
-    if (testRunner.get_errors() >= 1):
+    if (testRunner.errors >= 1):
       raise Exception('ERROR', 'testsuite')
-    elif (testRunner.get_timeouts() >= 1):
+    elif (testRunner.timeouts >= 1):
       raise Exception('ERROR', 'config._CONTEST_TIMEOUT_SEC is too low')
-    elif (testRunner.get_successes() >= 1):
+    elif (testRunner.successes >= 1):
       logger.info("Capable of a successful execution of the testsuite")
     else:
       raise Exception('ERROR', 'No successful runs, try again or fix code')

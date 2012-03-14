@@ -29,6 +29,7 @@ _PROJECT_TESTSUITE = "AirlineTest"
 _PROJECT_COMPILE = "compile"
 _PROJECT_CLASSPATH = _PROJECT_CLASS_DIR + ":" + _PROJECT_DIR + "test/"
 _PROJECT_TEST_MB = 2000
+_SHARED_VARS_FILE = _PROJECT_DIR + "com_ibm_contest/sharedVars.txt"
 # TODO Consider some automatic way to figure classpath if Ant or MVN exist
 
 # ConTest variables
@@ -44,25 +45,28 @@ _TESTSUITE_AVG = 3  # Number of test executions for finding the average time
 # [0]Name  [1]Enable  [2]DataRace  [3]Deadlock  [4]File
 _MUTATION_ASAS = ['ASAS', True, True, True, _TXL_DIR + "ASAS.Txl"]
 _MUTATION_ASAV = ['ASAV', True, True, True, _TXL_DIR + "ASAV.Txl"]
+_MUTATION_ASIM = ['ASIM', True, True, True, _TXL_DIR + "ASIM.Txl"]
 _MUTATION_ASM  = ['ASM', True, True, True, _TXL_DIR + "ASM.Txl"]
 _MUTATION_CSO  = ['CSO', True, False, True, _TXL_DIR + "CSO.Txl"]
 _MUTATION_EXSB = ['EXSB', True, True, True, _TXL_DIR + "EXSB.Txl"]
 _MUTATION_EXSA = ['EXSA', True, True, True, _TXL_DIR + "EXSA.Txl"]
 _MUTATION_RSAS = ['RSAS', True, True, True, _TXL_DIR + "RSAS.Txl"]
 _MUTATION_RSAV = ['RSAV', True, True, True, _TXL_DIR + "RSAV.Txl"]
+_MUTATION_RSIM = ['RSIM', True, True, True, _TXL_DIR + "RSIM.Txl"]
 _MUTATION_RSM  = ['RSM', True, True, True, _TXL_DIR + "RSM.Txl"]
 _MUTATION_SHSA = ['SHSA', True, True, True, _TXL_DIR + "SHSA.Txl"]
 _MUTATION_SHSB = ['SHSB', True, True, True, _TXL_DIR + "SHSB.Txl"]
-_FUNCTIONAL_MUTATIONS = [_MUTATION_ASAS, _MUTATION_ASAV, _MUTATION_ASM,
-                         _MUTATION_CSO, _MUTATION_EXSB, _MUTATION_EXSA,
-                         _MUTATION_RSAS, _MUTATION_RSAV, _MUTATION_RSM]
-_NONFUNCTIONAL_MUTATIONS = [_MUTATION_RSAS, _MUTATION_RSAV, _MUTATION_RSM,
-                            _MUTATION_SHSA, _MUTATION_SHSB]
-_ALL_MUTATIONS = [_MUTATION_ASAS, _MUTATION_ASAV, _MUTATION_ASM,
-                         _MUTATION_CSO, _MUTATION_EXSB, _MUTATION_EXSA,
-                         _MUTATION_RSAS, _MUTATION_RSAV, _MUTATION_RSM,
-                         _MUTATION_SHSA, _MUTATION_SHSB]
-
+_FUNCTIONAL_MUTATIONS = [_MUTATION_ASAS, _MUTATION_ASAV, _MUTATION_ASIM,
+                         _MUTATION_ASM, _MUTATION_CSO, _MUTATION_EXSB,
+                         _MUTATION_EXSA, _MUTATION_RSAS, _MUTATION_RSAV,
+                         _MUTATION_RSIM, _MUTATION_RSM]
+_NONFUNCTIONAL_MUTATIONS = [_MUTATION_RSAS, _MUTATION_RSAV, _MUTATION_RSIM,
+                            _MUTATION_RSM, _MUTATION_SHSA, _MUTATION_SHSB]
+_ALL_MUTATIONS = [_MUTATION_ASAS, _MUTATION_ASAV, _MUTATION_ASIM,
+                         _MUTATION_ASM, _MUTATION_CSO, _MUTATION_EXSB,
+                         _MUTATION_EXSA, _MUTATION_RSAS, _MUTATION_RSAV,
+                         _MUTATION_RSIM, _MUTATION_RSM, _MUTATION_SHSA,
+                         _MUTATION_SHSB]
 
 # Enable random mutation
 _RANDOM_MUTATION = True
@@ -96,9 +100,9 @@ else:
   handler = logging.FileHandler(_LOG_FILE, "w");
 
 if _VERBOSE:
-    logger.setLevel(logging.DEBUG)
+  logger.setLevel(logging.DEBUG)
 else:
-    logger.setLevel(logging.INFO)
+  logger.setLevel(logging.INFO)
 
 formatter = logging.Formatter('%(relativeCreated)d %(levelname)s [%(module)s.%(funcName)s] %(message)s')
 handler.setFormatter(formatter)
