@@ -1,55 +1,83 @@
 %***********************************************************
-% RSM (Remove Sync on a Method) Mutator for ARC
+% RSM (Remove Sync around a Method Body from ConTest) Mutator for ARC
 % (Automatic Repair of Concurrency Bugs)
 %
 % Kevin Jalbert, David Kelk and Jeremy Bradbury, Mar. 2012
 % SBSE Reading Course Project
 %
-% Based on RSK by J.S. Bradbury
+% Based on ASK by J.S. Bradbury
 %
 % Typical invocation:
-% txl ManageAccount.java RSM.Txl - -outfile ManageAccount.java -outdir RSM/
+% txl ManageAccount.java ASM.Txl - -outfile ManageAccount_1.java -outdir ASM/
+% -contestfile sharedVars.txt -class ManageAccount -var account
 %
 % Notes:
+% - Java files must be named _1.java, _2.java due to the fact that
+%   the second invocation of mutant generation will overwrite the first.
 % - Output directory must already exist.
-% - Removes the synchronized modifier from a method.  Doesn't remove
-%   the synchronized modifier inserted by ASM yet.
+% - Class and variable name from ConTest are passed as arguments to TXL.
 %***********************************************************
 
 %***********************************************************
-% RSK (Remove Synchronized Keyword from Method) Mutator
+% ASK (Add Synchronized Keyword To a Method) Mutator
 % Jeremy S. Bradbury
 
 % Copyright 2006 J.S. Bradbury
 
-% Description: This mutation operator removes the
-% the synchronizied keyword from methods.
-% We do not remove the synchronized keyword from constructors
-% because a constructor method can not be synchronized.
+% Description: This mutation operator adds the synchronized
+% keyword to any method that is not synchronized. We do
+% not consider constructors because a constructor method
+% can not be synchronized.
+
+% NOTE: This operator generates a number of equivalent
+% mutants. In the future we plan to restrict the ASK mutator
+% to add a synchronized modifier ONLY to methods that
+% have synchronized blocks (with the objective to cause
+% a deadlock bug)
 %***********************************************************
 
 % Base grammar, and grammar override files
 include "Java.Grm"
 include "JavaCommentOverrides.Grm"
 
-% Local grammar overrides
+% Before and after for the method (Where the mutant comments go)
+
 redefine method_or_constructor_declaration
-	  [attr labelM] [method_declaration]
-	| [attr labelM] /* 'MUTANT: [stringlit] */ [method_declaration] /* 'MUTANT: [stringlit] */ [NL]
-	| [attr labelM] [constructor_declaration]
+    [attr labelM] [method_declaration]
+  |
+    [attr labelM] /* 'MUTANT: [stringlit] */
+    [method_declaration]
+    /* 'MUTANT: [stringlit] */ [NL]
+  |
+    [attr labelM] [constructor_declaration]
 end redefine
 
 define labelM
-	'MUTATED
+  'MUTATED
 end define
 
 redefine method_declaration
-  [NL] [repeat modifier] [rest_of_method_declaration]
+  [NL] [repeat modifier] [type_specifier] [rest_of_method_declaration]
 end redefine
 
 define rest_of_method_declaration
-	[type_specifier] [method_declarator] [opt throws] [method_body]
+  [method_declarator] [opt throws] [method_body]
 end define
+
+% Before and after for the block (Where the synchronization goes)
+
+redefine block
+    '{                                        [NL][IN]
+        [repeat declaration_or_statement]     [EX]
+    '}
+   |
+    '{ [NL][IN]
+        'synchronized '( [id] ') [NL]
+        '{ [NL][IN]
+          [repeat declaration_or_statement]     [EX]
+        '}
+    '}
+end redefine
 
 %------------------------------------------------------------
 % Main rule, followed by other rules in topological order
@@ -67,81 +95,121 @@ function main
 		"RSM"
 	export MutantOpName
 
+  % Get the class and variable name from ConTest
+
+  import TXLargs [repeat stringlit]
+    deconstruct * TXLargs
+      "-contestfile" contestFile [stringlit] "-class" clsNm [stringlit] "-var" varNm [stringlit] MoreOptions [repeat stringlit]
+
+  construct className [id]
+    _ [unquote clsNm]
+
+  construct varName [id]
+    _ [unquote varNm]
+
+  export className
+  export varName
+
 	replace [program]
     P [program]
 
   by
-		% Remove all instances of synchronized modifiers on
-		% methods one at a time
-    P [MutateSynchronizedDel]
+    P [MutateSynchronizedInsert]
 end function
 
 %------------------------------------------------------------
-% Match all methods that have both a synchronized keyword
-% and then perform the following 3 steps for each:
-%	1. Create mutant of program with synchronized modifier
-%    removed
+% Match all methods that do have a synchronized modifier in their
+% body and then perform the following 3 steps for each:
+%	1. Create mutant of program with synchronized modifier added
 %	2. Write mutant to a file
-%	3. Reinsert synchronized modifier that was removed
+%	3. Remove synchronized modifier that was inserted
 %------------------------------------------------------------
-rule MutateSynchronizedDel
+rule MutateSynchronizedInsert
 	replace [program]
 		P 	[program]
 
 	% only proceed for methods that satisfy the requirements
-	% (i.e. methods that have a synchronized modifier)
+	% (i.e. methods that are not synchronized)
 	where
-		P 	[?doSynchronizedDelMutation]
+		P 	[?doSynchronizedInsertMutation]
 
 	by
 		P
 			% Create the mutant version of the program
-			[doSynchronizedDelMutation]
-			%[print]
+			[doSynchronizedInsertMutation]
+			% [print]
 			[writeToFile]
 			% Undo mutation and return to original program
-			[undoSynchronizedDelMutation]
+			[undoSynchronizedInsertMutation]
 end rule
 
 %------------------------------------------------------------
-% Create an RSM mutant by removing synchronized from the
-% method modifier list
+% Create an ASM method by adding a synchronized block surrounding
+% all statements in a method
 %------------------------------------------------------------
-function doSynchronizedDelMutation
-	replace * [method_or_constructor_declaration]
-		GenDecl [method_or_constructor_declaration]
+function doSynchronizedInsertMutation
 
-	deconstruct GenDecl
-		MethodDecl [method_declaration]
+  import className [id]
+  import varName [id]
 
-	deconstruct MethodDecl
-		MethodModifiers [repeat modifier]
-		RemainingDelcaration [rest_of_method_declaration]
+  replace * [method_or_constructor_declaration]
+    GenDecl [method_or_constructor_declaration]
 
-	% check that synchronized modifier is present
-	where
-		MethodModifiers [hasSynchronizedKeyword]
+  deconstruct GenDecl
+    MethodDecl [method_declaration]
 
-	% create empty list of modifiers
-	construct NewMethodModifiers [repeat modifier]
+  % export the old declaration and reinsert it
+  % once the mutant has been created and saved
+  export GenDecl
 
-	% export the old declaration and reinsert it
-	% once the mutant has been created and saved
-	export GenDecl
+  deconstruct MethodDecl
+    MethodModifiers [repeat modifier]
+    TypeSpec [type_specifier]
+    RemainingDeclaration [rest_of_method_declaration]
 
-	% create mutant comment to appear in source
-	construct MutantString [stringlit]
-		"RSM (Removed Synch on a Method)"
+  deconstruct RemainingDeclaration
+    MD [method_declarator]
+    OT [opt throws]
+    MB [method_body]
 
-	by
-		% generate hidden attribute and comment
-		'MUTATED /* 'MUTANT: MutantString */
-		% populate new modifier list with all modifiers
-		% except synchronized
-		NewMethodModifiers [generateModifiers each MethodModifiers]
-		% reinsert rest of method declaration
-		RemainingDelcaration
-		/* 'MUTANT: MutantString */
+  deconstruct MB
+    BL [block]
+
+  deconstruct BL
+    '{
+      'synchronized '( varName ')
+      '{
+        DOS [repeat declaration_or_statement]
+      '}
+    '}
+
+  % create new block
+  construct NoSynchBlock [block]
+    '{
+      DOS
+    '}
+
+  construct NewBody [method_body]
+    NoSynchBlock
+
+  construct NewRemDecl [rest_of_method_declaration]
+    MD OT NewBody
+
+  construct NewMethodDecl [method_declaration]
+    MethodModifiers TypeSpec NewRemDecl
+
+  construct NewGenDecl [method_declaration]
+    NewMethodDecl
+
+  % create mutant comment to appear in source
+  construct MutantString [stringlit]
+    "RSM (Remove Sync around a Method Body from ConTest)"
+
+  by
+    % generate hidden attribute and comment
+    'MUTATED /* 'MUTANT: MutantString */
+    NewMethodDecl
+    /* 'MUTANT: MutantString */
 end function
 
 %------------------------------------------------------------
@@ -149,49 +217,27 @@ end function
 % MUTATED attribute to indicate that the mutant has already
 % been created.
 %------------------------------------------------------------
-function undoSynchronizedDelMutation
-	replace * [method_or_constructor_declaration]
-		CurrGenDecl [method_or_constructor_declaration]
+function undoSynchronizedInsertMutation
+  replace * [method_or_constructor_declaration]
+    CurrGenDecl [method_or_constructor_declaration]
 
-	% Import the old declaration
-	import GenDecl [method_or_constructor_declaration]
+  % Import the old declaration
+  import GenDecl [method_or_constructor_declaration]
 
-	% extract method declaration
-	deconstruct GenDecl
-		SavedMethodDecl [method_declaration]
+  % extract method declaration
+  deconstruct GenDecl
+    SavedMethodDecl [method_declaration]
 
-	deconstruct CurrGenDecl
-		'MUTATED /* 'MUTANT: MutantString [stringlit] */
-		CurrMethodDecl [method_declaration]
-    /* 'MUTANT: MutantString */
-	by
-		% replace mutated declaration with original but
-		% leave hidden attribute
-		'MUTATED SavedMethodDecl
-end function
+  deconstruct CurrGenDecl
+    'MUTATED /* 'MUTANT: MutStr1 [stringlit] */
+    CurMethDecl [method_declaration]
+    /* 'MUTANT: MutStr2 [stringlit] */
 
-%------------------------------------------------------------
-% Check if method modifier list includes synchronized
-%------------------------------------------------------------
-rule hasSynchronizedKeyword
-	match * [modifier]
-		'synchronized
-end rule
+  by
+    % replace mutated declaration with original
+    % but leave hidden attribute
+    'MUTATED SavedMethodDecl
 
-%------------------------------------------------------------
-% Generate list of modifiers for a method from existing list
-% but exclude the synchronized modifier.
-%------------------------------------------------------------
-function generateModifiers CurrModifier [modifier]
-	% check that current modifier is not static
-	where not
-		CurrModifier [hasSynchronizedKeyword]
-
-	% otherwise insert modifier into list
-	replace [repeat modifier]
-		Modifiers [repeat modifier]
-	by
-		Modifiers [. CurrModifier]
 end function
 
 %Include rules for writing mutants to files
