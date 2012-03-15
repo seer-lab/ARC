@@ -183,9 +183,6 @@ def generate_mutants(generation, memberNum, txlOperator, sourceFile, destDir):
         variableName = line.split('.')[-1].strip(' \t\n\r')
         className = line.split('.')[-2].strip(' \t\n\r')
 
-        print ['txl', sourceFile, txlOperator[4], '-',
-                  '-outfile', mutantSource + sourceExtOnly, '-outdir', txlDestDir,
-                  '-class', className, '-var', variableName]
         process = subprocess.Popen(['txl', sourceFile, txlOperator[4], '-',
                   '-outfile', mutantSource + sourceExtOnly, '-outdir', txlDestDir,
                   '-class', className, '-var', variableName],
@@ -197,13 +194,10 @@ def generate_mutants(generation, memberNum, txlOperator, sourceFile, destDir):
 
   else:
 
-    print ['txl', sourceFile, txlOperator[4], '-',
-            '-outfile', sourceNameOnly + sourceExtOnly, '-outdir', txlDestDir]
     process = subprocess.Popen(['txl', sourceFile, txlOperator[4], '-',
               '-outfile', sourceNameOnly + sourceExtOnly, '-outdir', txlDestDir],
               stdout=outFile, stderr=errFile, cwd=config._PROJECT_DIR, shell=False)
     process.wait()
-    
 
   #logger.debug("stdout: {}".format(outFile))
   #logger.debug("stderr: {}".format(errFile))

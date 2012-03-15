@@ -190,8 +190,9 @@ def evolve(generation=0, worstScore=0):
     bestFitness.append((highestSoFar, highestID))
 
     # Check the terminating conditions
-    if convergence(generation, bestFitness, averageFitness):
-      return get_best_individual()
+    if not _functionalPhase:
+      if convergence(generation, bestFitness, averageFitness):
+        return get_best_individual()
     if terminate(generation, generationLimit):
       return get_best_individual()
 
@@ -630,10 +631,15 @@ def convergence(generation, bestFitness, averageFitness):
   # Alternate termination criteria to check for convergence
   avgFitTest = False
   maxFitTest = False
-  if generation >= config._GENERATIONAL_IMPROVEMENT_WINDOW + 1:
-    if max(averageFitness) - min(averageFitness) > config._AVG_FITNESS_MIN_DELTA:
+  
+  # Acquire the last N window values
+  windowAverageValues = averageFitness[-config._GENERATIONAL_IMPROVEMENT_WINDOW:]
+  windowMaximumValues = bestFitness[-config._GENERATIONAL_IMPROVEMENT_WINDOW:]
+
+  if len(windowAverageValues) == config._GENERATIONAL_IMPROVEMENT_WINDOW:
+    if max(windowAverageValues) - min(windowAverageValues) > config._AVG_FITNESS_MIN_DELTA:
       avgFitTest = True
-    if max(bestFitness, key=lambda x:x[0])[0] - min(bestFitness,
+    if max(windowMaximumValues, key=lambda x:x[0])[0] - min(windowMaximumValues,
         key=lambda x:x[0])[0] > config._BEST_FITNESS_MIN_DELTA:
       maxFitTest = True
 
