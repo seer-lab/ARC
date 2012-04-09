@@ -27,7 +27,8 @@ _PROJECT_OUTPUT_DIR = _ROOT_DIR + "output/"
 _PROJECT_PREFIX = "org.example.project,AirlineBug"  # Comma separated fully-qualifying class names or package prefixes
 _PROJECT_TESTSUITE = "AirlineTest"
 _PROJECT_COMPILE = "compile"
-_PROJECT_CLASSPATH = _PROJECT_CLASS_DIR + ":" + _PROJECT_DIR + "test/"
+_PROJECT_TEST = "test"
+_PROJECT_CLASSPATH = None  # Automatically acquired using ant test if None
 _PROJECT_TEST_MB = 2000
 _SHARED_VARS_FILE = _PROJECT_DIR + "com_ibm_contest/sharedVars.txt"
 # TODO Consider some automatic way to figure classpath if Ant or MVN exist

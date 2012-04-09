@@ -6,6 +6,9 @@ within the config.py module.
 
 import config
 import argparse
+import subprocess
+import tempfile
+import re
 from _contest import contester
 from _evolution import evolution
 from _txl import txl_operator
@@ -21,6 +24,18 @@ def main():
 
   # Compiling initial project
   txl_operator.compile_project()
+
+  # Acquire classpath dynamically using 'ant test'
+  if config._PROJECT_CLASSPATH is None:
+    outFile = tempfile.SpooledTemporaryFile()
+    errFile = tempfile.SpooledTemporaryFile()
+    antProcess = subprocess.Popen(['ant', '-v', config._PROJECT_TEST], stdout=outFile,
+                    stderr=errFile, cwd=config._PROJECT_DIR, shell=False)
+    antProcess.wait()
+    outFile.seek(0)
+    outText = outFile.read().lower()
+    outFile.close()
+    config._PROJECT_CLASSPATH = re.search("-classpath'\s*\[junit\]\s*'(.*)'", outText).groups()[0]
 
   # Initial run for ConTest (Acquire dynamic timeout value)
   contestTime = contester.run_test_execution(config._CONTEST_RUNS * config._CONTEST_VALIDATION_MULTIPLIER)
