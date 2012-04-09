@@ -22,8 +22,10 @@ def main():
   # Compiling initial project
   txl_operator.compile_project()
 
-  # Initial run for ConTest
-  contester.test_execution(config._CONTEST_RUNS * config._CONTEST_VALIDATION_MULTIPLIER)
+  # Initial run for ConTest (Acquire dynamic timeout value)
+  contestTime = contester.run_test_execution(config._CONTEST_RUNS * config._CONTEST_VALIDATION_MULTIPLIER)
+  config._CONTEST_TIMEOUT_SEC = contestTime * config._CONTEST_TIMEOUT_MULTIPLIER
+  logger.info("Using a timeout value of {}s".format(config._CONTEST_TIMEOUT_SEC))
 
   # Run evolution
   evolution.start()

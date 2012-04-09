@@ -42,15 +42,15 @@ def setup():
     print(line[0:-1])  # Remove extra newlines (a trailling-space must exists in modified lines)
 
 
-def run_test_execution():
+def run_test_execution(runs):
   # Check if the testsuite can successfully execute with the set parameters
-  logger.debug("Practice testsuite run {} times".format(config._TESTSUITE_AVG))
-  cmd = "test_execution({})".format(config._TESTSUITE_AVG)
+  logger.debug("Practice testsuite run {} times".format(runs))
+  cmd = "test_execution({})".format(runs)
   timer = timeit.Timer(cmd, "from _contest.contester import test_execution")
 
-  averageTime = timer.timeit(1) / config._TESTSUITE_AVG
+  averageTime = timer.timeit(1) / runs
   logger.debug("Practice testsuite runs took {}s as an AVG".format(averageTime))
-
+  return averageTime
 
 def test_execution(runs):
   """Test the testsuite to ensure it can run successfully at least once.
@@ -63,10 +63,9 @@ def test_execution(runs):
   """
 
   testRunner = tester.Tester()
-  logger.info("Check if testsuite runs with ConTest (will retry if needed)")
   try:
     testRunner.begin_testing(True,runs=runs)
-  
+
     logger.info("Testing Runs Results...")
     logger.info("Successes: {}".format(testRunner.successes))
     logger.info("Timeouts: {}".format(testRunner.timeouts))
@@ -81,7 +80,7 @@ def test_execution(runs):
     elif (testRunner.successes >= 1):
       logger.info("Capable of a successful execution of the testsuite")
     else:
-      raise Exception('ERROR', 'No successful runs, try again or fix code')
+      logger.warn("No successful execution of the testsuite")
 
   except Exception as message:
     print (message.args)

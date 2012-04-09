@@ -44,7 +44,7 @@ def initialize(bestIndividual=None):
   elif _functionalPhase:
     setOfOperators = config._FUNCTIONAL_MUTATIONS
   else:
-    setOfOperators = config._NONFUNCTIONAL_MUTATIONS 
+    setOfOperators = config._NONFUNCTIONAL_MUTATIONS
     _population = []  # Reset population if on next phase
 
   # The number of enabled mutation operators
@@ -229,10 +229,10 @@ def mutation(individual, deadlockVotes, dataraceVotes, nonFunctionalVotes):
   elif _functionalPhase:
     mutationOperators = config._FUNCTIONAL_MUTATIONS
   else:
-    mutationOperators = config._NONFUNCTIONAL_MUTATIONS 
+    mutationOperators = config._NONFUNCTIONAL_MUTATIONS
 
   # Repopulate the individual's genome with new possible mutation locations
-  individual.repopulateGenome(_functionalPhase) 
+  individual.repopulateGenome(_functionalPhase)
 
   # Definite check to see if ANY mutants exists for an individual
   checkInd = -1
@@ -371,10 +371,10 @@ def evaluate(individual, worstScore):
     #txl_operator.move_local_project_to_original(individual.generation,
     #                                            individual.id)
     #txl_operator.compile_project()
-    if contest.begin_testing(_functionalPhase, True, 
+    if contest.begin_testing(_functionalPhase, True,
           config._CONTEST_RUNS * config._CONTEST_VALIDATION_MULTIPLIER):
       logger.debug("Functionality was unchanged")
-      contest.clear_results()      
+      contest.clear_results()
 
       # Nonfunctional fitness
       individual.score.append(get_average_non_functional_score(individual))
@@ -419,7 +419,7 @@ def feedback_selection(individual, deadlockVotes, dataraceVotes, nonFunctionalVo
   elif _functionalPhase:
     mutationOperators = config._FUNCTIONAL_MUTATIONS
   else:
-    mutationOperators = config._NONFUNCTIONAL_MUTATIONS 
+    mutationOperators = config._NONFUNCTIONAL_MUTATIONS
 
   # Handle mutation selection (using random or heuristics)
   if config._RANDOM_MUTATION:
@@ -631,7 +631,7 @@ def convergence(generation, bestFitness, averageFitness):
   # Alternate termination criteria to check for convergence
   avgFitTest = False
   maxFitTest = False
-  
+
   # Acquire the last N window values
   windowAverageValues = averageFitness[-config._GENERATIONAL_IMPROVEMENT_WINDOW:]
   windowMaximumValues = bestFitness[-config._GENERATIONAL_IMPROVEMENT_WINDOW:]
@@ -669,7 +669,7 @@ def terminate(generation, generationLimit):
       txl_operator.move_local_project_to_original(individual.generation,
                                                   individual.id)
       txl_operator.compile_project()
-      if tester.Tester().begin_testing(True, True, 
+      if tester.Tester().begin_testing(True, True,
             config._CONTEST_RUNS * config._CONTEST_VALIDATION_MULTIPLIER):
         tester.Tester().clear_results()
         logger.info("Found best individual {}".format(individual.id))
@@ -735,7 +735,7 @@ def replace_lowest(generation):
   # as they are the worst performing
   for i in xrange(0, numUnder):
     sortedMembers[i].turnsUnderperforming += 1
-    
+
   # Check to see if we can replace the weakest individuals
   if generation % config._EVOLUTION_REPLACE_INTERVAL is 0:
 
@@ -747,11 +747,11 @@ def replace_lowest(generation):
     elif _functionalPhase:
       mutationOperators = config._FUNCTIONAL_MUTATIONS
     else:
-      mutationOperators = config._NONFUNCTIONAL_MUTATIONS 
+      mutationOperators = config._NONFUNCTIONAL_MUTATIONS
 
     # Replace or restart members who have underperformed for too long
     for i in xrange(0, numUnder):
-      
+
       if (sortedMembers[i].turnsUnderperforming < config._EVOLUTION_REPLACE_WEAK_MIN_TURNS):
         continue
       else:

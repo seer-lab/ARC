@@ -177,7 +177,7 @@ def generate_mutants(generation, memberNum, txlOperator, sourceFile, destDir):
       counter = 1
 
       for line in open(config._SHARED_VARS_FILE, 'r'):
-        
+
         mutantSource = sourceNameOnly + "_" + str(counter)
 
         variableName = line.split('.')[-1].strip(' \t\n\r')

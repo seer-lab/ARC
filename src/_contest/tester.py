@@ -168,7 +168,7 @@ class Tester():
         faultTests = re.search("Tests run: \d+,\s+Failures: (\d+)", output)
         successTests = re.search("OK \((\d+) test", output)
 
-        # Tests have faults 
+        # Tests have faults
         if faultTests is not None:
           totalFaults = int(faultTests.groups()[0])
           logger.info("Test {} - Datarace Encountered ({} errors)".format(i,
@@ -191,7 +191,7 @@ class Tester():
             logger.info("Test {} - Error, no tests ran".format(i))
             self.errors += 1
             self.goodRuns.append(False)
-          
+
           # Successful tests were encounted
           else:
             logger.info("Test {} - Successful Execution".format(i))

@@ -36,10 +36,10 @@ _SHARED_VARS_FILE = _PROJECT_DIR + "com_ibm_contest/sharedVars.txt"
 _CONTEST_DIR = _ROOT_DIR + "lib/ConTest/"
 _CONTEST_KINGPROPERTY = _CONTEST_DIR + "KingProperties"
 _CONTEST_JAR = _CONTEST_DIR + "ConTest.jar"
-_CONTEST_RUNS = 3
-_CONTEST_TIMEOUT_SEC = 3 # Aim for around x2-3 desirable performance
-_CONTEST_VALIDATION_MULTIPLIER = 10  # Allows for validation of functionality 
-_TESTSUITE_AVG = 3  # Number of test executions for finding the average time
+_CONTEST_RUNS = 10
+_CONTEST_TIMEOUT_SEC = 30 # Default timeout, it is adjusted dynamically
+_CONTEST_TIMEOUT_MULTIPLIER = 3  # The average execution time (with conTest) is multiplied by this
+_CONTEST_VALIDATION_MULTIPLIER = 10  # Allows for validation of functionality
 
 # Mutation operator variables
 # [0]Name  [1]Enable  [2]DataRace  [3]Deadlock  [4]File
