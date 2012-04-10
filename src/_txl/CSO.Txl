@@ -57,8 +57,8 @@ define double_sync_after
   '{ [NL][IN]
     'synchronized '( [expression] ')
     '{ [NL][IN]
-      [repeat declaration_or_statement] [NL][EX]
-    '} [NL]
+      [repeat declaration_or_statement] [EX]
+    '} [NL][EX]
   '} [NL]
   /* 'MUTANT: [stringlit] */ [NL]
 end define

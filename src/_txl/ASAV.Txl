@@ -90,7 +90,7 @@ end redefine
 
 define asgn_stmt
     % Assignment expression (From Java.grm)
-    [unary_expression] [assignment_operator] [assignment_expression] ';
+    [unary_expression] [assignment_operator] [assignment_expression] '; [NL]
 end define
 
 % How it looks after

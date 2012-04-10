@@ -79,7 +79,7 @@ end redefine
 define single_sync
 	'synchronized '( [expression] ')
  	'{ [NL][IN]
-		[unary_expression] [assignment_operator] [assignment_expression] [NL]
+    [repeat statement] [NL]
 	'}   [NL]
 end define
 
@@ -87,7 +87,7 @@ end define
 
 define single_sync_removed
   /* 'MUTANT: [stringlit] */ 	[NL]
-  [unary_expression] [assignment_operator] [assignment_expression] '; [NL]
+  [repeat statement] [NL]
   /* 'MUTANT: [stringlit] */ 	[NL]
 end define
 
@@ -158,17 +158,13 @@ function doSynchronizedDelMutation
 	deconstruct SyncStatement
 		'synchronized '( SyncExpr [expression] ')
 		'{
-	    UA [unary_expression]
-			AO [assignment_operator]
-			AE [assignment_expression] ';
+      Stm [repeat statement]
 		'}
 
 
 	% export the old synchronized expression and reinsert it
 	% once the mutant has been created and saved
-	export UA
-	export AO
-	export AE
+  export Stm
 	export SyncExpr
 
 	% create mutant comment to appear in source
@@ -178,7 +174,7 @@ function doSynchronizedDelMutation
 	by
 		% Replace with empty syncronized statement
 		'MUTATED /* 'MUTANT: MutantString */
-		UA AO AE ';
+    Stm
 		/* 'MUTANT: MutantString */
 end function
 
@@ -192,10 +188,8 @@ function undoSynchronizedDelMutation
 		SynchStatement [synchronized_statement]
 
 	% Import the old expression
-	import UA [unary_expression]
-	import AO [assignment_operator]
-	import AE [assignment_expression]
-	import SyncExpr [expression]
+	import Stm [repeat statement]
+  import SyncExpr [expression]
 
 	% extract body
 	deconstruct SynchStatement
@@ -203,9 +197,7 @@ function undoSynchronizedDelMutation
 
 	deconstruct SyncRemoved
     /* 'MUTANT: MutantStr1 [stringlit] */
-	  UA2 [unary_expression]
-		AO2 [assignment_operator]
-		AE2 [assignment_expression] ';
+	  Stm
     /* 'MUTANT: MutantStr2 [stringlit] */
 
 	by
@@ -214,7 +206,7 @@ function undoSynchronizedDelMutation
 		'MUTATED
 		'synchronized '( SyncExpr ')
 		'{
-			UA AO AE
+      Stm
 		'}
 end function
 

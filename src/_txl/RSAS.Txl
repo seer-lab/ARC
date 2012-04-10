@@ -77,28 +77,26 @@ end redefine
 
 define double_sync
   'synchronized '( [expression] ')
-  '{ [NL][IN]
-	  [repeat declaration_or_statement] [NL][EX]
+  '{ [IN]
+	  [repeat declaration_or_statement] [NL]
 	  'synchronized '( [expression] ')
  	  '{ [NL][IN]
-		  [repeat declaration_or_statement] [NL][EX]
+		  [repeat declaration_or_statement+] [EX]
 	  '}   [NL]
-	  [repeat declaration_or_statement] [NL][EX]
+	  [repeat declaration_or_statement] [EX]
   '}   [NL]
 end define
 
 % How it looks after removing
 
 define decapitated_double_sync
-    /* 'MUTANT: [stringlit] */ 	[NL]
-    '{ [NL][IN]
-	    [repeat declaration_or_statement] [NL][EX]
+    /* 'MUTANT: [stringlit] */
+	    [repeat declaration_or_statement] [NL]
 	    'synchronized '( [expression] ')
      	'{ [NL][IN]
-	    	[repeat declaration_or_statement] [NL][EX]
+	    	[repeat declaration_or_statement+] [EX]
 	    '}   [NL]
-    	[repeat declaration_or_statement] [NL][EX]      % DK
-    '}   [NL]
+    	[repeat declaration_or_statement]
     /* 'MUTANT: [stringlit] */ 	[NL]
 end define
 
@@ -175,7 +173,7 @@ function doSynchronizedDelMutation
 			OuterBody [repeat declaration_or_statement]
 			'synchronized '( InnerExpr [expression] ')
  			'{
-				InnerBody [repeat declaration_or_statement]
+				InnerBody [repeat declaration_or_statement+]
 			'}
 		  OuterAfterBody [repeat declaration_or_statement]
     '}
@@ -195,14 +193,12 @@ function doSynchronizedDelMutation
 	by
 		% Remove outer syncronize block
 		'MUTATED /* 'MUTANT: MutantString */
-    '{
 			OuterBody
 			'synchronized '( InnerExpr ')
  			'{
 				InnerBody
 			'}
 			OuterAfterBody
-    '}
 		/* 'MUTANT: MutantString */
 end function
 
@@ -219,7 +215,7 @@ function undoSynchronizedDelMutation
 	import OuterExpr [expression]
 	import OuterBody [repeat declaration_or_statement]
 	import InnerExpr [expression]
-	import InnerBody [repeat declaration_or_statement]
+	import InnerBody [repeat declaration_or_statement+]
 	import OuterAfterBody [repeat declaration_or_statement]
 
 	% extract body
@@ -228,14 +224,12 @@ function undoSynchronizedDelMutation
 
 	deconstruct Decapitated
     /* 'MUTANT: MutantStr1 [stringlit] */
-    '{
 			OB [repeat declaration_or_statement]
 			'synchronized '( IE [expression] ')
  			'{
 				IB [repeat declaration_or_statement]
 			'}
 			OAB [repeat declaration_or_statement]
-    '}
     /* 'MUTANT: MutantStr2 [stringlit] */
 
 	by
