@@ -31,7 +31,6 @@ _PROJECT_TEST = "test"
 _PROJECT_CLASSPATH = None  # Automatically acquired using ant test if None
 _PROJECT_TEST_MB = 2000
 _SHARED_VARS_FILE = _PROJECT_DIR + "com_ibm_contest/sharedVars.txt"
-# TODO Consider some automatic way to figure classpath if Ant or MVN exist
 
 # ConTest variables
 _CONTEST_DIR = _ROOT_DIR + "lib/ConTest/"
@@ -73,15 +72,15 @@ _ALL_MUTATIONS = [_MUTATION_ASAS, _MUTATION_ASAV, _MUTATION_ASIM,
 _RANDOM_MUTATION = False
 
 # Evolution variables
-_EVOLUTION_GENERATIONS = 20
-_EVOLUTION_POPULATION = 10
+_EVOLUTION_GENERATIONS = 50
+_EVOLUTION_POPULATION = 20
 _EVOLUTION_REPLACE_LOWEST_PERCENT = 10
-_EVOLUTION_REPLACE_INTERVAL = 2  # Consider replacement on this generational interval
-_EVOLUTION_REPLACE_WEAK_MIN_TURNS = 1  # Min number of turns of underperforming before replacement
-_EVOLUTION_REPLACE_WITH_BEST_PERCENT = 80
+_EVOLUTION_REPLACE_INTERVAL = 5  # Consider replacement on this generational interval
+_EVOLUTION_REPLACE_WEAK_MIN_TURNS = 3  # Min number of turns of underperforming before replacement
+_EVOLUTION_REPLACE_WITH_BEST_PERCENT = 75
 
 # Dynamic ranking window (number of generations to consider)
-_DYNAMIC_RANKING_WINDOW = 20
+_DYNAMIC_RANKING_WINDOW = 5
 
 # Fitness evaluation variables
 _SUCCESS_WEIGHT = 100
@@ -89,9 +88,9 @@ _TIMEOUT_WEIGHT = 50
 
 # Convergence criteria, considering the window size ensure there is at least
 # a fitness score movement of delta
-_GENERATIONAL_IMPROVEMENT_WINDOW = 20
+_GENERATIONAL_IMPROVEMENT_WINDOW = 10
 _AVG_FITNESS_MIN_DELTA = 0.01
-_BEST_FITNESS_MIN_DELTA = 0.01
+_BEST_FITNESS_MIN_DELTA = 1
 
 # Create logger
 logger = logging.getLogger('arc')

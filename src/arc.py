@@ -33,7 +33,7 @@ def main():
                     stderr=errFile, cwd=config._PROJECT_DIR, shell=False)
     antProcess.wait()
     outFile.seek(0)
-    outText = outFile.read().lower()
+    outText = outFile.read()
     outFile.close()
     config._PROJECT_CLASSPATH = re.search("-classpath'\s*\[junit\]\s*'(.*)'", outText).groups()[0]
 
