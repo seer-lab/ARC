@@ -267,8 +267,18 @@ def mutation(individual, deadlockVotes, dataraceVotes, nonFunctionalVotes):
       return False
 
   # Pick a mutation operator to apply
-  limit = individual.stateSpace[-1] * 2  # Number of attempts to find a valid mutation
+  limit = individual.stateSpace[-1] + 1  # Number of attempts to find a valid mutation
   successfulCompile = False
+
+  # Hold attempted mutations (operatorIndex[mut#]), so we do not retry them
+  attemptedMutations = {}
+
+  # Initialize attemptedMutations hash for valid operators
+  operatorIndex = -1
+  for mutationOp in mutationOperators:
+    if mutationOp[1]:
+      operatorIndex += 1
+      attemptedMutations[operatorIndex] = set()
 
   # Keep trying to find a successful mutant within the retry limits
   while limit is not 0 and not successfulCompile:
@@ -288,13 +298,34 @@ def mutation(individual, deadlockVotes, dataraceVotes, nonFunctionalVotes):
     # The continue here is for efficiency sake
     if len(individual.genome[operatorIndex]) == 0:
       logger.debug("No mutations at operatorIndex {}".format(operatorIndex))
-      limit -= 1
       continue
 
     txl_operator.create_local_project(individual.generation,
                                       individual.id, False)
 
-    randomMutant = random.randint(0, len(individual.genome[operatorIndex]) - 1)
+    # Make it so we do not try the same mutation over and over
+    # TODO Could refactor this to work backwards from a set of mutants instead
+    #       of trying to do it randomly.
+    retry = True
+    while retry:
+
+      # Check to see if we have exhausted all mutants for this operator
+      if len(attemptedMutations[operatorIndex]) is len(individual.genome[operatorIndex]):
+        randomMutant = None
+        break
+
+      randomMutant = random.randint(0, len(individual.genome[operatorIndex]) - 1)
+
+      # Make sure we try a new mutation
+      if randomMutant not in attemptedMutations[operatorIndex]:
+
+        # Add mutation to set of attemptedMutations
+        attemptedMutations[operatorIndex].add(randomMutant)
+        retry = False
+
+    # Move to another operator as this one has nothing left to mutate
+    if randomMutant is None:
+      continue
 
     txl_operator.move_mutant_to_local_project(individual.generation,
                                               individual.id,
