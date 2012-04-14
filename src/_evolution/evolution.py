@@ -165,10 +165,11 @@ def evolve(generation=0, worstScore=0):
     generation += 1
 
     # Mutate each individual
+    moreMutations = False
     for individual in _population:
       individual.generation = generation
-      moreMutations = mutation(individual, deadlockVotes,
-        dataraceVotes, nonFunctionalVotes)
+      if mutation(individual, deadlockVotes, dataraceVotes, nonFunctionalVotes):
+        moreMutations = True
 
     # Evaluate each individual
     for individual in _population:
@@ -318,16 +319,22 @@ def mutation(individual, deadlockVotes, dataraceVotes, nonFunctionalVotes):
       individual.genome[operatorIndex][randomMutant] = 1
     else:
       limit -= 1
-      logger.error("Compiling failed, retrying another mutation")
+      logger.debug("Compiling failed, retrying another mutation")
 
+  # Return true if successful, otherwise false (returned to pristine state)
   if not successfulCompile:
-    # If not mutant was found we reset the project to it's pristine state
-    # and start over
-    logger.error("Couldn't create a compilable mutant project. Resetting to the pristine project.")
+    logger.debug("Couldn't create a compilable mutant project. Resetting to the pristine project.")
     txl_operator.create_local_project(individual.generation, individual.id, True)
-  logger.debug("Selected operator for Individual {} @ generation {}: {}".
+
+    # Update individual to reflect failed mutation
+    individual.lastOperator = None
+    individual.appliedOperators.append(None)
+
+    return False
+  else:
+    logger.debug("Selected operator for Individual {} @ generation {}: {}".
     format(individual.id, individual.generation, selectedOperator[0]))
-  return True
+    return True
 
 
 def evaluate(individual, worstScore):
@@ -570,7 +577,6 @@ def get_average_non_functional_score(individual, numberOfRuns = config._CONTEST_
 
 def adjust_operator_weighting(generation):
 
-
   global _population
   global _functionalPhase
 
@@ -597,27 +603,31 @@ def adjust_operator_weighting(generation):
 
     # Only consider the generations we are concerned with
     for i in xrange(beginningGeneration,generation-1):
-      # Figure if there was any improvement from the last generation
-      if _functionalPhase:
-        if individual.deadlocks[i+1] < individual.deadlocks[i]:
-          logger.debug("Deadlock improvement from individual {} in generation {}".
-            format(individual.id, i))
-          deadlockVotes[individual.appliedOperators[i]] += 1
 
-        if individual.dataraces[i+1] < individual.dataraces[i]:
-          logger.debug("Datarace improvement from individual {} in generation {}".
-            format(individual.id, i))
-          dataraceVotes[individual.appliedOperators[i]] += 1
+      # Only weight operators for valid mutations (ignore failed mutations)
+      if individual.lastOperator is not None:
 
-      else:
-        if individual.score[i+1] > individual.score[i]:
-          logger.debug("Non-functional improvement over individual {} in generation {}".
-            format(individual.id, i))
-          logger.debug("Applied operators: {}".format(individual.appliedOperators))
-          logger.debug("\n{}".format(individual))
-          j = individual.appliedOperators[i]
-          #logger.debug ("      ***** J is {} *****".format(j))
-          nonFunctionalVotes[j] += 1
+        # Figure if there was any improvement from the last generation
+        if _functionalPhase:
+          if individual.deadlocks[i+1] < individual.deadlocks[i]:
+            logger.debug("Deadlock improvement from individual {} in generation {}".
+              format(individual.id, i))
+            deadlockVotes[individual.appliedOperators[i]] += 1
+
+          if individual.dataraces[i+1] < individual.dataraces[i]:
+            logger.debug("Datarace improvement from individual {} in generation {}".
+              format(individual.id, i))
+            dataraceVotes[individual.appliedOperators[i]] += 1
+
+        else:
+          if individual.score[i+1] > individual.score[i]:
+            logger.debug("Non-functional improvement over individual {} in generation {}".
+              format(individual.id, i))
+            logger.debug("Applied operators: {}".format(individual.appliedOperators))
+            logger.debug("\n{}".format(individual))
+            j = individual.appliedOperators[i]
+            #logger.debug ("      ***** J is {} *****".format(j))
+            nonFunctionalVotes[j] += 1
 
   logger.debug("Deadlock Votes: {}".format(deadlockVotes))
   logger.debug("Datarace Votes: {}".format(dataraceVotes))
