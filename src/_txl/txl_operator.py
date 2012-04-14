@@ -16,6 +16,7 @@ import os.path
 import tempfile
 import time
 import shutil
+import re
 
 sys.path.append("..")  # To allow importing parent directory module
 import config
@@ -381,6 +382,10 @@ def move_mutant_to_local_project(generation, memberNum, txlOperator, mutantNum):
         sourceDir += os.sep + aFile
         break
 
+  # Special handle for mutation operators that append _# to the filename
+  if txlOperator in ["ASAV", "ASM", "RSM", "RSAV"]:
+    dst = re.sub("_\d+.java", ".java", dst)
+
   # print '---------------------------'
   # print 'mmtlp txlOperator:    ' + txlOperator
   # print 'mmtlp pathNoFileName: ' + pathNoFileName
@@ -464,11 +469,11 @@ def compile_project():
     antProcess.wait()
 
     # Look for a compilation error
-    errFile.seek(0)
-    errorText = errFile.read().lower()
-    errFile.close()
+    outFile.seek(0)
+    outText = outFile.read().lower()
+    outFile.close()
 
-    if (errorText.find("build failed") >= 0):
+    if (outText.find("build failed") >= 0):
       logger.error("ant 'compile' command failed, could not compile (global) project")
       return False
     else:
