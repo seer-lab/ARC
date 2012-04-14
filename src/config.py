@@ -13,7 +13,7 @@ _MAX_CORES = 2
 _TMP_DIR = _ROOT_DIR + "tmp/"
 _TXL_DIR = _ROOT_DIR + "src/_txl/"
 _JUNIT_JAR = _ROOT_DIR + "lib/junit-4.8.1.jar"
-_VERBOSE = True
+_LOG_LEVEL = "INFO"  # {OFF,ERROR,WARN,INFO,DEBUG}
 _LOG_FILE = "log.txt"  # If None then use stdout, otherwise specify a file
 _RANDOM_SEED = None  # None means use the system time, non-zero is fixed
 
@@ -99,10 +99,7 @@ if _LOG_FILE is None:
 else:
   handler = logging.FileHandler(_LOG_FILE, "w");
 
-if _VERBOSE:
-  logger.setLevel(logging.DEBUG)
-else:
-  logger.setLevel(logging.INFO)
+logger.setLevel(_LOG_LEVEL)
 
 formatter = logging.Formatter('%(relativeCreated)d %(levelname)s [%(module)s.%(funcName)s] %(message)s')
 handler.setFormatter(formatter)
