@@ -168,8 +168,12 @@ def evolve(generation=0, worstScore=0):
     moreMutations = False
     for individual in _population:
       individual.generation = generation
-      if mutation(individual, deadlockVotes, dataraceVotes, nonFunctionalVotes):
+      mutationSuccess = mutation(individual, deadlockVotes, dataraceVotes, nonFunctionalVotes)
+      if mutationSuccess:
         moreMutations = True
+      elif not mutationSuccess and not _functionalPhase:
+        # No more possible mutations in non-functional phase, time to terminate
+        return get_best_individual(True)
 
     # Evaluate each individual
     for individual in _population:
@@ -215,6 +219,10 @@ def evolve(generation=0, worstScore=0):
           mutation(individual, deadlockVotes, dataraceVotes,
             nonFunctionalVotes)
 
+          # If were in the non-functional phase and no more mutants are possible we terminate
+          if not _functionalPhase and not mutationSuccess:
+            return get_best_individual()
+
       # Adjust weighting of mutation operators
       deadlockVotes, dataraceVotes, nonFunctionalVotes = adjust_operator_weighting(generation)
 
@@ -248,10 +256,14 @@ def mutation(individual, deadlockVotes, dataraceVotes, nonFunctionalVotes):
   # If no mutants exist, reset and re-attempt mutation
   if not mutantsExist:
     logger.debug("No possible mutations for individual")
-    txl_operator.create_local_project(individual.generation, individual.id,
-                                      True)
+
+    # If in non-functional phase then this individual is done
+    if not _functionalPhase:
+      return False
 
     # Repopulate the individual's genome with new possible mutation locations
+    txl_operator.create_local_project(individual.generation, individual.id,
+                                    True)
     individual.repopulateGenome(_functionalPhase)
 
     # Definite check to see if ANY mutants exists for an individual
@@ -263,9 +275,10 @@ def mutation(individual, deadlockVotes, dataraceVotes, nonFunctionalVotes):
         if len(individual.genome[checkInd]) != 0:
           mutantsExist = True
 
+    # If mutants don't exist still then pristine project has a problem
     if not mutantsExist:
-      logger.info("A restarted individual has no mutations... Terminating")
-      return False
+      logger.error("A restarted individual has no mutations... terminating")
+      raise Exception("No mutations in Functional Phase on pristine project")
 
   # Pick a mutation operator to apply
   limit = individual.stateSpace[-1] + 1  # Number of attempts to find a valid mutation
@@ -729,7 +742,7 @@ def terminate(generation, generationLimit):
   return False, None
 
 
-def get_best_individual():
+def get_best_individual(beforeMutation=False):
 
   global _population
   global _functionalPhase
@@ -737,6 +750,11 @@ def get_best_individual():
   bestScore = -1
   individualId = -1
   generation = -1
+  mod = 0
+
+  # If we have to get the best individual before the mutation step occurs
+  if beforeMutation:
+    mod = 1
 
   for individual in _population:
 
@@ -750,7 +768,7 @@ def get_best_individual():
 
     else:
       # Consider generations over the switch
-      for i in xrange(individual.switchGeneration, individual.generation):
+      for i in xrange(individual.switchGeneration, individual.generation - mod):
         if individual.score[i] > bestScore:
           individualId = individual.id
           generation = i + 1
