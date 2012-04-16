@@ -280,7 +280,7 @@ def restore_project():
   shutil.copytree(config._PROJECT_BACKUP_DIR, config._PROJECT_SRC_DIR)
 
 
-def create_local_project(generation, memberNum, restart):
+def create_local_project(generation, memberNum, restart, switchGeneration=0):
   """After mutating the files above, create the local project for a member of
   a given generation.  The source of the project depends on the generation:
   Gen 1: Original (pristine) project
@@ -299,9 +299,12 @@ def create_local_project(generation, memberNum, restart):
   logger.debug("Input arguments:  Gen: {}, Mem: {} and Restart: {}".format(generation, memberNum, restart))
 
   staticPart = os.sep + str(memberNum) + os.sep + 'project' + os.sep
-  # If the indivudal is on the first or restarted, use the original
+  # If the indivudal is on the first or restarted, use the original (or switch gen for non-functional)
   if generation is 1 or restart:
-    srcDir = config._PROJECT_BACKUP_DIR
+    if switchGeneration > 0:
+      srcDir = config._TMP_DIR + str(switchGeneration) + staticPart
+    else:
+      srcDir = config._PROJECT_BACKUP_DIR
   else:
     # Note: generation - 1 vs generation
     srcDir = config._TMP_DIR + str(generation - 1) + staticPart

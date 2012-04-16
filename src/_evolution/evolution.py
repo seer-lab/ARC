@@ -194,8 +194,9 @@ def evolve(generation=0, worstScore=0):
     if not _functionalPhase:
       if convergence(generation, bestFitness, averageFitness):
         return get_best_individual()
-    if terminate(generation, generationLimit):
-      return get_best_individual()
+    terminating, bestIndividual = terminate(generation, generationLimit)
+    if terminating:
+      return bestIndividual, generation
 
     # If there are no more mutations, this process cannot go any further
     if not moreMutations:
@@ -354,8 +355,13 @@ def mutation(individual, deadlockVotes, dataraceVotes, nonFunctionalVotes):
 
   # Return true if successful, otherwise false (returned to pristine state)
   if not successfulCompile:
-    logger.debug("Couldn't create a compilable mutant project. Resetting to the pristine project.")
-    txl_operator.create_local_project(individual.generation, individual.id, True)
+    logger.debug("Couldn't create a compilable mutant project. Resetting to the pristine project/bestIndividual.")
+    if _functionalPhase:
+      txl_operator.create_local_project(individual.generation, individual.id,
+                                    True)
+    else:
+      txl_operator.create_local_project(individual.generation, individual.id,
+                                    True, individual.switchGeneration + 1)
 
     # Update individual to reflect failed mutation
     individual.lastOperator = None
@@ -506,13 +512,13 @@ def feedback_selection(individual, deadlockVotes, dataraceVotes, nonFunctionalVo
     # Acquire the operator chances based on what voting condition we have
     if _functionalPhase and opType is 'lock':
       operatorChances = get_operator_chances(candatateChoices, deadlockVotes)
-      logger.debug("Voting for functional phase with deadlocks: {}".format(operatorChances))
+      logger.debug("Operator chance for functional phase with deadlocks: {}".format(operatorChances))
     elif _functionalPhase and opType is 'race':
       operatorChances = get_operator_chances(candatateChoices, dataraceVotes)
-      logger.debug("Voting for functional phase with dataraces: {}".format(operatorChances))
+      logger.debug("Operator chance for functional phase with dataraces: {}".format(operatorChances))
     else:
       operatorChances = get_operator_chances(candatateChoices, nonFunctionalVotes)
-      logger.debug("Voting for non-functional phase: {}".format(operatorChances))
+      logger.debug("Operator chance for non-functional phase: {}".format(operatorChances))
 
     # Make selection of operator based on the adjusted weighting
     randomChance = random.randint(0,sum(operatorChances))
@@ -655,7 +661,6 @@ def adjust_operator_weighting(generation):
             logger.debug("Non-functional improvement over individual {} in generation {}".
               format(individual.id, i))
             logger.debug("Applied operators: {}".format(individual.appliedOperators))
-            logger.debug("\n{}".format(individual))
             j = individual.appliedOperators[i]
             #logger.debug ("      ***** J is {} *****".format(j))
             nonFunctionalVotes[j] += 1
@@ -714,13 +719,14 @@ def terminate(generation, generationLimit):
             config._CONTEST_RUNS * config._CONTEST_VALIDATION_MULTIPLIER):
         tester.Tester().clear_results()
         logger.info("Found best individual {}".format(individual.id))
-        return True
+        return True, individual
       else:
+        tester.Tester().clear_results()
         logger.info("Potential best individual still has errors")
   if generation == generationLimit:
     logger.info("Exhausted all generations")
-    return True
-  return False
+    return True, None
+  return False, None
 
 
 def get_best_individual():
