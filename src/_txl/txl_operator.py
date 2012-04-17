@@ -475,8 +475,11 @@ def compile_project():
     outFile.seek(0)
     outText = outFile.read().lower()
     outFile.close()
+    errFile.seek(0)
+    errText = errFile.read().lower()
+    errFile.close()
 
-    if (outText.find("build failed") >= 0):
+    if (outText.find("build failed") >= 0 or errText.find("build failed") >= 0):
       logger.error("ant 'compile' command failed, could not compile (global) project")
       return False
     else:
