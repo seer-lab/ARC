@@ -200,7 +200,10 @@ def evolve(generation=0, worstScore=0):
         return get_best_individual()
     terminating, bestIndividual = terminate(generation, generationLimit)
     if terminating:
-      return bestIndividual, generation
+      if bestIndividual is None:
+        return get_best_individual()
+      else:
+        return bestIndividual, generation
 
     # If there are no more mutations, this process cannot go any further
     if not moreMutations:
