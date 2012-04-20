@@ -190,6 +190,15 @@ def generate_mutants(generation, memberNum, txlOperator, sourceFile, destDir):
                   stdout=outFile, stderr=errFile, cwd=config._PROJECT_DIR, shell=False)
         process.wait()
         counter += 1
+
+      mutantSource = sourceNameOnly + "_" + str(counter)
+
+      # Use the mutation with the 'this' object
+      process = subprocess.Popen(['txl', sourceFile, txlOperator[4], '-',
+                '-outfile', mutantSource + sourceExtOnly, '-outdir', txlDestDir,
+                '-class', '', '-var', 'this'],
+                stdout=outFile, stderr=errFile, cwd=config._PROJECT_DIR, shell=False)
+      process.wait()
     else:
       logger.WARN("No shared file was found for this mutation operator.")
 
@@ -386,7 +395,7 @@ def move_mutant_to_local_project(generation, memberNum, txlOperator, mutantNum):
         break
 
   # Special handle for mutation operators that append _# to the filename
-  if txlOperator in ["ASAV", "ASM", "RSM", "RSAV"]:
+  if txlOperator in ["ASAV", "ASM", "ASAS"]:
     dst = re.sub("_\d+.java", ".java", dst)
 
   # print '---------------------------'
