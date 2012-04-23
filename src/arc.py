@@ -10,6 +10,8 @@ import subprocess
 import tempfile
 import re
 import shutil
+import os
+import os.path
 from _contest import contester
 from _evolution import evolution
 from _txl import txl_operator
