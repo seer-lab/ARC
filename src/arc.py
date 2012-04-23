@@ -9,6 +9,7 @@ import argparse
 import subprocess
 import tempfile
 import re
+import shutil
 from _contest import contester
 from _evolution import evolution
 from _txl import txl_operator
@@ -41,6 +42,13 @@ def main():
   contestTime = contester.run_test_execution(config._CONTEST_RUNS * config._CONTEST_VALIDATION_MULTIPLIER)
   config._CONTEST_TIMEOUT_SEC = contestTime * config._CONTEST_TIMEOUT_MULTIPLIER
   logger.info("Using a timeout value of {}s".format(config._CONTEST_TIMEOUT_SEC))
+
+  logger.info("Cleaning TMP directory")
+  if not os.path.exists(config._TMP_DIR):
+    os.makedirs(config._TMP_DIR)
+  else:
+    shutil.rmtree(config._TMP_DIR)
+    os.makedirs(config._TMP_DIR)
 
   # Run evolution
   evolution.start()
