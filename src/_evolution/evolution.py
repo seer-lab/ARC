@@ -85,7 +85,7 @@ def start():
     bestFunctional, bestFunctionalGeneration = evolve(0)
 
     # Check to see if bestFunctional is valid for progress to next phase
-    if bestFunctional.successes[-1]/config._CONTEST_RUNS == 1.0:
+    if bestFunctional.successes[-1]/config._CONTEST_RUNS == 1.0 and bestFunctional.validated:
 
       _functionalPhase = False
       bestFunctional.switchGeneration = bestFunctional.generation
@@ -735,6 +735,7 @@ def terminate(generation, generationLimit):
             config._CONTEST_RUNS * config._CONTEST_VALIDATION_MULTIPLIER):
         tester.Tester().clear_results()
         logger.info("Found best individual {}".format(individual.id))
+        individual.validated = True
         return True, individual
       else:
         tester.Tester().clear_results()

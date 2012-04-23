@@ -56,6 +56,7 @@ class Individual():
     self.goodRuns = []  # Boolean
 
     self.score = []
+    self.validated = False  # Indicates if the validation was successful
     self.wasRestarted = []  # Boolean & does not clone over
     self.wasReplaced = []  # Boolean & does not clone over
     self.stateSpace = []  # Integer & does not clone over
@@ -122,7 +123,7 @@ class Individual():
     ret += " Replaced: {}\n".format(self.wasReplaced)
     ret += " stateSpace: {}\n".format(self.stateSpace)
     ret += " turnsUnderperforming: {}\n".format(self.turnsUnderperforming)
-
+    ret += " validated: {}\n".format(self.validated)
 
     return ret
 
