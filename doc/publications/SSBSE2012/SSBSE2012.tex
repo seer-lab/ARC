@@ -1,446 +1,63 @@
-%% bare_conf.tex
-%% V1.3
-%% 2007/01/11
-%% by Michael Shell
-%% See:
-%% http://www.michaelshell.org/
-%% for current contact information.
-%%
-%% This is a skeleton file demonstrating the use of IEEEtran.cls
-%% (requires IEEEtran.cls version 1.7 or later) with an IEEE conference paper.
-%%
-%% Support sites:
-%% http://www.michaelshell.org/tex/ieeetran/
-%% http://www.ctan.org/tex-archive/macros/latex/contrib/IEEEtran/
-%% and
-%% http://www.ieee.org/
+\documentclass{llncs}
 
-%%*************************************************************************
-%% Legal Notice:
-%% This code is offered as-is without any warranty either expressed or
-%% implied; without even the implied warranty of MERCHANTABILITY or
-%% FITNESS FOR A PARTICULAR PURPOSE!
-%% User assumes all risk.
-%% In no event shall IEEE or any contributor to this code be liable for
-%% any damages or losses, including, but not limited to, incidental,
-%% consequential, or any other damages, resulting from the use or misuse
-%% of any information contained here.
-%%
-%% All comments are the opinions of their respective authors and are not
-%% necessarily endorsed by the IEEE.
-%%
-%% This work is distributed under the LaTeX Project Public License (LPPL)
-%% ( http://www.latex-project.org/ ) version 1.3, and may be freely used,
-%% distributed and modified. A copy of the LPPL, version 1.3, is included
-%% in the base LaTeX documentation of all distributions of LaTeX released
-%% 2003/12/01 or later.
-%% Retain all contribution notices and credits.
-%% ** Modified files should be clearly indicated as such, including  **
-%% ** renaming them and changing author support contact information. **
-%%
-%% File list of work: IEEEtran.cls, IEEEtran_HOWTO.pdf, bare_adv.tex,
-%%                    bare_conf.tex, bare_jrnl.tex, bare_jrnl_compsoc.tex
-%%*************************************************************************
-
-% *** Authors should verify (and, if needed, correct) their LaTeX system  ***
-% *** with the testflow diagnostic prior to trusting their LaTeX platform ***
-% *** with production work. IEEE's font choices can trigger bugs that do  ***
-% *** not appear when using other class files.                            ***
-% The testflow support page is at:
-% http://www.michaelshell.org/tex/testflow/
-
-
-
-% Note that the a4paper option is mainly intended so that authors in
-% countries using A4 can easily print to A4 and see how their papers will
-% look in print - the typesetting of the document will not typically be
-% affected with changes in paper size (but the bottom and side margins will).
-% Use the testflow package mentioned above to verify correct handling of
-% both paper sizes by the user's LaTeX system.
-%
-% Also note that the "draftcls" or "draftclsnofoot", not "draft", option
-% should be used if it is desired that the figures are to be displayed in
-% draft mode.
-%
-\documentclass[10pt, conference, compsocconf]{IEEEtran}
-% Add the compsocconf option for Computer Society conferences.
-%
-% If IEEEtran.cls has not been installed into the LaTeX system files,
-% manually specify the path to it like:
-% \documentclass[conference]{../sty/IEEEtran}
-
-
-
-
-
-% Some very useful LaTeX packages include:
-% (uncomment the ones you want to load)
 \usepackage{color}
 \usepackage{colortbl}
-
-\definecolor{lightgray}{gray}{.95}
-\definecolor{darkgray}{gray}{.80}
-
 \usepackage{epsfig}
 \usepackage{listings}
-
 \usepackage{array}
 \usepackage{longtable}
 \usepackage{hhline}
-\usepackage{listings}
-%\usepackage{tabular}
-
-\lstset{ %
-lineskip=0.5pt,
-basicstyle=\scriptsize,       % the size of the fonts that are used for the code
-%numbers=left,                   % where to put the line-numbers
-numberstyle=\scriptsize,      % the size of the fonts that are used for the line-numbers
-stepnumber=1,                   % the step between two line-numbers. If it is 1 each line will be numbered
-numbersep=3pt,                  % how far the line-numbers are from the code
-backgroundcolor=\color{lightgray},  % choose the background color. You must add \usepackage{color}
-showspaces=false,               % show spaces adding particular underscores
-showstringspaces=false,         % underline spaces within strings
-showtabs=false,                 % show tabs within strings adding particular underscores
-frame=none,                   % adds a frame around the code
-tabsize=2,              % sets default tabsize to 2 spaces
-captionpos=b,                   % sets the caption-position to bottom
-breaklines=true,        % sets automatic line breaking
-breakatwhitespace=false,    % sets if automatic breaks should only happen at whitespace
-escapeinside={\%}{)}          % if you want to add a comment within your code
-}
-
-
-% *** MISC UTILITY PACKAGES ***
-%
-%\usepackage{ifpdf}
-% Heiko Oberdiek's ifpdf.sty is very useful if you need conditional
-% compilation based on whether the output is pdf or dvi.
-% usage:
-% \ifpdf
-%   % pdf code
-% \else
-%   % dvi code
-% \fi
-% The latest version of ifpdf.sty can be obtained from:
-% http://www.ctan.org/tex-archive/macros/latex/contrib/oberdiek/
-% Also, note that IEEEtran.cls V1.7 and later provides a builtin
-% \ifCLASSINFOpdf conditional that works the same way.
-% When switching from latex to pdflatex and vice-versa, the compiler may
-% have to be run twice to clear warning/error messages.
-
-
-
-
-
-
-% *** CITATION PACKAGES ***
-%
 \usepackage{cite}
-% cite.sty was written by Donald Arseneau
-% V1.6 and later of IEEEtran pre-defines the format of the cite.sty package
-% \cite{} output to follow that of IEEE. Loading the cite package will
-% result in citation numbers being automatically sorted and properly
-% "compressed/ranged". e.g., [1], [9], [2], [7], [5], [6] without using
-% cite.sty will become [1], [2], [5]--[7], [9] using cite.sty. cite.sty's
-% \cite will automatically add leading space, if needed. Use cite.sty's
-% noadjust option (cite.sty V3.8 and later) if you want to turn this off.
-% cite.sty is already installed on most LaTeX systems. Be sure and use
-% version 4.0 (2003-05-27) and later if using hyperref.sty. cite.sty does
-% not currently provide for hyperlinked citations.
-% The latest version can be obtained at:
-% http://www.ctan.org/tex-archive/macros/latex/contrib/cite/
-% The documentation is contained in the cite.sty file itself.
-
-
-
-
-
-
-% *** GRAPHICS RELATED PACKAGES ***
-%
-\ifCLASSINFOpdf
-  % \usepackage[pdftex]{graphicx}
-  % declare the path(s) where your graphic files are
-  % \graphicspath{{../pdf/}{../jpeg/}}
-  % and their extensions so you won't have to specify these with
-  % every instance of \includegraphics
-  % \DeclareGraphicsExtensions{.pdf,.jpeg,.png}
-\else
-  % or other class option (dvipsone, dvipdf, if not using dvips). graphicx
-  % will default to the driver specified in the system graphics.cfg if no
-  % driver is specified.
-  % \usepackage[dvips]{graphicx}
-  % declare the path(s) where your graphic files are
-  % \graphicspath{{../eps/}}
-  % and their extensions so you won't have to specify these with
-  % every instance of \includegraphics
-  % \DeclareGraphicsExtensions{.eps}
-\fi
-% graphicx was written by David Carlisle and Sebastian Rahtz. It is
-% required if you want graphics, photos, etc. graphicx.sty is already
-% installed on most LaTeX systems. The latest version and documentation can
-% be obtained at:
-% http://www.ctan.org/tex-archive/macros/latex/required/graphics/
-% Another good source of documentation is "Using Imported Graphics in
-% LaTeX2e" by Keith Reckdahl which can be found as epslatex.ps or
-% epslatex.pdf at: http://www.ctan.org/tex-archive/info/
-%
-% latex, and pdflatex in dvi mode, support graphics in encapsulated
-% postscript (.eps) format. pdflatex in pdf mode supports graphics
-% in .pdf, .jpeg, .png and .mps (metapost) formats. Users should ensure
-% that all non-photo figures use a vector format (.eps, .pdf, .mps) and
-% not a bitmapped formats (.jpeg, .png). IEEE frowns on bitmapped formats
-% which can result in "jaggedy"/blurry rendering of lines and letters as
-% well as large increases in file sizes.
-%
-% You can find documentation about the pdfTeX application at:
-% http://www.tug.org/applications/pdftex
-
-
-
-
-
-% *** MATH PACKAGES ***
-%
-%\usepackage[cmex10]{amsmath}
-% A popular package from the American Mathematical Society that provides
-% many useful and powerful commands for dealing with mathematics. If using
-% it, be sure to load this package with the cmex10 option to ensure that
-% only type 1 fonts will utilized at all point sizes. Without this option,
-% it is possible that some math symbols, particularly those within
-% footnotes, will be rendered in bitmap form which will result in a
-% document that can not be IEEE Xplore compliant!
-%
-% Also, note that the amsmath package sets \interdisplaylinepenalty to 10000
-% thus preventing page breaks from occurring within multiline equations. Use:
-%\interdisplaylinepenalty=2500
-% after loading amsmath to restore such page breaks as IEEEtran.cls normally
-% does. amsmath.sty is already installed on most LaTeX systems. The latest
-% version and documentation can be obtained at:
-% http://www.ctan.org/tex-archive/macros/latex/required/amslatex/math/
-
-
-
-
-
-% *** SPECIALIZED LIST PACKAGES ***
-%
-%\usepackage{algorithmic}
-% algorithmic.sty was written by Peter Williams and Rogerio Brito.
-% This package provides an algorithmic environment fo describing algorithms.
-% You can use the algorithmic environment in-text or within a figure
-% environment to provide for a floating algorithm. Do NOT use the algorithm
-% floating environment provided by algorithm.sty (by the same authors) or
-% algorithm2e.sty (by Christophe Fiorio) as IEEE does not use dedicated
-% algorithm float types and packages that provide these will not provide
-% correct IEEE style captions. The latest version and documentation of
-% algorithmic.sty can be obtained at:
-% http://www.ctan.org/tex-archive/macros/latex/contrib/algorithms/
-% There is also a support site at:
-% http://algorithms.berlios.de/index.html
-% Also of interest may be the (relatively newer and more customizable)
-% algorithmicx.sty package by Szasz Janos:
-% http://www.ctan.org/tex-archive/macros/latex/contrib/algorithmicx/
-
-
-
-
-% *** ALIGNMENT PACKAGES ***
-%
-%\usepackage{array}
-% Frank Mittelbach's and David Carlisle's array.sty patches and improves
-% the standard LaTeX2e array and tabular environments to provide better
-% appearance and additional user controls. As the default LaTeX2e table
-% generation code is lacking to the point of almost being broken with
-% respect to the quality of the end results, all users are strongly
-% advised to use an enhanced (at the very least that provided by array.sty)
-% set of table tools. array.sty is already installed on most systems. The
-% latest version and documentation can be obtained at:
-% http://www.ctan.org/tex-archive/macros/latex/required/tools/
-
-
-%\usepackage{mdwmath}
-%\usepackage{mdwtab}
-% Also highly recommended is Mark Wooding's extremely powerful MDW tools,
-% especially mdwmath.sty and mdwtab.sty which are used to format equations
-% and tables, respectively. The MDWtools set is already installed on most
-% LaTeX systems. The lastest version and documentation is available at:
-% http://www.ctan.org/tex-archive/macros/latex/contrib/mdwtools/
-
-
-% IEEEtran contains the IEEEeqnarray family of commands that can be used to
-% generate multiline equations as well as matrices, tables, etc., of high
-% quality.
-
-
-%\usepackage{eqparbox}
-% Also of notable interest is Scott Pakin's eqparbox package for creating
-% (automatically sized) equal width boxes - aka "natural width parboxes".
-% Available at:
-% http://www.ctan.org/tex-archive/macros/latex/contrib/eqparbox/
-
-
-
-
-
-% *** SUBFIGURE PACKAGES ***
-%\usepackage[tight,footnotesize]{subfigure}
-% subfigure.sty was written by Steven Douglas Cochran. This package makes it
-% easy to put subfigures in your figures. e.g., "Figure 1a and 1b". For IEEE
-% work, it is a good idea to load it with the tight package option to reduce
-% the amount of white space around the subfigures. subfigure.sty is already
-% installed on most LaTeX systems. The latest version and documentation can
-% be obtained at:
-% http://www.ctan.org/tex-archive/obsolete/macros/latex/contrib/subfigure/
-% subfigure.sty has been superceeded by subfig.sty.
-
-
-
-%\usepackage[caption=false]{caption}
-%\usepackage[font=footnotesize]{subfig}
-% subfig.sty, also written by Steven Douglas Cochran, is the modern
-% replacement for subfigure.sty. However, subfig.sty requires and
-% automatically loads Axel Sommerfeldt's caption.sty which will override
-% IEEEtran.cls handling of captions and this will result in nonIEEE style
-% figure/table captions. To prevent this problem, be sure and preload
-% caption.sty with its "caption=false" package option. This is will preserve
-% IEEEtran.cls handing of captions. Version 1.3 (2005/06/28) and later
-% (recommended due to many improvements over 1.2) of subfig.sty supports
-% the caption=false option directly:
-%\usepackage[caption=false,font=footnotesize]{subfig}
-%
-% The latest version and documentation can be obtained at:
-% http://www.ctan.org/tex-archive/macros/latex/contrib/subfig/
-% The latest version and documentation of caption.sty can be obtained at:
-% http://www.ctan.org/tex-archive/macros/latex/contrib/caption/
-
-
-
-
-% *** FLOAT PACKAGES ***
-%
-%\usepackage{fixltx2e}
-% fixltx2e, the successor to the earlier fix2col.sty, was written by
-% Frank Mittelbach and David Carlisle. This package corrects a few problems
-% in the LaTeX2e kernel, the most notable of which is that in current
-% LaTeX2e releases, the ordering of single and double column floats is not
-% guaranteed to be preserved. Thus, an unpatched LaTeX2e can allow a
-% single column figure to be placed prior to an earlier double column
-% figure. The latest version and documentation can be found at:
-% http://www.ctan.org/tex-archive/macros/latex/base/
-
-
-
-%\usepackage{stfloats}
-% stfloats.sty was written by Sigitas Tolusis. This package gives LaTeX2e
-% the ability to do double column floats at the bottom of the page as well
-% as the top. (e.g., "\begin{figure*}[!b]" is not normally possible in
-% LaTeX2e). It also provides a command:
-%\fnbelowfloat
-% to enable the placement of footnotes below bottom floats (the standard
-% LaTeX2e kernel puts them above bottom floats). This is an invasive package
-% which rewrites many portions of the LaTeX2e float routines. It may not work
-% with other packages that modify the LaTeX2e float routines. The latest
-% version and documentation can be obtained at:
-% http://www.ctan.org/tex-archive/macros/latex/contrib/sttools/
-% Documentation is contained in the stfloats.sty comments as well as in the
-% presfull.pdf file. Do not use the stfloats baselinefloat ability as IEEE
-% does not allow \baselineskip to stretch. Authors submitting work to the
-% IEEE should note that IEEE rarely uses double column equations and
-% that authors should try to avoid such use. Do not be tempted to use the
-% cuted.sty or midfloat.sty packages (also by Sigitas Tolusis) as IEEE does
-% not format its papers in such ways.
-
-
-
 \usepackage{boxedminipage}
 \usepackage{graphicx}
 
 \newcommand{\notesbox}[1]{
-%     \ \\
-      \noindent\begin{center}\begin{boxedminipage}[h]{0.4\textwidth}{#1}\end{boxedminipage}\end{center}
+  \noindent\begin{center}\begin{boxedminipage}[h]{0.4\textwidth}{#1}\end{boxedminipage}\end{center}
 }
 
-% *** PDF, URL AND HYPERLINK PACKAGES ***
-%
-%\usepackage{url}
-% url.sty was written by Donald Arseneau. It provides better support for
-% handling and breaking URLs. url.sty is already installed on most LaTeX
-% systems. The latest version can be obtained at:
-% http://www.ctan.org/tex-archive/macros/latex/contrib/misc/
-% Read the url.sty source comments for usage information. Basically,
-% \url{my_url_here}.
+\definecolor{lightgray}{gray}{.95}
+\definecolor{darkgray}{gray}{.80}
 
-% *** Do not adjust lengths that control margins, column widths, etc. ***
-% *** Do not use packages that alter fonts (such as pslatex).         ***
-% There should be no need to do such things with IEEEtran.cls V1.6 and later.
-% (Unless specifically asked to do so by the journal or conference you plan
-% to submit to, of course. )
+\lstset{
+  lineskip=0.5pt,
+  basicstyle=\scriptsize,             % the size of the fonts that are used for the code
+  %numbers=left,                      % where to put the line-numbers
+  numberstyle=\scriptsize,            % the size of the fonts that are used for the line-numbers
+  stepnumber=1,                       % the step between two line-numbers. If it is 1 each line will be numbered
+  numbersep=3pt,                      % how far the line-numbers are from the code
+  backgroundcolor=\color{lightgray},  % choose the background color. You must add \usepackage{color}
+  showspaces=false,                   % show spaces adding particular underscores
+  showstringspaces=false,             % underline spaces within strings
+  showtabs=false,                     % show tabs within strings adding particular underscores
+  frame=none,                         % adds a frame around the code
+  tabsize=2,                          % sets default tabsize to 2 spaces
+  captionpos=b,                       % sets the caption-position to bottom
+  breaklines=true,                    % sets automatic line breaking
+  breakatwhitespace=false,            % sets if automatic breaks should only happen at whitespace
+  escapeinside={\%}{)}                % if you want to add a comment within your code
+}
 
-
-% correct bad hyphenation here
 \hyphenation{op-tical net-works semi-conduc-tor}
 
-
 \begin{document}
-%
-% paper title
-% can use linebreaks \\ within to get better formatting as desired
-\title{ARC - Automatic Repair of Concurrency Bugs}
 
+\title{ARC -- Automatic Repair of Concurrency Bugs}
 
-% author names and affiliations
-% use a multiple column layout for up to two different
-% affiliations
+\author{Kevin Jalbert, David Kelk, Jeremy S. Bradbury}
 
-\author{\IEEEauthorblockN{Kevin Jalbert, David Kelk, Jeremy S. Bradbury}
-\IEEEauthorblockA{Software Quality Research Group\\
+\institute{Software Quality Research Group\\
 Faculty of Science (Computer Science)\\
 University of Ontario Institute of Technology\\
 Oshawa, Ontario, Canada\\
-\{kevin.jalbert, david.kelk, jeremy.bradbury\}@uoit.ca}
-}
+\email{\{kevin.jalbert, david.kelk, jeremy.bradbury\}@uoit.ca}}
 
-% conference papers do not typically use \thanks and this command
-% is locked out in conference mode. If really needed, such as for
-% the acknowledgment of grants, issue a \IEEEoverridecommandlockouts
-% after \documentclass
-
-% for over three affiliations, or if they all won't fit within the width
-% of the page, use this alternative format:
-%
-%\author{\IEEEauthorblockN{Michael Shell\IEEEauthorrefmark{1},
-%Homer Simpson\IEEEauthorrefmark{2},
-%James Kirk\IEEEauthorrefmark{3},
-%Montgomery Scott\IEEEauthorrefmark{3} and
-%Eldon Tyrell\IEEEauthorrefmark{4}}
-%\IEEEauthorblockA{\IEEEauthorrefmark{1}School of Electrical and Computer Engineering\\
-%Georgia Institute of Technology,
-%Atlanta, Georgia 30332--0250\\ Email: see http://www.michaelshell.org/contact.html}
-%\IEEEauthorblockA{\IEEEauthorrefmark{2}Twentieth Century Fox, Springfield, USA\\
-%Email: homer@thesimpsons.com}
-%\IEEEauthorblockA{\IEEEauthorrefmark{3}Starfleet Academy, San Francisco, California 96678-2391\\
-%Telephone: (800) 555--1212, Fax: (888) 555--1212}
-%\IEEEauthorblockA{\IEEEauthorrefmark{4}Tyrell Inc., 123 Replicant Street, Los Angeles, California 90210--4321}}
-
-
-
-
-% use for special paper notices
-%\IEEEspecialpapernotice{(Invited Paper)}
-
-
-
-
-% make the title area
 \maketitle
-
 
 \begin{abstract}
 
 Automatic repair of single-threaded programs is being realised in practice.
 Similar progress has not been made on the automatic repair of parallel
-programs.  We introduce a fully automated two-phase system for repairing
+programs. We introduce a fully automated two-phase system for repairing
 deadlocks and data races in parallel Java programs. The approach works on any
 Java source code and requires only rudimentary test cases. Annotations, formal
 specifications or other notations are not required. As only the concurrency
@@ -453,31 +70,13 @@ program correctness. We describe the approach and report on early results.
 
 \end{abstract}
 
-\begin{IEEEkeywords}
-concurrency; genetic programming; mutation.
-
-\end{IEEEkeywords}
-
-
-% For peer review papers, you can put extra information on the cover
-% page as needed:
-% \ifCLASSOPTIONpeerreview
-% \begin{center} \bfseries EDICS Category: 3-BBND \end{center}
-% \fi
-%
-% For peerreview papers, this IEEEtran command inserts a page break and
-% creates the second title. It will be ignored for other modes.
-\IEEEpeerreviewmaketitle
-
-
-
 \section{Introduction}
 \label{sec:introduction}
 
 As desktop computers now ship with more than one processor, programs must
 parallelize to continue to benefit from Moore's Law. Inevitibly these programs
-contain bugs. If fixing bugs in single-threaded programs is a difficult
-and resource intensive task,  it is doubly so in multi-threaded programs.
+contain bugs. If fixing bugs in single-threaded programs is a difficult and
+resource intensive task,  it is doubly so in multi-threaded programs.
 Parallelism~\cite{SL05} introduces new classes of bugs and makes them harder to
 find by having them only occur in rare execution interleavings~\cite{MQB07}.
 Data-races cause variables to take on unpredictable values as different threads
@@ -500,32 +99,32 @@ software.
 
 Evolutionary strategies (ES) is part of the family of heuristic search
 algorithms. They are population-based technique driven by mutation. Crossover
-and replacement are not used.  All members of the population exist throughout
-an invocation of the search. A fitness function is used to evaluate each
-member's proposed fix. Bugs in a concurrent program are fixed by iteratively
-mutating the program and evaluating each mutation by executing the program many
-times. IBM's ConTest~\cite{EFN+02} tool is used to explore different interleavings
-of the program under test to increase our confidence bugs are not slipping by.
+and replacement are not used. All members of the population exist throughout an
+invocation of the search. A fitness function is used to evaluate each member's
+proposed fix. Bugs in a concurrent program are fixed by iteratively mutating
+the program and evaluating each mutation by executing the program many times.
+IBM's ConTest~\cite{EFN+02} tool is used to explore different interleavings of
+the program under test to increase our confidence bugs are not slipping by.
 Fitness improves with the number of correct executions.
 
 Large search spaces are a problem faced by all bug fixing techniques.
 Parallelism introduces thread interleavings on top of this. A number of steps
-are taken to address this issue.  First, we limit the algorithm to only fixing
+are taken to address this issue. First, we limit the algorithm to only fixing
 deadlocks and data races. Second, only the concurrency mechanisms are targeted.
 Specifically, \textit{synchronize} statements are added, removed, swapped,
 grown and shrunk. No other statements are affected. Third, we use a specific
-set of eleven TXL~\cite{CHP91} operators based on the ConMan
+set of eleven TXL~\cite{CHP91} operators based on the ConMAn
 operators~\cite{BCD06} to mutate the parallel Java code.
 
 ARC operates in two phases. In the first, synchronization blocks are added,
 expanded and swapped to attempt to fix the bugs. This may add unnecessary
 synchronization. If a correct program is found in phase one, a second phase
 attempts to improve performance by shrinking and removing synchronization
-blocks. As this can introduce data races or deadlocks, any mutant
-decreasing correctness is rejected.
+blocks. As this can introduce data races or deadlocks, any mutant decreasing
+correctness is rejected.
 
 To the best of our knowledge there has been no previous work using evolutionary
-strategies to fix bugs in concurrent software.  There has been work involving
+strategies to fix bugs in concurrent software. There has been work involving
 the correction of concurrency bugs using self-healing~\cite{LVK08}. From the
 paper, \textit{The healing techniques based on influencing the scheduling do
 not guarantee that a detected problem will really be completely removed, but
@@ -550,9 +149,10 @@ to transform the Java source.
 \section{Background}
 \label{sec:background}
 
-\begin{quote}\textit{Some properties are difficult or impossible to encode
-using test cases, such as nondeterministic properties; GenProg cannot
-currently repair race conditions, for example.}~\cite{GNFW11}
+\begin{quote}
+\textit{Some properties are difficult or impossible to encode using test cases,
+such as nondeterministic properties; GenProg cannot currently repair race
+conditions, for example.}~\cite{GNFW11}
 \end{quote}
 
 All of the material discussed here revolves around the topics of concurrency,
@@ -563,8 +163,9 @@ understanding of these topics is required for various parts of the paper.
 \label{sec:concurrency}
 
 Concurrency is the act of having multiple threads executing in parallel.
-Concurrent programs are able to exploit multi-core systems where threads are distributed across each of the CPUs to increase performance. Concurrency
-introduces a new class class of bugs, the \textit{heisenbugs}.  Due to
+Concurrent programs are able to exploit multi-core systems where threads are
+distributed across each of the CPUs to increase performance. Concurrency
+introduces a new class class of bugs, the \textit{heisenbugs}. Due to
 concurrent access to shared memory, threads are able to cause
 \textit{dataraces} and \textit{deadlocks}.
 
@@ -581,9 +182,9 @@ thread holds a lock that another thread desires and vice-versa''~\cite{LSW07}
 These bugs are extremely difficult to detect due to the non-deterministic
 nature of how threads are interleaved (the way the system schedules them). In
 one execution a concurrency bug might occur, then a second, third and forth it
-does not. Various techniques are available to detect concurrency bugs
-such as static analysis~\cite{NA07,NPSG09,HP04}, stress testing~\cite{HSU03},
-dynamic analysis~\cite{JNPS09,EFN+02}, and model
+does not. Various techniques are available to detect concurrency bugs such as
+static analysis~\cite{NA07,NPSG09,HP04}, stress testing~\cite{HSU03}, dynamic
+analysis~\cite{JNPS09,EFN+02}, and model
 checking~\cite{BHPV00,RDH03,OM03,MQB07,Holz97,JM04,HP00}.
 
 \subsection{Evolutionary Programming}
@@ -594,23 +195,23 @@ algorithms. The most commonly referenced heuristic search technique is the
 genetic algorithm~\cite{GA92}. For space reasons only the briefest outline of
 EP and it's place in the heuristic search family is given.
 
-A standard genetic algorithm is population based, uses mutation, crossover
-and a fitness function to evolve solutions to problems. A proposed solution to
-the problem is encoded as a member of the population. Each member is evaluated by a
-fitness function. The more fit a member solution is, the greater the chance
-it will pass it's genetic material (solution) on to the next generation.
+A standard genetic algorithm is population based, uses mutation, crossover and
+a fitness function to evolve solutions to problems. A proposed solution to the
+problem is encoded as a member of the population. Each member is evaluated by a
+fitness function. The more fit a member solution is, the greater the chance it
+will pass it's genetic material (solution) on to the next generation.
 \textit{Selection pressure prefentially selects better solutions.} Crossover
 mixes these solutions to produce new ones while mutation injects fresh
 information in to the population so it doesn't become stagnant.
 
 EP is a simpler form of search than a genetic algorithm. A population of
-proposed solutions is generated and mutated each generation.  Crossover and
+proposed solutions is generated and mutated each generation. Crossover and
 selection aren't used, so the same population exists throughout the evolution.
 Every members fitness is evaluated every generation. It ends when a
 predetermined fitness is reached or after a set number of generations have
 passed.
 
-Why use mutation only?  Sometimes it is unclear how to use crossover.  For
+Why use mutation only? Sometimes it is unclear how to use crossover. For
 example, if the member solutions are Java programs, how does one ensure that
 when putting two halves of different programs together the resulting program is
 correct, makes sense or even compiles?
@@ -627,21 +228,21 @@ resulting framework is tested only againt a toy sorting algorithm with mixed
 success. The untargeted nature of the fixing process is the largest limitation.
 No effort is made to constrain the large search space of the problem.
 
-Significant improvements are made in~\cite{FNWG09,
-WNLF09, NWLF09, WFGN10, GNFW11}. Formal specifications are no longer required.
-Instead, test cases are used to demonstrate the bug and describe the desired
-functionality that must be preserved. To address the limitations of the
-previous approach they introduce two innovations: First, they assume the bug is
-written correctly in another part of the program. Second, they determine the
-error path on which the bug occurs and target those statements specifically for
-repair. Together these additions constrain the state space enough that the
-framework can fix real bugs in real programs.
+Significant improvements are made in~\cite{FNWG09, WNLF09, NWLF09, WFGN10,
+GNFW11}. Formal specifications are no longer required. Instead, test cases are
+used to demonstrate the bug and describe the desired functionality that must be
+preserved. To address the limitations of the previous approach they introduce
+two innovations: First, they assume the bug is written correctly in another
+part of the program. Second, they determine the error path on which the bug
+occurs and target those statements specifically for repair. Together these
+additions constrain the state space enough that the framework can fix real bugs
+in real programs.
 
 Similar to the work done here,~\cite{KLT+07, LVK08} uses ConTest to heal data
 races. From their paper, \textit{``Healing concurrency problems is about
 limiting or changing the probability of interleaving, such that bugs will be
-seen less.''} In contrast, our approach uses ConTest in a framework that
-fixes both deadlocks and data races.
+seen less.''} In contrast, our approach uses ConTest in a framework that fixes
+both deadlocks and data races.
 
 A framework is created in~\cite{CB05} to ``repair'' buffer overflow attacks.
 When one is identified, the program state is reset to what it was before the
@@ -657,34 +258,32 @@ to the program or the specification of the program.
 \section{Motivating Problem}
 \label{sec:motivation}
 
-Concurrency bugs are difficult to detect and fix. Many
-tools exist that identify concurrent bugs. The identification of a problem is
-often not enough as multiple code fragments are involved, possibly in different
-units with differently named variables. In this ambiguous scenario the
-appropriate fix is not always clear. There has been work in concurrency
-anti-patterns that provide a definition, problem, context and solution for
-concurrency bugs~\cite{BJ09}.
+Concurrency bugs are difficult to detect and fix. Many tools exist that
+identify concurrent bugs. The identification of a problem is often not enough
+as multiple code fragments are involved, possibly in different units with
+differently named variables. In this ambiguous scenario the appropriate fix is
+not always clear. There has been work in concurrency anti-patterns that provide
+a definition, problem, context and solution for concurrency bugs~\cite{BJ09}.
 
-In the left part of figure~\ref{fig:fixed_sample_datarace} \texttt{read} and
-\texttt{write} method access a shared variable. A very simple data race
-exists because there is no atomic
-access to the \texttt{data} variable during the reading or writing. Both
-methods are involved in the data race, and it is because of the interactions
-between these methods the data race is possible. A solution involves
-synchronizing both accesses (Right part of figure~\ref{fig:fixed_sample_datarace}).
-Synchronizing one method alone does not fix the bug.
+In the left part of Fig.~\ref{fig:fixed_sample_datarace} \texttt{read} and
+\texttt{write} method access a shared variable. A very simple data race exists
+because there is no atomic access to the \texttt{data} variable during the
+reading or writing. Both methods are involved in the data race, and it is
+because of the interactions between these methods the data race is possible. A
+solution involves synchronizing both accesses (Right part of
+Fig.~\ref{fig:fixed_sample_datarace}). Synchronizing one method alone does
+not fix the bug.
 
-The solution in the right part of figure~\ref{fig:fixed_sample_datarace} is far
-from ideal. It forces other threads to wait unnecessarily while the write method works in the loop and database
-sections. An optimization is to shrink the critical region (the synchronized
-statements) to only guard access to the shared variable (as shown in
-Figure~\ref{fig:optimized_sample_datarace}).
+The solution in the right part of Fig.~\ref{fig:fixed_sample_datarace} is far
+from ideal. It forces other threads to wait unnecessarily while the write
+method works in the loop and database sections. An optimization is to shrink
+the critical region (the synchronized statements) to only guard access to the
+shared variable (as shown in Fig.~\ref{fig:optimized_sample_datarace}).
 
 \begin{figure}[!h]
-\vspace{2mm}
-\begin{minipage}{3.70cm}
+\begin{minipage}{5cm}
 \footnotesize{\textbf{Buggy Program:}}
-\begin{lstlisting}[language=Java]
+\begin{lstlisting}[language=Java, morekeywords={synchronize}]
 write(int var1){
   ... // Expensive loop
   data = var1;
@@ -696,9 +295,9 @@ int public read(){
 }
 \end{lstlisting}
 \end{minipage}\hfill
-\begin{minipage}{3.70cm}
+\begin{minipage}{5cm}
 \footnotesize{\textbf{Fixed Program:}}
-\begin{lstlisting}[language=Java]
+\begin{lstlisting}[language=Java, morekeywords={synchronize}]
 synchronize write(int var1){
   ... // Expensive loop
   data = var1;
@@ -711,16 +310,14 @@ int synchronize read(){
 \end{lstlisting}
 \end{minipage}
 \caption{A developer first synchronizes the \texttt{read} function, yet the bug
-still exists. Synchronizing the \texttt{write} method as well fixes
-it.}
+still exists. Synchronizing the \texttt{write} method as well fixes it.}
 \label{fig:fixed_sample_datarace}
 \end{figure}
 
 \begin{figure}[!h]
-\vspace{2mm}
-\begin{minipage}{3.70cm}
+\begin{minipage}{5cm}
 \footnotesize{\textbf{$1^{st}$ Optimization on Fix:}}
-\begin{lstlisting}[language=Java]
+\begin{lstlisting}[language=Java, morekeywords={synchronize}]
 public write(int var1){
   ... // Expensive loop
   synchronized(this){
@@ -734,9 +331,9 @@ int synchronize read(){
 }
 \end{lstlisting}
 \end{minipage}\hfill
-\begin{minipage}{3.70cm}
+\begin{minipage}{5cm}
 \footnotesize{\textbf{$2^{nd}$ Optimization on Fix:}}
-\begin{lstlisting}[language=Java]
+\begin{lstlisting}[language=Java, morekeywords={synchronize}]
 public write(int var1){
   ... // Expensive loop
   synchronized(this){
@@ -750,26 +347,33 @@ int synchronize read(){
 }
 \end{lstlisting}
 \end{minipage}
-\caption{A developer shrinks the critical region to exclude the expensive
-loop. They shrink the critical region again to exclude the database query as
-a further optimization.}
+\caption{A developer shrinks the critical region to exclude the expensive loop.
+They shrink the critical region again to exclude the database query as a
+further optimization.}
 \label{fig:optimized_sample_datarace}
 \end{figure}
 
-From a developer's standpoint there is a lot of work involved in creating a fix for parallel bugs as multiple, unrelated changes are not uncommon. Two changes  were required to functionally fix the example program. Two additional changes were required to improve the non-functional performance.
+From a developer's standpoint there is a lot of work involved in creating a fix
+for parallel bugs as multiple, unrelated changes are not uncommon. Two changes
+were required to functionally fix the example program. Two additional changes
+were required to improve the non-functional performance.
 
-Automated tools in software testing and debugging are needed as they have the potential to reduce the vast amount of resources spent on software testing (upwards to \$59.5 billion)~\cite{RTI02}. ARC provides an automated approach to fixing the \textit{functionality}, and then optimizing the \textit{non-functional} performance of programs with deadlocks and data races.
+Automated tools in software testing and debugging are needed as they have the
+potential to reduce the vast amount of resources spent on software testing
+(upwards to \$59.5 billion)~\cite{RTI02}. ARC provides an automated approach to
+fixing the \textit{functionality}, and then optimizing the \textit{non-
+functional} performance of programs with deadlocks and data races.
 
 \section{ARC's Approach}
 \label{sec:approach}
 
-ARC aims to automatically repair concurrency bugs like the one
-presented in Section~\ref{sec:motivation}. A high-level overview of ARC's
-approach is presented in Figure~\ref{fig:process}. There are two inputs to ARC: A buggy concurrent Java program and a JUnit test suite. This
-test suite is necessary as it acts like an oracle determining if the bug
-still exists in the program. One limitation of ARC (and of all automatic bug
-fixing techniques mentioned here) is that it can only fix bugs detectable by
-the test suite.
+ARC aims to automatically repair concurrency bugs like the one presented in
+Sect.~\ref{sec:motivation}. A high-level overview of ARC's approach is
+presented in Fig.~\ref{fig:process}. There are two inputs to ARC: A buggy
+concurrent Java program and a JUnit test suite. This test suite is necessary as
+it acts like an oracle determining if the bug still exists in the program. One
+limitation of ARC (and of all automatic bug fixing techniques mentioned here)
+is that it can only fix bugs detectable by the test suite.
 
 \begin{figure}[!h]
   \centering
@@ -779,10 +383,14 @@ the test suite.
 \end{figure}
 
 ARC is composed of two major phases, the \textit{Functional Phase} and the
-\textit{Non-Functional Phase}. Both are similar in terms of the steps
-they follow, with slight variations to accomplish different goals. The first phase attempts to fix the buggy program while the second attempts to optimize its performance.
+\textit{Non-Functional Phase}. Both are similar in terms of the steps they
+follow, with slight variations to accomplish different goals. The first phase
+attempts to fix the buggy program while the second attempts to optimize its
+performance.
 
-The next section details each step in the two phases, shown in Figure~\ref{fig:phases_internals}. Differences between them are indicated.  Key aspects of the approach are the mutation and evaluation steps.
+The next section details each step in the two phases, shown in
+Fig.~\ref{fig:phases_internals}. Differences between them are indicated. Key
+aspects of the approach are the mutation and evaluation steps.
 
 \begin{figure}[!h]
   \centering
@@ -794,23 +402,30 @@ The next section details each step in the two phases, shown in Figure~\ref{fig:p
 \subsection{Initialize Population}
 \label{sec:initialize_population}
 
-Arc begins the repair phase by initialize the population of individuals.
-This involves creating a copy of the program for each individual that is
-mutated by the ES. For the non-functional phase ARC has already produced
-the fixed program, so each individual receives a copy of the fixed
-program to optimize.
+Arc begins the repair phase by initialize the population of individuals. This
+involves creating a copy of the program for each individual that is mutated by
+the ES. For the non-functional phase ARC has already produced the fixed
+program, so each individual receives a copy of the fixed program to optimize.
 
 \subsection{Generate Mutants and Update Individual's Representation}
 \label{sec:update_individual_representation}
 
-Mutants are exhaustively created every generation from the previous generation's code. Internally the mutants are tracked by type in the representation.  (Member x at generation y has z add sync mutants, q expand sync before mutants, ...) This step generates all mutants and updates the representation. (A mutation is actually applied to the project in the next step.)
+Mutants are exhaustively created every generation from the previous
+generation's code. Internally the mutants are tracked by type in the
+representation. (Member x at generation y has z add sync mutants, q expand sync
+before mutants, ...) This step generates all mutants and updates the
+representation. (A mutation is actually applied to the project in the next
+step.)
 
-The individual's representation consists of an array of the mutation
-operators applied each round of the ES. Table~\ref{tbl:individual_representation}
+The individual's representation consists of an array of the mutation operators
+applied each round of the ES. Table~\ref{tbl:individual_representation}
 illustrates the program representation.
 
 \begin{table}[!h]
 \begin{center}
+\caption{Example representation of an individual, each 0 represents an instance
+of that mutation type. There can be up to $n$ mutation operators with no-limit
+to the number of instances per operator.}
 \begin{tabular}{|l|l|}
 \hline
 \textbf{Operator} &
@@ -827,17 +442,18 @@ Mutation 3 & --
 Mutation $n$ & 0 0
 \\\hline
 \end{tabular}
-\caption{Example representation of an individual, each 0 represents
-an instance of that mutation type. There can be up to $n$ mutation
-operators with no-limit to the number of instances per operator.}
 \label{tbl:individual_representation}
 \end{center}
 \end{table}
 
 The set of mutation operators is listed in Table~\ref{tbl:operators}. They are
-TXL operators derived from the ConMAn operators~\cite{BCD06}. TXL operators  work by searching for a pattern and then transforming it according to a set of rules.  An example operator is shown in Figure~\ref{fig:EXSB_example}.
+TXL operators derived from the ConMAn operators~\cite{BCD06}. TXL operators
+work by searching for a pattern and then transforming it according to a set of
+rules. An example operator is shown in Fig.~\ref{fig:EXSB_example}.
 
-\begin{table*}
+\begin{table}
+\caption{Set of mutation operators used by ARC, indicating which phases they
+are active mutators.}
 \begin{center}
 \begin{tabular}{|l|l|c|c|}
 \hline
@@ -871,18 +487,16 @@ Shrink synch. before & SHSB & & $\surd$
 Shrink synch. after & SHSA & & $\surd$
 \\\hline
 \end{tabular}
-\caption{Set of mutation operators used by ARC, indicating which phases they
-are active mutators.}
 \label{tbl:operators}
 \end{center}
-\end{table*}
+\end{table}
 
 \begin{figure}[h!]
 \vspace{2mm}
-\begin{minipage}{3.70cm}
+\begin{minipage}{5cm}
 
 \footnotesize{\textbf{ Program $P$:}}
-\begin{lstlisting}[language=Java]
+\begin{lstlisting}[language=Java, morekeywords={synchronize}]
   ...
   obj.write(var1);
   synchronized(lock){
@@ -890,9 +504,9 @@ are active mutators.}
   }
 \end{lstlisting}
 \end{minipage}\hfill
-\begin{minipage}{3.70cm}
+\begin{minipage}{5cm}
 \footnotesize{\textbf{ Program $P'$:}}
-\begin{lstlisting}[language=Java]
+\begin{lstlisting}[language=Java, morekeywords={synchronize}]
   ...
   synchronized(lock){
     obj.write(var1);
@@ -905,7 +519,9 @@ are active mutators.}
 \label{fig:EXSB_example}
 \end{figure}
 
-Mutating the concurrency blocks of the program changes the places where future mutations can occur, causing the search space of possible mutations to changes every generation. The representation must be updated to account for this.
+Mutating the concurrency blocks of the program changes the places where future
+mutations can occur, causing the search space of possible mutations to changes
+every generation. The representation must be updated to account for this.
 
 \subsection{Apply a Mutation to an Individual}
 \label{sec:mutate_individuals}
@@ -913,15 +529,25 @@ Mutating the concurrency blocks of the program changes the places where future m
 Once all mutations are generated a type of mutation and an instance of that
 type are selected from the representation and applied to the project.
 
-ARC uses historical information about previous successes with the mutation operators and the current dominating bug type to select a mutation operator to apply. More weight is given to operators that have been successful in the past. This is further detailed in Section~\ref{sec:recalculate_operator_weighting}. We randomly select an
-instance of the operator to accept as our final mutation for that individual.
+ARC uses historical information about previous successes with the mutation
+operators and the current dominating bug type to select a mutation operator to
+apply. More weight is given to operators that have been successful in the past.
+This is further detailed in Sect.~\ref{sec:recalculate_operator_weighting}.
+We randomly select an instance of the operator to accept as our final mutation
+for that individual.
 
 \subsection{Evaluate Individuals}
 \label{sec:evalute_individuals}
 
 A mutation may be beneficial, destructive or benign. It must be evaluated to
-determine it's effect on the program. A key problem is the unpredictability of  thread interleavings.  If a concurrency bug appears only rarely, how can we gain confidence that a proposed fix actually works?  IBM's ConTest tool~\cite{EFN+02} is used to instrument the project and inject noise into it's scheduled interleavings. ConTest is invoked by ARC many times to test each mutated project in turn. By running ConTest multiple times we gain confidence enough interleavings are explored to find bugs. Note that running ConTest many times for each member of
-the population at each generation is time intensive.
+determine it's effect on the program. A key problem is the unpredictability of
+thread interleavings. If a concurrency bug appears only rarely, how can we gain
+confidence that a proposed fix actually works? IBM's ConTest tool~\cite{EFN+02}
+is used to instrument the project and inject noise into it's scheduled
+interleavings. ConTest is invoked by ARC many times to test each mutated
+project in turn. By running ConTest multiple times we gain confidence enough
+interleavings are explored to find bugs. Note that running ConTest many times
+for each member of the population at each generation is time intensive.
 
 In the first phase fitness is determined by the number of successful ConTest
 runs. More successes translates in to higher fitness. As a timeout could either
@@ -948,14 +574,29 @@ $tw = timeout\ weighting$
 \label{fig:functional_fitness}
 \end{figure}
 
-If ARC finds an individual that achieves 100\% successful executions, we need to ensure it is truly a fix. Any proposed solutions could still hold a
-concurrency bug that escaped detection because the proper interleavings were not encountered. Our safeguard is to run ConTest an additional number of times (Default is 10x more runs then the original number of runs). If the fix still holds even after this safeguard we feel confident the solution is indeed a true solution. If any of these additional test fail, the proposed fix is rejected and the evolutionary process continues.
+If ARC finds an individual that achieves 100\% successful executions, we need
+to ensure it is truly a fix. Any proposed solutions could still hold a
+concurrency bug that escaped detection because the proper interleavings were
+not encountered. Our safeguard is to run ConTest an additional number of times
+(Default is 10x more runs then the original number of runs). If the fix still
+holds even after this safeguard we feel confident the solution is indeed a true
+solution. If any of these additional test fail, the proposed fix is rejected
+and the evolutionary process continues.
 
-Once a fix is found the second phase begins.  A new fitness function is used
-with the goal of optimizing performance.  We uses a combination of the real time required for an execution and the number of voluntary context switches made to determine fitness.
-The time taken is an obvious choice to use to measure the performance, while the number of voluntary context switches gives us an indication on the amount of thread switching. By minimizing unnecessary synchronization the number of context switches should decrease along with the real time taken.
-Figure~\ref{fig:nonfunctional_function} shows the phase 2 fitness function.
-Baseline time and context switches are generated from the newly fixed program by running it a large number of times and averaging. This baseline is used by the fitness function to evaluate any proposed improvements. Note that the fitness function adjusts based on the significance and uncertainty of both variables (to be fair in situations where either variable is under-represented).
+Once a fix is found the second phase begins. A new fitness function is used
+with the goal of optimizing performance. We uses a combination of the real time
+required for an execution and the number of voluntary context switches made to
+determine fitness. The time taken is an obvious choice to use to measure the
+performance, while the number of voluntary context switches gives us an
+indication on the amount of thread switching. By minimizing unnecessary
+synchronization the number of context switches should decrease along with the
+real time taken. Figure~\ref{fig:nonfunctional_function} shows the phase 2
+fitness function. Baseline time and context switches are generated from the
+newly fixed program by running it a large number of times and averaging. This
+baseline is used by the fitness function to evaluate any proposed improvements.
+Note that the fitness function adjusts based on the significance and
+uncertainty of both variables (to be fair in situations where either variable
+is under-represented).
 
 
 \begin{figure}
@@ -988,25 +629,29 @@ $ \\
 \label{fig:nonfunctional_fitness}
 \end{figure}
 
-Removing and reducing synchronization runs the risk of introducing new bugs into the program. Before every non-functional phase evaluation we need to ensure that no bugs are present. We re-run the functional phase evaluation again. If any deadlock or data race is encountered the proposed optimization is rejected. The individual's program is reset to the previous generation.
+Removing and reducing synchronization runs the risk of introducing new bugs
+into the program. Before every non-functional phase evaluation we need to
+ensure that no bugs are present. We re-run the functional phase evaluation
+again. If any deadlock or data race is encountered the proposed optimization is
+rejected. The individual's program is reset to the previous generation.
 
 As it isn't clear when an individual's program reaches its maximum optimization
--- and there is no a-priori way to know this, ARC runs phase two for
-it's full allotment of generations.  At the end it outputs the member program
-with the highest non-functional fitness (from any generation) as the final
-optimized fix.
+-- and there is no a-priori way to know this, ARC runs phase two for it's full
+allotment of generations. At the end it outputs the member program with the
+highest non-functional fitness (from any generation) as the final optimized
+fix.
 
 \subsection{Check Terminating Condition}
 \label{sec:check_terminating_condition}
 
-Each phase continues to evolve and evaluate individuals until some
-terminating condition is met. The following conditions are for the
-functional phase:
+Each phase continues to evolve and evaluate individuals until some terminating
+condition is met. The following conditions are for the functional phase:
 
 \begin{enumerate}
   \item A solution is found (100\% successful executions)
   \item No solution is found within the generational limit
-  \item The population has converged (no improvement has been seen in $x$ generations)
+  \item The population has converged (no improvement has been seen in $x$
+  generations)
 \end{enumerate}
 
 For the non-functional phase the terminating conditions are the same as the
@@ -1017,46 +662,57 @@ there is no actual best known solution for optimal performance.
 \label{sec:replace_weakest_individuals}
 
 With any evolutionary algorithm it is entirely possible for an individual to
-stray down a path leading to little or no improvement. To encourage
-individuals to explore more fruitful areas of the state space we employ a
-replacement strategy that replaces the lower $w$ percentage of individuals
-with a random individual from the upper $x$ percent.  These replacements only
-occur after an individual has been stagnant for $y$ generations. We believe
-the correct program isn't very far away in the state space from the original
-buggy program. Alternatively, a straying program may be reset to it's initial
-state if it has not seen any improvement in $y$ generations.
+stray down a path leading to little or no improvement. To encourage individuals
+to explore more fruitful areas of the state space we employ a replacement
+strategy that replaces the lower $w$ percentage of individuals with a random
+individual from the upper $x$ percent. These replacements only occur after an
+individual has been stagnant for $y$ generations. We believe the correct
+program isn't very far away in the state space from the original buggy program.
+Alternatively, a straying program may be reset to it's initial state if it has
+not seen any improvement in $y$ generations.
+
 % TODO Double check that ARC actually does it like this
 
 \subsection{Recalculate All Operator's Weighting}
 \label{sec:recalculate_operator_weighting}
 
 ARC utilizes a heuristic approach to select the mutation operator in the
-mutation step. A sliding window of $n$ generations is used to determine
-the success of previously used mutation operators. Operators that improve
-fitness are weighted more heavily and are more likely to be selected. A
-sliding window is used to prevent dominance of operators and to allow for
-flexibility in changing weighting based on recent history. The weighting is
-designed to ensure the chance of selecting an operator is always greater
-than zero regardless of performance. To ensure this approach is up to date
-the current weighting for each operator is recalculated based on the new
-feedback received from the population. In the functional phase we consider
-a separate weighting for data races and deadlocks to remain accurate
-in the use of this heuristic.
+mutation step. A sliding window of $n$ generations is used to determine the
+success of previously used mutation operators. Operators that improve fitness
+are weighted more heavily and are more likely to be selected. A sliding window
+is used to prevent dominance of operators and to allow for flexibility in
+changing weighting based on recent history. The weighting is designed to ensure
+the chance of selecting an operator is always greater than zero regardless of
+performance. To ensure this approach is up to date the current weighting for
+each operator is recalculated based on the new feedback received from the
+population. In the functional phase we consider a separate weighting for data
+races and deadlocks to remain accurate in the use of this heuristic.
 
 \section{Experiments}
 \label{sec:experiments}
 
-Due to the ARCs heuristic nature it is entirely possible for a program to perform better or worse then it did originally. We are interested in both
-ARCs ability to find fixes and ARCs effect on performance of solutions found.
+Due to the ARCs heuristic nature it is entirely possible for a program to
+perform better or worse then it did originally. We are interested in both ARCs
+ability to find fixes and ARCs effect on performance of solutions found.
 
-ARC is not a quick process.  Executing ConTest (population $\times$ generations $\times$ \# runs) times alone can take significant resources. Suffice it to say ARC is an offline process one could run over night.
+ARC is not a quick process. Executing ConTest (population $\times$ generations
+$\times$ \# runs) times alone can take significant resources. Suffice it to say
+ARC is an offline process one could run over night.
 
 \subsection{Experimental Setup}
 \label{sec:experimental_setup}
 
-Programs ARC is evaluated against come from the IBM Concurrency Benchmark~\cite{EHSU06}. This set of programs is rather small yet demonstrate a variety of concurrent bug types. None of them contain the required JUnit test suite.  They were manually created without altering the programs and their bugs\footnote{One incorrect program was fixed so that it properly exhibited its concurrency bug.}. Details on the programs are presented in Table~\ref{tbl:used_programs}.
+Programs ARC is evaluated against come from the IBM Concurrency
+Benchmark~\cite{EHSU06}. This set of programs is rather small yet demonstrate a
+variety of concurrent bug types. None of them contain the required JUnit test
+suite. They were manually created without altering the programs and their
+bugs\footnote{One incorrect program was fixed so that it properly exhibited its
+concurrency bug.}. Details on the programs are presented in
+Table~\ref{tbl:used_programs}.
 
 \begin{table}[!h]
+\caption{The set of programs used to evaluate ARC. The test suite for each
+program is excluded from these values.}
 \begin{center}
 \begin{tabular}{|l|r|r|l|}
 \hline
@@ -1086,18 +742,18 @@ BankAccounts & 75 & 2 & ?
 Pingpong & 142 & 4 & ?
 \\\hline
 \end{tabular}
-\caption{The set of programs used to evaluate ARC. The test suite for each
-program is excluded from these values.}
 \label{tbl:used_programs}
 \end{center}
 \end{table}
 
 ARC was designed to be flexible in terms of the parameters that can be
 configured. Table~\ref{tbl:used_parameters} lists and describes each parameter,
-including the values selected for evaluation. Values were selected based on
-our experience with ARC.
+including the values selected for evaluation. Values were selected based on our
+experience with ARC.
 
 \begin{table*}[!t]
+\caption{The set of parameters that ARC uses along with their descriptions and
+used values for the experimentations.}
 \begin{center}
 \begin{tabular}{|p{3cm}|p{10cm}|r|}
 \hline
@@ -1131,11 +787,10 @@ Generational Improvement Window & This specifies the size of the sliding window 
 \\\hline
 Average Fitness Min Delta & When checking for convergence this represents the minimum acceptable delta for the average fitness of the population & 5
 \\\hline
-Best Fitness Min Delta & When checking for convergence this represents the minimum acceptable delta for the best fitness of the population & 5 % TODO Does this actually look in the specific generation or over all generations?
+Best Fitness Min Delta & When checking for convergence this represents the minimum acceptable delta for the best fitness of the population & 5
+% TODO Does this actually look in the specific generation or over all generations?
 \\\hline
 \end{tabular}
-\caption{The set of parameters that ARC uses along with their descriptions and
-used values for the experimentations.}
 \label{tbl:used_parameters}
 \end{center}
 \end{table*}
@@ -1144,10 +799,13 @@ used values for the experimentations.}
 \label{sec:experimental_results}
 
 Each program was run through ARC a total of 10 times using the parameters
-described in Table~\ref{tbl:used_parameters}. The results of each
-program is summarized in Table~\ref{tbl:summary_results}. % TODO
+described in Table~\ref{tbl:used_parameters}. The results of each program is
+summarized in Table~\ref{tbl:summary_results}.
+% TODO
 
 \begin{table*}[!t]
+\caption{Summary of the results of running the programs
+(Table~\ref{tbl:used_programs}) through ARC 10 times.}
 \begin{center}
 \begin{tabular}{|p{2cm}|p{0.6cm}|p{1.75cm}|p{2cm}|p{2cm}|p{2cm}|p{2cm}|}
 \hline
@@ -1180,7 +838,6 @@ BankAccounts & 0.6 & [3--17] & [0.10--0.14] & [0.9--0.12] & [73--97] & [60--81]
 Pingpong & 0.6 & [3--17] & [0.10--0.14] & [0.9--0.12] & [73--97] & [60--81]
 \\\hline
 \end{tabular}
-\caption{Summary of the results of running the programs (Table~\ref{tbl:used_programs}) through ARC 10 times.}
 \label{tbl:summary_results}
 \end{center}
 \end{table*}
@@ -1192,28 +849,42 @@ Pingpong & 0.6 & [3--17] & [0.10--0.14] & [0.9--0.12] & [73--97] & [60--81]
 ARC has three major challenges to face:
 
 \textbf{Large Solution Space}: In Arcuri's approach~\cite{AY08}, they were
-considering the whole program along with a large set of mutations. When combined with a large number of places to apply them it creates an extremely large search space for finding the solution. In ARC we are only considering concurrency bugs and are only mutating concurrency mechanisms with concurrency mutation operators. Inherently ARC has a much smaller search space to explore to find a fix.
+considering the whole program along with a large set of mutations. When
+combined with a large number of places to apply them it creates an extremely
+large search space for finding the solution. In ARC we are only considering
+concurrency bugs and are only mutating concurrency mechanisms with concurrency
+mutation operators. Inherently ARC has a much smaller search space to explore
+to find a fix.
 
-The search space can be reduced even further by considering only the mutation falling  on the error path (Used in Weimer's approach~\cite{GNFW11}). This is future work.
+The search space can be reduced even further by considering only the mutation
+falling  on the error path (Used in Weimer's approach~\cite{GNFW11}). This is
+future work.
 
-\textbf{Dependence on Test Suite}: ARC depends on a minimal test suite for the program being repaired. In both Arcuri's and Weimer's approach~\cite{AY08,GNFW11} the test suites are used to both guard the
-program's functionality and to indicate a bug is present. ARC
-requires a test suit to exhibit the bug. ARC currently has no solution for
-dealing with bugs that occur outside of the test suite's coverage. Arcuri's
-and Weimer's approaches also has no solution for this.
+\textbf{Dependence on Test Suite}: ARC depends on a minimal test suite for the
+program being repaired. In both Arcuri's and Weimer's
+approach~\cite{AY08,GNFW11} the test suites are used to both guard the
+program's functionality and to indicate a bug is present. ARC requires a test
+suit to exhibit the bug. ARC currently has no solution for dealing with bugs
+that occur outside of the test suite's coverage. Arcuri's and Weimer's
+approaches also has no solution for this.
 
-There has been some work that attempts to co-evolve the test suite at the same time to help check for new situations~\cite{WT10}. (Be specific.) We
-assume the test suite is comprehensive enough to detect all bugs. ARC will
-eventually only consider using mutation operators that fall within the coverage of the test suite to avoid introducing new bugs the test suite cannot detect.
+There has been some work that attempts to co-evolve the test suite at the same
+time to help check for new situations~\cite{WT10}. (Be specific.) We assume the
+test suite is comprehensive enough to detect all bugs. ARC will eventually only
+consider using mutation operators that fall within the coverage of the test
+suite to avoid introducing new bugs the test suite cannot detect.
 
-(What is the challenge/problem here?  That only bugs in test suites can be
+(What is the challenge/problem here? That only bugs in test suites can be
 detected? What are we going to do about it?)
 
-\textbf{Program Readability}: Automatically fixing and optimizing
-a program raises the question of source readability. None of the related work considers the readability of their fixes. This is a concern as developers
-want to understand the fix as well. In ARC's we are simply adding, removing and modifying synchronization statements. Posnett et. al.~\cite{PHD11} use the following metrics to estimate readability:
+\textbf{Program Readability}: Automatically fixing and optimizing a program
+raises the question of source readability. None of the related work considers
+the readability of their fixes. This is a concern as developers want to
+understand the fix as well. In ARC's we are simply adding, removing and
+modifying synchronization statements. Posnett et. al.~\cite{PHD11} use the
+following metrics to estimate readability:
 
-(What is the challenge/problem here?  It sounds like we've fixed the problem
+(What is the challenge/problem here? It sounds like we've fixed the problem
 aready.)
 
 \begin{itemize}
@@ -1222,10 +893,13 @@ aready.)
 readability as much as adding new unique statements
 \end{itemize}
 
-Readability metrics for programs fixed by ARC are collected in Tabel~\ref{tbl:readability}.
+Readability metrics for programs fixed by ARC are collected in
+Tabel~\ref{tbl:readability}.
 \ldots % TODO
 
 \begin{table*}[!t]
+\caption{The program readability values from the buggy program to the fixed
+program to the optimized program.}
 \begin{center}
 \begin{tabular}{|l|p{2cm}|p{2cm}|p{2cm}|p{2cm}|p{2cm}|}
 \hline
@@ -1257,7 +931,6 @@ BankAccounts & 100 & 110 & 105 & +10\% & -4.6\%
 Pingpong & 100 & 110 & 105 & +10\% & -4.6\%
 \\\hline
 \end{tabular}
-\caption{The program readability values from the buggy program to the fixed program to the optimized program.}
 \label{tbl:readability}
 \end{center}
 \end{table*}
@@ -1266,7 +939,6 @@ Pingpong & 100 & 110 & 105 & +10\% & -4.6\%
 \label{sec:threats}
 
 % TODO
-
 
 \section{Future Work}
 \label{sec:future_work}
@@ -1277,17 +949,17 @@ shelf solutions integrateable into ARC to give it this capability, similar
 to~\cite{CM08, HP00}.
 
 Targeting the variables, functions and classes on the error path is another
-feature we would like to add.  It has shown great success in helping to isolate
+feature we would like to add. It has shown great success in helping to isolate
 and automatically fix bugs in single-threaded programs~\cite{FNWG09, NWLF09,
 WFGN10, GNFW11}. We believe it will do the same for multithreaded programs.
 
 Generalizing the TXL operators is also important. Currently the add
 synchronization around synchronization operator (ASAS) for example, only adds
-\texttt{synchronize(this) \{...\}} to the Java source.  When the analysis of
-the previous two paragraphs are implemented the operators need to be updated to
+\texttt{synchronize(this) \{...\}} to the Java source. When the analysis of the
+previous two paragraphs are implemented the operators need to be updated to
 work with them.
 
-We also plan to experiment with new operators.  Potential additions include
+We also plan to experiment with new operators. Potential additions include
 splitting or merging synchronization blocks and changing the argument in the
 synchronize call.
 
@@ -1298,42 +970,16 @@ ability to fix additional types of bugs.
 \section{Conclusion}
 \label{sec:conclusion}
 
-Little work has been done on automatically fixing parallel programs.  We
-introduced ARC - a framework that automatically fixes deadlocks and data
-races in parallel Java programs. It uses an evolutionary
-algorithm operating in two phases. Bugs are fixed in the first phase, then
-concurrency is optimized in the second.
+Little work has been done on automatically fixing parallel programs. We
+introduced ARC - a framework that automatically fixes deadlocks and data races
+in parallel Java programs. It uses an evolutionary algorithm operating in two
+phases. Bugs are fixed in the first phase, then concurrency is optimized in the
+second.
 
 Experiments were conducted to evaluate ARC using a set of 10 programs found in
 a concurrency benchmark. The results indicate that ARC is \ldots % TODO
 
-% use section* for acknowledgement
-%\section*{Acknowledgment}
-%The authors would like to thank the Natural Sciences and Engineering Research Council of Canada (NSERC) for funding this research.
+\bibliographystyle{splncs03}
+\bibliography{SSBSE2012}
 
-
-% trigger a \newpage just before the given reference
-% number - used to balance the columns on the last page
-% adjust value as needed - may need to be readjusted if
-% the document is modified later
-%\IEEEtriggeratref{8}
-% The "triggered" command can be changed if desired:
-%\IEEEtriggercmd{\enlargethispage{-5in}}
-
-% references section
-
-% can use a bibliography generated by BibTeX as a .bbl file
-% BibTeX documentation can be easily obtained at:
-% http://www.ctan.org/tex-archive/biblio/bibtex/contrib/doc/
-% The IEEEtran BibTeX style support page is at:
-% http://www.michaelshell.org/tex/ieeetran/bibtex/
-\bibliographystyle{IEEEtran}
-% argument is your BibTeX string definitions and bibliography database(s)
-\bibliography{x2012}
-%
-% <OR> manually copy in the resultant .bbl file
-% set second argument of \begin to the number of references
-% (used to reserve space for the reference number labels box)
-
-% that's all folks
 \end{document}
