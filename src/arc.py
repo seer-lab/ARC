@@ -45,7 +45,7 @@ def main():
   config._CONTEST_TIMEOUT_SEC = contestTime * config._CONTEST_TIMEOUT_MULTIPLIER
   logger.info("Using a timeout value of {}s".format(config._CONTEST_TIMEOUT_SEC))
 
-  logger.info("Cleaning TMP directory")
+  # logger.info("Cleaning TMP directory")
   if not os.path.exists(config._TMP_DIR):
     os.makedirs(config._TMP_DIR)
   else:

@@ -136,15 +136,15 @@ class Tester():
 
         # Check if there is any deadlock using "Java-level deadlock:"
         if (output.find(b"Java-level deadlock:") >= 0):
-          logger.debug("Test {} - Deadlock Encountered".format(i))
+          logger.info("Test {} - Deadlock Encountered".format(i))
           self.deadlocks += 1
         else:
           if functional:
-            logger.debug("Test {} - Timeout Encountered".format(i))
+            logger.info("Test {} - Timeout Encountered".format(i))
             self.timeouts += 1
           else:
             # If on non-functional, we cannot tell when deadlock thus assume it
-            logger.debug("Test {} - Deadlock/Timeout Encountered".format(i))
+            logger.info("Test {} - Deadlock/Timeout Encountered".format(i))
             self.deadlocks += 1
         self.goodRuns.append(False)
 

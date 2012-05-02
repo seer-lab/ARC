@@ -71,6 +71,9 @@ _ALL_MUTATIONS = [_MUTATION_ASAS, _MUTATION_ASAV, _MUTATION_ASIM,
 # Enable random mutation
 _RANDOM_MUTATION = False
 
+# Only perform functional phase
+_ONLY_FUNCTIONAL = False
+
 # Evolution variables
 _EVOLUTION_GENERATIONS = 30
 _EVOLUTION_POPULATION = 30

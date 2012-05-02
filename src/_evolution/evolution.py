@@ -87,49 +87,56 @@ def start():
     # Check to see if bestFunctional is valid for progress to next phase
     if bestFunctional.successes[-1]/config._CONTEST_RUNS == 1.0 and bestFunctional.validated:
 
-      _functionalPhase = False
-      bestFunctional.switchGeneration = bestFunctional.generation
+      # Proceed with the non-functional phase if enabled
+      if not config._ONLY_FUNCTIONAL:
 
-      logger.info("**************************************************")
-      logger.info("Best individual found during the bug fixing phase:")
-      logger.info(bestFunctional)
-      logger.info("**************************************************")
-      logger.info("")
+        _functionalPhase = False
+        bestFunctional.switchGeneration = bestFunctional.generation
 
-      # Reinitialize the population with the best functional individual
-      logger.debug("Repopulating with best individual {} at generation {}".format(
-                                  bestFunctional.id, bestFunctional.generation))
-      initialize(bestFunctional)
-      for individual in _population:
-        if individual.id is not bestFunctional.id:
-          txl_operator.copy_local_project_a_to_b(bestFunctional.generation,
-                                              bestFunctional.id,
-                                              bestFunctional.generation,
-                                              individual.id)
+        logger.info("**************************************************")
+        logger.info("Best individual found during the bug fixing phase:")
+        logger.info(bestFunctional)
+        logger.info("**************************************************")
+        logger.info("")
 
-      # Acquire worst possible non-functional score for best individual.
-      # Here "worst" is the average of a large number of executions
-      txl_operator.move_local_project_to_original(bestFunctional.generation,
-                                                  bestFunctional.id)
-      txl_operator.compile_project()
-      logger.debug("Acquiring Non-Functional worst score")
-      worstScore = get_average_non_functional_score(bestFunctional,
-        config._CONTEST_RUNS * config._CONTEST_VALIDATION_MULTIPLIER)
+        # Reinitialize the population with the best functional individual
+        logger.debug("Repopulating with best individual {} at generation {}".format(
+                                    bestFunctional.id, bestFunctional.generation))
+        initialize(bestFunctional)
+        for individual in _population:
+          if individual.id is not bestFunctional.id:
+            txl_operator.copy_local_project_a_to_b(bestFunctional.generation,
+                                                bestFunctional.id,
+                                                bestFunctional.generation,
+                                                individual.id)
 
-      # Evolve the population to find the best non-functional individual
-      logger.info("Evolving population towards non-functional performance")
-      bestNonFunctional, bestNonFunctionalGeneration = evolve(bestFunctional.generation, worstScore)
+        # Acquire worst possible non-functional score for best individual.
+        # Here "worst" is the average of a large number of executions
+        txl_operator.move_local_project_to_original(bestFunctional.generation,
+                                                    bestFunctional.id)
+        txl_operator.compile_project()
+        logger.debug("Acquiring Non-Functional worst score")
+        worstScore = get_average_non_functional_score(bestFunctional,
+          config._CONTEST_RUNS * config._CONTEST_VALIDATION_MULTIPLIER)
 
-      logger.info("******************************************************")
-      logger.info("Best individual found during the non-functional phase:")
-      logger.info(bestNonFunctional)
-      logger.info("******************************************************")
-      logger.info("")
-      logger.info(_population)
+        # Evolve the population to find the best non-functional individual
+        logger.info("Evolving population towards non-functional performance")
+        bestNonFunctional, bestNonFunctionalGeneration = evolve(bestFunctional.generation, worstScore)
+
+        logger.info("******************************************************")
+        logger.info("Best individual found during the non-functional phase:")
+        logger.info(bestNonFunctional)
+        logger.info("******************************************************")
+        logger.info("")
+
+      else:
+        bestNonFunctional = bestFunctional
+        bestNonFunctionalGeneration = bestFunctionalGeneration
 
       logger.info("Copying fixed project Individual:{} Generation:{} to {}".format(bestNonFunctional.id, bestNonFunctionalGeneration, config._PROJECT_OUTPUT_DIR))
       txl_operator.move_best_project_to_output(bestNonFunctionalGeneration,
         bestNonFunctional.id)
+      logger.info(_population)
     else:
       logger.info("No individual was found that functions correctly")
       logger.info(_population)
