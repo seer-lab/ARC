@@ -136,15 +136,15 @@ class Tester():
 
         # Check if there is any deadlock using "Java-level deadlock:"
         if (output.find(b"Java-level deadlock:") >= 0):
-          logger.debug("Test {} - Deadlock Encountered".format(i))
+          logger.info("Test {} - Deadlock Encountered".format(i))
           self.deadlocks += 1
         else:
           if functional:
-            logger.debug("Test {} - Timeout Encountered".format(i))
+            logger.info("Test {} - Timeout Encountered".format(i))
             self.timeouts += 1
           else:
             # If on non-functional, we cannot tell when deadlock thus assume it
-            logger.debug("Test {} - Deadlock/Timeout Encountered".format(i))
+            logger.info("Test {} - Deadlock/Timeout Encountered".format(i))
             self.deadlocks += 1
         self.goodRuns.append(False)
 
@@ -160,15 +160,15 @@ class Tester():
         errFile.close()
 
         # Acquire the number of faults (accoring to ant test)
-        # logger.error("Test, Output text:\n")
-        # logger.error(output)
+        # logger.debug("Test, Output text:\n")
+        # logger.debug(output)
         # logger.debug("Test, Error text:\n")
         # logger.debug(error)
 
         faultTests = re.search("Tests run: \d+,\s+Failures: (\d+)", output)
         successTests = re.search("OK \((\d+) test", output)
 
-        # Tests have faults 
+        # Tests have faults
         if faultTests is not None:
           totalFaults = int(faultTests.groups()[0])
           logger.info("Test {} - Datarace Encountered ({} errors)".format(i,
@@ -191,15 +191,15 @@ class Tester():
             logger.info("Test {} - Error, no tests ran".format(i))
             self.errors += 1
             self.goodRuns.append(False)
-          
+
           # Successful tests were encounted
           else:
             logger.info("Test {} - Successful Execution".format(i))
             self.successes += 1
             self.goodRuns.append(True)
 
-            # Take the performance measures of exection
             if not functional:
+              # Take the performance measures of exection
               userTime = re.search("User time \(seconds\): (\d+\.\d+)", error).groups()[0]
               systemTime = re.search("System time \(seconds\): (\d+\.\d+)", error).groups()[0]
               voluntarySwitches = re.search("Voluntary context switches: (\d+)", error).groups()[0]

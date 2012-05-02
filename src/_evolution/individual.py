@@ -56,6 +56,7 @@ class Individual():
     self.goodRuns = []  # Boolean
 
     self.score = []
+    self.validated = False  # Indicates if the validation was successful
     self.wasRestarted = []  # Boolean & does not clone over
     self.wasReplaced = []  # Boolean & does not clone over
     self.stateSpace = []  # Integer & does not clone over
@@ -69,14 +70,14 @@ class Individual():
     The values are all zero, though the number of values per row indicates
     the number of possible mutations that can occur for that operator (row).
     """
-    
+
     # Acquire set of operators to use
     if config._RANDOM_MUTATION:
       mutationOperators = config._ALL_MUTATIONS
     elif functionalPhase:
       mutationOperators = config._FUNCTIONAL_MUTATIONS
     else:
-      mutationOperators = config._NONFUNCTIONAL_MUTATIONS 
+      mutationOperators = config._NONFUNCTIONAL_MUTATIONS
 
     # Delete old genome and recreate an empty one
     del self.genome[:]
@@ -122,7 +123,7 @@ class Individual():
     ret += " Replaced: {}\n".format(self.wasReplaced)
     ret += " stateSpace: {}\n".format(self.stateSpace)
     ret += " turnsUnderperforming: {}\n".format(self.turnsUnderperforming)
-
+    ret += " validated: {}\n".format(self.validated)
 
     return ret
 

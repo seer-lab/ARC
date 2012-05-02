@@ -44,7 +44,7 @@ def initialize(bestIndividual=None):
   elif _functionalPhase:
     setOfOperators = config._FUNCTIONAL_MUTATIONS
   else:
-    setOfOperators = config._NONFUNCTIONAL_MUTATIONS 
+    setOfOperators = config._NONFUNCTIONAL_MUTATIONS
     _population = []  # Reset population if on next phase
 
   # The number of enabled mutation operators
@@ -85,51 +85,58 @@ def start():
     bestFunctional, bestFunctionalGeneration = evolve(0)
 
     # Check to see if bestFunctional is valid for progress to next phase
-    if bestFunctional.successes[-1]/config._CONTEST_RUNS == 1.0:
+    if bestFunctional.successes[-1]/config._CONTEST_RUNS == 1.0 and bestFunctional.validated:
 
-      _functionalPhase = False
-      bestFunctional.switchGeneration = bestFunctional.generation
+      # Proceed with the non-functional phase if enabled
+      if not config._ONLY_FUNCTIONAL:
 
-      logger.info("**************************************************")
-      logger.info("Best individual found during the bug fixing phase:")
-      logger.info(bestFunctional)
-      logger.info("**************************************************")
-      logger.info("")
+        _functionalPhase = False
+        bestFunctional.switchGeneration = bestFunctional.generation
 
-      # Reinitialize the population with the best functional individual
-      logger.debug("Repopulating with best individual {} at generation {}".format(
-                                  bestFunctional.id, bestFunctional.generation))
-      initialize(bestFunctional)
-      for individual in _population:
-        if individual.id is not bestFunctional.id:
-          txl_operator.copy_local_project_a_to_b(bestFunctional.generation,
-                                              bestFunctional.id,
-                                              bestFunctional.generation,
-                                              individual.id)
+        logger.info("**************************************************")
+        logger.info("Best individual found during the bug fixing phase:")
+        logger.info(bestFunctional)
+        logger.info("**************************************************")
+        logger.info("")
 
-      # Acquire worst possible non-functional score for best individual.
-      # Here "worst" is the average of a large number of executions
-      txl_operator.move_local_project_to_original(bestFunctional.generation,
-                                                  bestFunctional.id)
-      txl_operator.compile_project()
-      logger.debug("Acquiring Non-Functional worst score")
-      worstScore = get_average_non_functional_score(bestFunctional,
-        config._CONTEST_RUNS * config._CONTEST_VALIDATION_MULTIPLIER)
+        # Reinitialize the population with the best functional individual
+        logger.debug("Repopulating with best individual {} at generation {}".format(
+                                    bestFunctional.id, bestFunctional.generation))
+        initialize(bestFunctional)
+        for individual in _population:
+          if individual.id is not bestFunctional.id:
+            txl_operator.copy_local_project_a_to_b(bestFunctional.generation,
+                                                bestFunctional.id,
+                                                bestFunctional.generation,
+                                                individual.id)
 
-      # Evolve the population to find the best non-functional individual
-      logger.info("Evolving population towards non-functional performance")
-      bestNonFunctional, bestNonFunctionalGeneration = evolve(bestFunctional.generation, worstScore)
+        # Acquire worst possible non-functional score for best individual.
+        # Here "worst" is the average of a large number of executions
+        txl_operator.move_local_project_to_original(bestFunctional.generation,
+                                                    bestFunctional.id)
+        txl_operator.compile_project()
+        logger.debug("Acquiring Non-Functional worst score")
+        worstScore = get_average_non_functional_score(bestFunctional,
+          config._CONTEST_RUNS * config._CONTEST_VALIDATION_MULTIPLIER)
 
-      logger.info("******************************************************")
-      logger.info("Best individual found during the non-functional phase:")
-      logger.info(bestNonFunctional)
-      logger.info("******************************************************")
-      logger.info("")
-      logger.info(_population)
+        # Evolve the population to find the best non-functional individual
+        logger.info("Evolving population towards non-functional performance")
+        bestNonFunctional, bestNonFunctionalGeneration = evolve(bestFunctional.generation, worstScore)
+
+        logger.info("******************************************************")
+        logger.info("Best individual found during the non-functional phase:")
+        logger.info(bestNonFunctional)
+        logger.info("******************************************************")
+        logger.info("")
+
+      else:
+        bestNonFunctional = bestFunctional
+        bestNonFunctionalGeneration = bestFunctionalGeneration
 
       logger.info("Copying fixed project Individual:{} Generation:{} to {}".format(bestNonFunctional.id, bestNonFunctionalGeneration, config._PROJECT_OUTPUT_DIR))
       txl_operator.move_best_project_to_output(bestNonFunctionalGeneration,
         bestNonFunctional.id)
+      logger.info(_population)
     else:
       logger.info("No individual was found that functions correctly")
       logger.info(_population)
@@ -165,10 +172,15 @@ def evolve(generation=0, worstScore=0):
     generation += 1
 
     # Mutate each individual
+    moreMutations = False
     for individual in _population:
       individual.generation = generation
-      moreMutations = mutation(individual, deadlockVotes,
-        dataraceVotes, nonFunctionalVotes)
+      mutationSuccess = mutation(individual, deadlockVotes, dataraceVotes, nonFunctionalVotes)
+      if mutationSuccess:
+        moreMutations = True
+      elif not mutationSuccess and not _functionalPhase:
+        # No more possible mutations in non-functional phase, time to terminate
+        return get_best_individual(True)
 
     # Evaluate each individual
     for individual in _population:
@@ -190,10 +202,15 @@ def evolve(generation=0, worstScore=0):
     bestFitness.append((highestSoFar, highestID))
 
     # Check the terminating conditions
-    if convergence(generation, bestFitness, averageFitness):
-      return get_best_individual()
-    if terminate(generation, generationLimit):
-      return get_best_individual()
+    if not _functionalPhase:
+      if convergence(generation, bestFitness, averageFitness):
+        return get_best_individual()
+    terminating, bestIndividual = terminate(generation, generationLimit)
+    if terminating:
+      if bestIndividual is None:
+        return get_best_individual()
+      else:
+        return bestIndividual, generation
 
     # If there are no more mutations, this process cannot go any further
     if not moreMutations:
@@ -212,6 +229,10 @@ def evolve(generation=0, worstScore=0):
           mutation(individual, deadlockVotes, dataraceVotes,
             nonFunctionalVotes)
 
+          # If were in the non-functional phase and no more mutants are possible we terminate
+          if not _functionalPhase and not mutationSuccess:
+            return get_best_individual()
+
       # Adjust weighting of mutation operators
       deadlockVotes, dataraceVotes, nonFunctionalVotes = adjust_operator_weighting(generation)
 
@@ -228,10 +249,10 @@ def mutation(individual, deadlockVotes, dataraceVotes, nonFunctionalVotes):
   elif _functionalPhase:
     mutationOperators = config._FUNCTIONAL_MUTATIONS
   else:
-    mutationOperators = config._NONFUNCTIONAL_MUTATIONS 
+    mutationOperators = config._NONFUNCTIONAL_MUTATIONS
 
   # Repopulate the individual's genome with new possible mutation locations
-  individual.repopulateGenome(_functionalPhase) 
+  individual.repopulateGenome(_functionalPhase)
 
   # Definite check to see if ANY mutants exists for an individual
   checkInd = -1
@@ -245,10 +266,14 @@ def mutation(individual, deadlockVotes, dataraceVotes, nonFunctionalVotes):
   # If no mutants exist, reset and re-attempt mutation
   if not mutantsExist:
     logger.debug("No possible mutations for individual")
-    txl_operator.create_local_project(individual.generation, individual.id,
-                                      True)
+
+    # If in non-functional phase then this individual is done
+    if not _functionalPhase:
+      return False
 
     # Repopulate the individual's genome with new possible mutation locations
+    txl_operator.create_local_project(individual.generation, individual.id,
+                                    True)
     individual.repopulateGenome(_functionalPhase)
 
     # Definite check to see if ANY mutants exists for an individual
@@ -260,13 +285,24 @@ def mutation(individual, deadlockVotes, dataraceVotes, nonFunctionalVotes):
         if len(individual.genome[checkInd]) != 0:
           mutantsExist = True
 
+    # If mutants don't exist still then pristine project has a problem
     if not mutantsExist:
-      logger.info("A restarted individual has no mutations... Terminating")
-      return False
+      logger.error("A restarted individual has no mutations... terminating")
+      raise Exception("No mutations in Functional Phase on pristine project")
 
   # Pick a mutation operator to apply
-  limit = individual.stateSpace[-1] * 2  # Number of attempts to find a valid mutation
+  limit = 100  # Number of attempts to find a valid mutation
   successfulCompile = False
+
+  # Hold attempted mutations (operatorIndex[mut#]), so we do not retry them
+  attemptedMutations = {}
+
+  # Initialize attemptedMutations hash for valid operators
+  operatorIndex = -1
+  for mutationOp in mutationOperators:
+    if mutationOp[1]:
+      operatorIndex += 1
+      attemptedMutations[operatorIndex] = set()
 
   # Keep trying to find a successful mutant within the retry limits
   while limit is not 0 and not successfulCompile:
@@ -286,13 +322,34 @@ def mutation(individual, deadlockVotes, dataraceVotes, nonFunctionalVotes):
     # The continue here is for efficiency sake
     if len(individual.genome[operatorIndex]) == 0:
       logger.debug("No mutations at operatorIndex {}".format(operatorIndex))
-      limit -= 1
       continue
 
     txl_operator.create_local_project(individual.generation,
                                       individual.id, False)
 
-    randomMutant = random.randint(0, len(individual.genome[operatorIndex]) - 1)
+    # Make it so we do not try the same mutation over and over
+    # TODO Could refactor this to work backwards from a set of mutants instead
+    #       of trying to do it randomly.
+    retry = True
+    while retry:
+
+      # Check to see if we have exhausted all mutants for this operator
+      if len(attemptedMutations[operatorIndex]) is len(individual.genome[operatorIndex]):
+        randomMutant = None
+        break
+
+      randomMutant = random.randint(0, len(individual.genome[operatorIndex]) - 1)
+
+      # Make sure we try a new mutation
+      if randomMutant not in attemptedMutations[operatorIndex]:
+
+        # Add mutation to set of attemptedMutations
+        attemptedMutations[operatorIndex].add(randomMutant)
+        retry = False
+
+    # Move to another operator as this one has nothing left to mutate
+    if randomMutant is None:
+      continue
 
     txl_operator.move_mutant_to_local_project(individual.generation,
                                               individual.id,
@@ -317,16 +374,27 @@ def mutation(individual, deadlockVotes, dataraceVotes, nonFunctionalVotes):
       individual.genome[operatorIndex][randomMutant] = 1
     else:
       limit -= 1
-      logger.error("Compiling failed, retrying another mutation")
+      logger.debug("Compiling failed, retrying another mutation")
 
+  # Return true if successful, otherwise false (returned to pristine state)
   if not successfulCompile:
-    # If not mutant was found we reset the project to it's pristine state
-    # and start over
-    logger.error("Couldn't create a compilable mutant project. Resetting to the pristine project.")
-    txl_operator.create_local_project(individual.generation, individual.id, True)
-  logger.debug("Selected operator for Individual {} @ generation {}: {}".
+    logger.debug("Couldn't create a compilable mutant project. Resetting to the pristine project/bestIndividual.")
+    if _functionalPhase:
+      txl_operator.create_local_project(individual.generation, individual.id,
+                                    True)
+    else:
+      txl_operator.create_local_project(individual.generation, individual.id,
+                                    True, individual.switchGeneration + 1)
+
+    # Update individual to reflect failed mutation
+    individual.lastOperator = None
+    individual.appliedOperators.append(None)
+
+    return False
+  else:
+    logger.debug("Selected operator for Individual {} @ generation {}: {}".
     format(individual.id, individual.generation, selectedOperator[0]))
-  return True
+    return True
 
 
 def evaluate(individual, worstScore):
@@ -370,10 +438,10 @@ def evaluate(individual, worstScore):
     #txl_operator.move_local_project_to_original(individual.generation,
     #                                            individual.id)
     #txl_operator.compile_project()
-    if contest.begin_testing(_functionalPhase, True, 
+    if contest.begin_testing(_functionalPhase, True,
           config._CONTEST_RUNS * config._CONTEST_VALIDATION_MULTIPLIER):
       logger.debug("Functionality was unchanged")
-      contest.clear_results()      
+      contest.clear_results()
 
       # Nonfunctional fitness
       individual.score.append(get_average_non_functional_score(individual))
@@ -418,7 +486,7 @@ def feedback_selection(individual, deadlockVotes, dataraceVotes, nonFunctionalVo
   elif _functionalPhase:
     mutationOperators = config._FUNCTIONAL_MUTATIONS
   else:
-    mutationOperators = config._NONFUNCTIONAL_MUTATIONS 
+    mutationOperators = config._NONFUNCTIONAL_MUTATIONS
 
   # Handle mutation selection (using random or heuristics)
   if config._RANDOM_MUTATION:
@@ -467,13 +535,13 @@ def feedback_selection(individual, deadlockVotes, dataraceVotes, nonFunctionalVo
     # Acquire the operator chances based on what voting condition we have
     if _functionalPhase and opType is 'lock':
       operatorChances = get_operator_chances(candatateChoices, deadlockVotes)
-      logger.debug("Voting for functional phase with deadlocks: {}".format(operatorChances))
+      logger.debug("Operator chance for functional phase with deadlocks: {}".format(operatorChances))
     elif _functionalPhase and opType is 'race':
       operatorChances = get_operator_chances(candatateChoices, dataraceVotes)
-      logger.debug("Voting for functional phase with dataraces: {}".format(operatorChances))
+      logger.debug("Operator chance for functional phase with dataraces: {}".format(operatorChances))
     else:
       operatorChances = get_operator_chances(candatateChoices, nonFunctionalVotes)
-      logger.debug("Voting for non-functional phase: {}".format(operatorChances))
+      logger.debug("Operator chance for non-functional phase: {}".format(operatorChances))
 
     # Make selection of operator based on the adjusted weighting
     randomChance = random.randint(0,sum(operatorChances))
@@ -569,7 +637,6 @@ def get_average_non_functional_score(individual, numberOfRuns = config._CONTEST_
 
 def adjust_operator_weighting(generation):
 
-
   global _population
   global _functionalPhase
 
@@ -596,27 +663,30 @@ def adjust_operator_weighting(generation):
 
     # Only consider the generations we are concerned with
     for i in xrange(beginningGeneration,generation-1):
-      # Figure if there was any improvement from the last generation
-      if _functionalPhase:
-        if individual.deadlocks[i+1] < individual.deadlocks[i]:
-          logger.debug("Deadlock improvement from individual {} in generation {}".
-            format(individual.id, i))
-          deadlockVotes[individual.appliedOperators[i]] += 1
 
-        if individual.dataraces[i+1] < individual.dataraces[i]:
-          logger.debug("Datarace improvement from individual {} in generation {}".
-            format(individual.id, i))
-          dataraceVotes[individual.appliedOperators[i]] += 1
+      # Only weight operators for valid mutations (ignore failed mutations)
+      if individual.lastOperator is not None:
 
-      else:
-        if individual.score[i+1] > individual.score[i]:
-          logger.debug("Non-functional improvement over individual {} in generation {}".
-            format(individual.id, i))
-          logger.debug("Applied operators: {}".format(individual.appliedOperators))
-          logger.debug("\n{}".format(individual))
-          j = individual.appliedOperators[i]
-          #logger.debug ("      ***** J is {} *****".format(j))
-          nonFunctionalVotes[j] += 1
+        # Figure if there was any improvement from the last generation
+        if _functionalPhase:
+          if individual.deadlocks[i+1] < individual.deadlocks[i]:
+            logger.debug("Deadlock improvement from individual {} in generation {}".
+              format(individual.id, i))
+            deadlockVotes[individual.appliedOperators[i]] += 1
+
+          if individual.dataraces[i+1] < individual.dataraces[i]:
+            logger.debug("Datarace improvement from individual {} in generation {}".
+              format(individual.id, i))
+            dataraceVotes[individual.appliedOperators[i]] += 1
+
+        else:
+          if individual.score[i+1] > individual.score[i]:
+            logger.debug("Non-functional improvement over individual {} in generation {}".
+              format(individual.id, i))
+            logger.debug("Applied operators: {}".format(individual.appliedOperators))
+            j = individual.appliedOperators[i]
+            #logger.debug ("      ***** J is {} *****".format(j))
+            nonFunctionalVotes[j] += 1
 
   logger.debug("Deadlock Votes: {}".format(deadlockVotes))
   logger.debug("Datarace Votes: {}".format(dataraceVotes))
@@ -630,10 +700,15 @@ def convergence(generation, bestFitness, averageFitness):
   # Alternate termination criteria to check for convergence
   avgFitTest = False
   maxFitTest = False
-  if generation >= config._GENERATIONAL_IMPROVEMENT_WINDOW + 1:
-    if max(averageFitness) - min(averageFitness) > config._AVG_FITNESS_MIN_DELTA:
+
+  # Acquire the last N window values
+  windowAverageValues = averageFitness[-config._GENERATIONAL_IMPROVEMENT_WINDOW:]
+  windowMaximumValues = bestFitness[-config._GENERATIONAL_IMPROVEMENT_WINDOW:]
+
+  if len(windowAverageValues) == config._GENERATIONAL_IMPROVEMENT_WINDOW:
+    if max(windowAverageValues) - min(windowAverageValues) > config._AVG_FITNESS_MIN_DELTA:
       avgFitTest = True
-    if max(bestFitness, key=lambda x:x[0])[0] - min(bestFitness,
+    if max(windowMaximumValues, key=lambda x:x[0])[0] - min(windowMaximumValues,
         key=lambda x:x[0])[0] > config._BEST_FITNESS_MIN_DELTA:
       maxFitTest = True
 
@@ -663,20 +738,22 @@ def terminate(generation, generationLimit):
       txl_operator.move_local_project_to_original(individual.generation,
                                                   individual.id)
       txl_operator.compile_project()
-      if tester.Tester().begin_testing(True, True, 
+      if tester.Tester().begin_testing(True, True,
             config._CONTEST_RUNS * config._CONTEST_VALIDATION_MULTIPLIER):
         tester.Tester().clear_results()
         logger.info("Found best individual {}".format(individual.id))
-        return True
+        individual.validated = True
+        return True, individual
       else:
+        tester.Tester().clear_results()
         logger.info("Potential best individual still has errors")
   if generation == generationLimit:
     logger.info("Exhausted all generations")
-    return True
-  return False
+    return True, None
+  return False, None
 
 
-def get_best_individual():
+def get_best_individual(beforeMutation=False):
 
   global _population
   global _functionalPhase
@@ -684,6 +761,11 @@ def get_best_individual():
   bestScore = -1
   individualId = -1
   generation = -1
+  mod = 0
+
+  # If we have to get the best individual before the mutation step occurs
+  if beforeMutation:
+    mod = 1
 
   for individual in _population:
 
@@ -697,7 +779,7 @@ def get_best_individual():
 
     else:
       # Consider generations over the switch
-      for i in xrange(individual.switchGeneration, individual.generation):
+      for i in xrange(individual.switchGeneration, individual.generation - mod):
         if individual.score[i] > bestScore:
           individualId = individual.id
           generation = i + 1
@@ -729,7 +811,7 @@ def replace_lowest(generation):
   # as they are the worst performing
   for i in xrange(0, numUnder):
     sortedMembers[i].turnsUnderperforming += 1
-    
+
   # Check to see if we can replace the weakest individuals
   if generation % config._EVOLUTION_REPLACE_INTERVAL is 0:
 
@@ -741,11 +823,11 @@ def replace_lowest(generation):
     elif _functionalPhase:
       mutationOperators = config._FUNCTIONAL_MUTATIONS
     else:
-      mutationOperators = config._NONFUNCTIONAL_MUTATIONS 
+      mutationOperators = config._NONFUNCTIONAL_MUTATIONS
 
     # Replace or restart members who have underperformed for too long
     for i in xrange(0, numUnder):
-      
+
       if (sortedMembers[i].turnsUnderperforming < config._EVOLUTION_REPLACE_WEAK_MIN_TURNS):
         continue
       else:

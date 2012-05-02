@@ -2,10 +2,17 @@
 % RSAV (Remove Sync Around Variable) Mutator for ARC
 % (Automatic Repair of Concurrency Bugs)
 %
-% Kevin Jalbert and David Kelk, Sept. 2011
+% Kevin Jalbert, David Kelk and Jeremy Bradbury, Mar. 2012
 % SBSE Reading Course Project
 %
 % Based on RSB by J.S. Bradbury
+%
+% Typical invocation:
+% txl ManageAccount.java RSAV.Txl - -outfile ManageAccount.java -outdir RSAV/
+%
+% Notes:
+% - Output directory must already exist.
+% - Only removes synchronization block from around A := B statements
 %***********************************************************
 
 %***********************************************************
@@ -25,9 +32,9 @@ include "JavaCommentOverrides.Grm"
 % Local grammar overrides
 
 redefine statement
-        	[synchronized_statement]
-	| 	[other_statements]
-   	|   	[block]
+    [synchronized_statement]
+	| [other_statements]
+  | [block]
 	|	[comment_NL]
 end redefine
 
@@ -48,22 +55,21 @@ define other_statements
 end define
 
 define declaration_or_other_statements
-        [local_variable_declaration]
-%   |   [class_declaration]     DK
-    |   [other_statements]
+    [local_variable_declaration]
+  | [other_statements]
 end define
 
 redefine declaration_or_statement
 	 	[synchronized_statement]
 	|	[declaration_or_other_statements]
-	|       [block]
+	| [block]
 	|	[comment_NL]
 end redefine
 
 % Our choices of sync statements for RSAS
 
 redefine synchronized_statement
-          [attr labelM] [single_sync]
+    [attr labelM] [single_sync]
 	| [attr labelM] [single_sync_removed]
 	| ...
 end redefine
@@ -73,16 +79,16 @@ end redefine
 define single_sync
 	'synchronized '( [expression] ')
  	'{ [NL][IN]
-		[unary_expression] [assignment_operator] [assignment_expression] [NL]
+    [repeat statement] [NL]
 	'}   [NL]
 end define
 
 % How it looks after removing
 
 define single_sync_removed
-    /* 'MUTANT: [stringlit] */ 	[NL]
-    [unary_expression] [assignment_operator] [assignment_expression] '; [NL]
-    /* 'MUTANT: [stringlit] */ 	[NL]
+  /* 'MUTANT: [stringlit] */ 	[NL]
+  [repeat statement] [NL]
+  /* 'MUTANT: [stringlit] */ 	[NL]
 end define
 
 define labelM
@@ -95,9 +101,9 @@ end define
 function main
 	% initialize and export a mutant count that will be used in
 	% file name / folder name generation
-    	construct MutantCount [number]
+  construct MutantCount [number]
 		0
-    	export MutantCount
+  export MutantCount
 
 	% initialize and export the name of the current mutant which
 	% will be used for folder name generation
@@ -106,19 +112,19 @@ function main
 	export MutantOpName
 
 	replace [program]
-        		P [program]
+    P [program]
 
-    	by
-		% Remove all instances of synchronized blocks one at
-		% a time
-        		P [MutateSynchronizedDel]
+  by
+		% Remove all instances of synchronized blocks around variables
+    % one at a time
+    P [MutateSynchronizedDel]
 end function
 
 %------------------------------------------------------------
-% Match all methods that have a synchronized block
+% Match all variables that have a synchronized block
 % and then perform the following 3 steps for each:
 %	1. Create mutant of program with synchronized block
-%      removed
+%    removed
 %	2. Write mutant to a file
 %	3. Reinsert synchronized block that was removed
 %------------------------------------------------------------
@@ -136,14 +142,14 @@ rule MutateSynchronizedDel
 			% Create the mutant version of the program
 			[doSynchronizedDelMutation]
 			%[print]
-			 [writeToFile]
+			[writeToFile]
 			% Undo mutation and return to original program
 			[undoSynchronizedDelMutation]
 end rule
 
 %------------------------------------------------------------
-% Create an RSAS mutant by removing a synchronized keyword
-% from around a synchronized block
+% Create an RSAV mutant by removing a synchronized block
+% around an assignment statement, A := B
 %------------------------------------------------------------
 function doSynchronizedDelMutation
 	replace * [synchronized_statement]
@@ -152,17 +158,13 @@ function doSynchronizedDelMutation
 	deconstruct SyncStatement
 		'synchronized '( SyncExpr [expression] ')
 		'{
-	    		UA [unary_expression]
-			AO [assignment_operator]
-			AE [assignment_expression] ';
+      Stm [repeat statement]
 		'}
 
 
 	% export the old synchronized expression and reinsert it
 	% once the mutant has been created and saved
-	export UA
-	export AO
-	export AE
+  export Stm
 	export SyncExpr
 
 	% create mutant comment to appear in source
@@ -172,7 +174,7 @@ function doSynchronizedDelMutation
 	by
 		% Replace with empty syncronized statement
 		'MUTATED /* 'MUTANT: MutantString */
-		UA AO AE ';
+    Stm
 		/* 'MUTANT: MutantString */
 end function
 
@@ -186,19 +188,17 @@ function undoSynchronizedDelMutation
 		SynchStatement [synchronized_statement]
 
 	% Import the old expression
-	import UA [unary_expression]
-	import AO [assignment_operator]
-	import AE [assignment_expression]
-	import SyncExpr [expression]
+	import Stm [repeat statement]
+  import SyncExpr [expression]
+
 	% extract body
 	deconstruct SynchStatement
 		'MUTATED SyncRemoved [single_sync_removed]
+
 	deconstruct SyncRemoved
-    		/* 'MUTANT: MutantStr1 [stringlit] */
-	    		UA2 [unary_expression]
-			AO2 [assignment_operator]
-			AE2 [assignment_expression] ';
-    		/* 'MUTANT: MutantStr2 [stringlit] */
+    /* 'MUTANT: MutantStr1 [stringlit] */
+	  Stm
+    /* 'MUTANT: MutantStr2 [stringlit] */
 
 	by
 		% replace mutated synchronized block with original but
@@ -206,7 +206,7 @@ function undoSynchronizedDelMutation
 		'MUTATED
 		'synchronized '( SyncExpr ')
 		'{
-			UA AO AE
+      Stm
 		'}
 end function
 

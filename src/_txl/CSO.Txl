@@ -2,10 +2,16 @@
 % CSO (Change Sync Order) Mutator for ARC
 % (Automatic Repair of Concurrency Bugs)
 %
-% Kevin Jalbert and David Kelk, Sept. 2011
+% Kevin Jalbert, David Kelk and Jeremy Bradbury, Mar. 2012
 % SBSE Reading Course Project
 %
 % Based on ESP by J.S. Bradbury
+%
+% Typical invocation:
+% txl ManageAccount.java CSO.Txl - -outfile ManageAccount_1.java -outdir CSO/
+%
+% Notes:
+% - Output directory must already exist.
 %***********************************************************
 
 %***********************************************************
@@ -26,17 +32,35 @@ include "JavaCommentOverrides.Grm"
 
 % Local grammar overrides
 redefine synchronized_statement
-	[attr labelM]  [synchronized_statement2]
-	| [attr labelM] /* 'MUTANT: [stringlit] */ [NL] [synchronized_statement2]
+	  [attr labelM] [double_sync_before]
+	|
+    [attr labelM] [double_sync_after]
 end redefine
 
-define synch_expression
-    [assignment_expression]
+% How it looks before
+
+define double_sync_before
+  'synchronized '( [expression] ')
+  '{ [NL][IN]
+    'synchronized '( [expression] ')
+    '{ [NL][IN]
+      [repeat declaration_or_statement] [NL][EX]
+     '} [NL]
+  '} [NL]
 end define
 
-define synchronized_statement2
-    'synchronized '( [synch_expression] ')
-        [statement]                  [NL]
+% How it looks after
+
+define double_sync_after
+  /* 'MUTANT: [stringlit] */ [NL]
+  'synchronized '( [expression] ')
+  '{ [NL][IN]
+    'synchronized '( [expression] ')
+    '{ [NL][IN]
+      [repeat declaration_or_statement] [EX]
+    '} [NL][EX]
+  '} [NL]
+  /* 'MUTANT: [stringlit] */ [NL]
 end define
 
 define labelM
@@ -49,9 +73,9 @@ end define
 function main
 	% initialize and export a mutant count that will be used in
 	% file name / folder name generation
-    	construct MutantCount [number]
+  construct MutantCount [number]
 		0
-    	export MutantCount
+  export MutantCount
 
 	% initialize and export the name of the current mutant which
 	% will be used for folder name generation
@@ -60,19 +84,19 @@ function main
 	export MutantOpName
 
 	replace [program]
-        		P [program]
+    P [program]
 
-    	by	% Exchange all nested synchronization block parameters
-    		P [ExchangeSynchBlockParameter]
+  by	% Exchange all nested synchronization block parameters
+    P [ExchangeSynchBlockParameter]
 end function
 
 %------------------------------------------------------------
 % Match all methods that have nested synchronized blocks
 % and then perform the following 3 steps for each:
 %	1. Create mutant of program with synchronized block
-%      parameters switched
+%    with parameters switched
 %	2. Write mutant to a file
-%	3. Switch back synchronized block  parameters
+%	3. Switch back synchronized block parameters
 %------------------------------------------------------------
 rule ExchangeSynchBlockParameter
 	replace [program]
@@ -100,91 +124,77 @@ function doExchangeLocks
 		SynchStatement [synchronized_statement]
 
 	deconstruct SynchStatement
-		SynchStatement2 [synchronized_statement2]
+	    'synchronized '( OuterSynchExpr [expression] ')
+      '{
+        'synchronized '( InnerSynchExpr [expression] ')
+        '{
+            InnerSynchBody [repeat declaration_or_statement]
+        '}
+      '}
 
-	export SynchStatement2
-
-	deconstruct SynchStatement2
-	    'synchronized '(  SynchExpr [synch_expression] ')
-        		SynchBody [statement]
-
-	%Only switch the first synch statement
-	deconstruct * [statement] SynchBody
-		SynchStatementB [synchronized_statement]
-
-	deconstruct SynchStatementB
-		SynchStatementB2 [synchronized_statement2]
-
-	deconstruct SynchStatementB2
-	    'synchronized '(  SynchExprB [synch_expression] ')
-        		SynchBodyB [statement]
+  export SynchStatement
 
 	% Check that the inner and outer synchronized block
 	%parameters are not the same
 	where not
-		SynchExpr [isSameParam SynchExprB]
+		OuterSynchExpr [isSameParam InnerSynchExpr]
 
-	construct SynchStmt_new [synchronized_statement2]
-	 	'synchronized '(  SynchExprB ')
-        			SynchBody [replaceInnerLock SynchExpr]
+  construct MutantString [stringlit]
+    "CSO (Change Sync Order)"
 
-	% create mutant comment to appear in source
-	construct MutantString [stringlit]
-		"CSO (Change Sync Order)"
+	construct SynchStmtNew [synchronized_statement]
+    'MUTATED /* 'MUTANT: MutantString */
+	 	'synchronized '(  InnerSynchExpr ')
+    '{
+      'synchronized '( OuterSynchExpr ')
+        '{
+          InnerSynchBody
+        '}
+    '}
+    /* 'MUTANT: MutantString */
 
 	by
-		'MUTATED /* 'MUTANT: MutantString */ SynchStmt_new
+    SynchStmtNew
+
 end function
 
 %------------------------------------------------------------
-% Check that outer parameter is not the same as
+% Check that outer parameter is not the same as the
 % inner parameter
 %------------------------------------------------------------
-rule isSameParam InnerParam [synch_expression]
-	match * [synch_expression]
+rule isSameParam InnerParam [expression]
+	match * [expression]
 		InnerParam
 end rule
-
-%------------------------------------------------------------
-% Replace the inner block parameter with outer parameter
-%------------------------------------------------------------
-function replaceInnerLock SynchExpr [synch_expression]
-	replace * [synchronized_statement2]
-		SStmt [synchronized_statement2]
-
-	deconstruct SStmt
-   		 'synchronized '(  SynchExpr2 [synch_expression] ')
-        			SynchBody2 [statement]
-	by
-   		 'synchronized '(  SynchExpr ')
-        			SynchBody2
-end function
 
 %------------------------------------------------------------
 % Switch back the synchronization block parameters but leave the
 % MUTATED attribute to indicate that the mutant has already
 % been created.
 %------------------------------------------------------------
-function undoExchangeLocks
+rule undoExchangeLocks
 	replace * [synchronized_statement]
-		'MUTATED /* 'MUTANT: MutantString [stringlit] */ SynchStatement [synchronized_statement2]
+    InStmt [synchronized_statement]
 
-	import SynchStatement2 [synchronized_statement2]
+  deconstruct InStmt
+    'MUTATED /* 'MUTANT: MutantString1 [stringlit] */
+    'synchronized '(  InnerSynchExpr [expression] ')
+    '{
+      'synchronized '( OuterSynchExpr [expression] ')
+      '{
+        InnerSynchBody [repeat declaration_or_statement]
+      '}
+    '}
+    /* 'MUTANT: MutantString2 [stringlit] */
 
 	by
-		'MUTATED SynchStatement2
-end function
-
-%------------------------------------------------------------
-%Remove MUTATED attributes for another pass
-%------------------------------------------------------------
-rule Clean
-	replace [synchronized_statement]
-		LStmt [synchronized_statement]
-	deconstruct LStmt
-		'MUTATED LStmt2 [synchronized_statement2]
-	by
-		LStmt2
+		'MUTATED 'synchronized '(  OuterSynchExpr ')
+    '{
+      'synchronized '( InnerSynchExpr ')
+      '{
+        InnerSynchBody
+      '}
+    '}
 end rule
 
 %Include rules for writing mutants to files
