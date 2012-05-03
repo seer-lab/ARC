@@ -87,8 +87,8 @@ We propose ARC (Automatic Repair of Concurrency bugs): An automatic technique
 to repair deadlocks and data races in parallel Java programs. Formal
 specifications, annotations and elaborate test suites are not required. Only
 the Java source code and test(s) demonstrating the deadlocks and data races are
-necessary. Evolutionary strategies (ES) are used to evolve variants until one is
-found that fixes the bugs in question.
+necessary. Evolutionary strategies (ES) are used to evolve variants until one
+is found that fixes the bugs in question.
 
 There has been a great deal of research in the area of search-based software
 engineering~\cite{Har+10}. Furthermore, the use of heuristic search to identify
@@ -166,18 +166,18 @@ Concurrency is the act of having multiple threads executing in parallel.
 Concurrent programs are able to exploit multi-core systems where threads are
 distributed across each of the CPUs to increase performance. Concurrency
 introduces a new class class of bugs, the \textit{heisenbugs}. Due to
-concurrent access to shared memory, threads are able to cause
-\textit{data races} and \textit{deadlocks}.
+concurrent access to shared memory, threads are able to cause \textit{data
+races} and \textit{deadlocks}.
 
 A \textbf{data race} has been defined as: \textit{``\ldots two or more
 concurrent threads access a shared variable and when at least one access is a
 write, and the threads use no explicit mechanism to prevent the access from
-being simultaneous.''}~\cite{LSW07}
+being simultaneous.''}~\cite{LSW07}.
 
 A \textbf{deadlock} as: \textit{``\ldots a situation where two or more
 processes are unable to proceed because each is waiting for one of the others
 to do something in a deadlock cycle \ldots} For example, this occurs when a
-thread holds a lock that another thread desires and vice-versa''~\cite{LSW07}
+thread holds a lock that another thread desires and vice-versa''~\cite{LSW07}.
 
 These bugs are extremely difficult to detect due to the non-deterministic
 nature of how threads are interleaved (the way the system schedules them). In
@@ -263,7 +263,8 @@ identify concurrent bugs. The identification of a problem is often not enough
 as multiple code fragments are involved, possibly in different units with
 differently named variables. In this ambiguous scenario the appropriate fix is
 not always clear. There has been work in concurrency anti-patterns that provide
-a definition, problem, context and solution for concurrency bugs~\cite{BJ09,FKLV12}.
+a definition, problem, context and solution for concurrency
+bugs~\cite{BJ09,FKLV12}.
 
 In the left part of Fig.~\ref{fig:fixed_sample_datarace} \texttt{read} and
 \texttt{write} method access a shared variable. A very simple data race exists
@@ -271,8 +272,8 @@ because there is no atomic access to the \texttt{data} variable during the
 reading or writing. Both methods are involved in the data race, and it is
 because of the interactions between these methods the data race is possible. A
 solution involves synchronizing both accesses (Right part of
-Fig.~\ref{fig:fixed_sample_datarace}). Synchronizing one method alone does
-not fix the bug.
+Fig.~\ref{fig:fixed_sample_datarace}). Synchronizing one method alone does not
+fix the bug.
 
 The solution in the right part of Fig.~\ref{fig:fixed_sample_datarace} is far
 from ideal. It forces other threads to wait unnecessarily while the write
@@ -462,6 +463,8 @@ Add synch. around synch. & ASAS & $\surd$ &\\
 \hline
 Add synch. around variable & ASAV & $\surd$ &\\
 \hline
+Add synch. in method header & ASIM & $\surd$ &\\
+\hline
 Add synch. around method & ASM & $\surd$ &\\
 \hline
 Change synch. order & CSO & $\surd$ &\\
@@ -474,9 +477,9 @@ Remove synch. around synch. & RSAS & $\surd$ & $\surd$\\
 \hline
 Remove synch. around variable & RSAV & $\surd$ & $\surd$\\
 \hline
-Remove synch. around method & RSM & $\surd$ & $\surd$\\
+Remove synch. in method header & RSIM & $\surd$ & $\surd$\\
 \hline
-Remove synch. around block & RSB & $\surd$ & $\surd$\\
+Remove synch. around method & RSM & $\surd$ & $\surd$\\
 \hline
 Shrink synch. before & SHSB & & $\surd$\\
 \hline
@@ -528,9 +531,9 @@ type are selected from the representation and applied to the project.
 ARC uses historical information about previous successes with the mutation
 operators and the current dominating bug type to select a mutation operator to
 apply. More weight is given to operators that have been successful in the past.
-This is further detailed in Sect.~\ref{sec:recalculate_operator_weighting}.
-We randomly select an instance of the operator to accept as our final mutation
-for that individual.
+This is further detailed in Sect.~\ref{sec:recalculate_operator_weighting}. We
+randomly select an instance of the operator to accept as our final mutation for
+that individual.
 
 \subsection{Evaluate Individuals}
 \label{sec:evalute_individuals}
@@ -853,7 +856,7 @@ mutation operators. Inherently ARC has a much smaller search space to explore
 to find a fix.
 
 The search space can be reduced even further by considering only the mutation
-falling  on the error path (Used in Weimer's approach~\cite{GNFW11}). This is
+falling on the error path (Used in Weimer's approach~\cite{GNFW11}). This is
 future work.
 
 \textbf{Dependence on Test Suite}: ARC depends on a minimal test suite for the
@@ -950,8 +953,8 @@ WFGN10, GNFW11}. We believe it will do the same for multi-threaded programs.
 
 Generalizing the TXL operators is also important. Currently the add
 synchronization around synchronization operator (ASAS) for example, only adds
-\texttt{synchronize(this) \{\ldots\}} to the Java source. When the analysis of the
-previous two paragraphs are implemented the operators need to be updated to
+\texttt{synchronize(this) \{\ldots\}} to the Java source. When the analysis of
+the previous two paragraphs are implemented the operators need to be updated to
 work with them.
 
 We also plan to experiment with new operators. Potential additions include
@@ -966,7 +969,7 @@ ability to fix additional types of bugs.
 \label{sec:conclusion}
 
 Little work has been done on automatically fixing parallel programs. We
-introduced ARC - a framework that automatically fixes deadlocks and data races
+introduced ARC -- a framework that automatically fixes deadlocks and data races
 in parallel Java programs. It uses an evolutionary algorithm operating in two
 phases. Bugs are fixed in the first phase, then concurrency is optimized in the
 second.
