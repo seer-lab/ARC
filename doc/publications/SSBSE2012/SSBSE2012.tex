@@ -413,7 +413,7 @@ program, so each individual receives a copy of the fixed program to optimize.
 Mutants are exhaustively created every generation from the previous
 generation's code. Internally the mutants are tracked by type in the
 representation. (Member x at generation y has z add sync mutants, q expand sync
-before mutants, ...) This step generates all mutants and updates the
+before mutants, \ldots) This step generates all mutants and updates the
 representation. (A mutation is actually applied to the project in the next
 step.)
 
@@ -428,19 +428,18 @@ of that mutation type. There can be up to $n$ mutation operators with no-limit
 to the number of instances per operator.}
 \begin{tabular}{|l|l|}
 \hline
-\textbf{Operator} &
-\textbf{Instances}
-\\\hline
-Mutation 1 & 0
-\\\hline
-Mutation 2 & 0 0 0
-\\\hline
-Mutation 3 & --
-\\\hline
-\ldots & \ldots
-\\\hline
-Mutation $n$ & 0 0
-\\\hline
+\textbf{Operator} & \textbf{Instances}\\
+\hline
+Mutation 1 & 0\\
+\hline
+Mutation 2 & 0 0 0\\
+\hline
+Mutation 3 & --\\
+\hline
+\ldots & \ldots\\
+\hline
+Mutation $n$ & 0 0\\
+\hline
 \end{tabular}
 \label{tbl:individual_representation}
 \end{center}
@@ -457,35 +456,32 @@ are active mutators.}
 \begin{center}
 \begin{tabular}{|l|l|c|c|}
 \hline
-\textbf{Operator} &
-\textbf{Acronym} &
-\textbf{Functional} &
-\textbf{Non-Functional}
-\\\hline
-Add synch. around synch. & ASAS & $\surd$ &
-\\\hline
-Add synch. around variable & ASAV & $\surd$ &
-\\\hline
-Add synch. around method & ASM & $\surd$ &
-\\\hline
-Change synch. order & CSO & $\surd$ &
-\\\hline
-Expand synch. before & EXSB & $\surd$ &
-\\\hline
-Expand synch. after & EXSA & $\surd$ &
-\\\hline
-Remove synch. around synch. & RSAS & $\surd$ & $\surd$
-\\\hline
-Remove synch. around variable & RSAV & $\surd$ & $\surd$
-\\\hline
-Remove synch. around method & RSM & $\surd$ & $\surd$
-\\\hline
-Remove synch. around block & RSB & $\surd$ & $\surd$
-\\\hline
-Shrink synch. before & SHSB & & $\surd$
-\\\hline
-Shrink synch. after & SHSA & & $\surd$
-\\\hline
+\textbf{Operator} & \textbf{Acronym} & \textbf{Functional} & \textbf{Non-Functional}\\
+\hline
+Add synch. around synch. & ASAS & $\surd$ &\\
+\hline
+Add synch. around variable & ASAV & $\surd$ &\\
+\hline
+Add synch. around method & ASM & $\surd$ &\\
+\hline
+Change synch. order & CSO & $\surd$ &\\
+\hline
+Expand synch. before & EXSB & $\surd$ &\\
+\hline
+Expand synch. after & EXSA & $\surd$ &\\
+\hline
+Remove synch. around synch. & RSAS & $\surd$ & $\surd$\\
+\hline
+Remove synch. around variable & RSAV & $\surd$ & $\surd$\\
+\hline
+Remove synch. around method & RSM & $\surd$ & $\surd$\\
+\hline
+Remove synch. around block & RSB & $\surd$ & $\surd$\\
+\hline
+Shrink synch. before & SHSB & & $\surd$\\
+\hline
+Shrink synch. after & SHSA & & $\surd$\\
+\hline
 \end{tabular}
 \label{tbl:operators}
 \end{center}
@@ -714,33 +710,34 @@ Table~\ref{tbl:used_programs}.
 \caption{The set of programs used to evaluate ARC. The test suite for each
 program is excluded from these values.}
 \begin{center}
-\begin{tabular}{|l|r|r|l|}
+\begin{tabular}{|l|r|r|l|l|}
 \hline
-\textbf{Program} &
-\textbf{SLOC} &
-\textbf{Classes} &
-\textbf{Bug Type}
-\\\hline
-Deadlock2 & 38 & 1 & Deadlock
-\\\hline
-Account & 164 & 3 & Data race
-\\\hline
-AirlineBug & 89 & 1 & Data race
-\\\hline
-AllocationVector & 161 & 3 & Data race
-\\\hline
-Buffer & 324 & 5 & ?
-\\\hline
-BubbleSort & 237 & 4 & ?
-\\\hline
-Deadlock & 107 & 2 & Deadlock
-\\\hline
-BufWriter& 168 & 5 & ?
-\\\hline
-BankAccounts & 75 & 2 & ?
-\\\hline
-Pingpong & 142 & 4 & ?
-\\\hline
+\textbf{Program} & \textbf{SLOC} & \textbf{Classes} & \textbf{Bug Type} & \textbf{Bug Pattern}\\
+\hline
+account & 165 & 3 & Data Race & blah\\
+\hline
+accounts & 75 & 2 & Data Race & blah\\
+\hline
+airline & 93 & 1 & Data Race & blah\\
+\hline
+allocation & 165 & 3 & Data Race & blah\\
+\hline
+bubble & 246 & 4 & Data Race & blah\\
+\hline
+bubblesort2 & 104 & 2 & Data Race & blah\\
+\hline
+buffer & 319 & 5 & Data Race & blah\\
+\hline
+bufwriter & 170 & 5 & Deadlock & blah\\
+\hline
+deadlock & 109 & 2 & Deadlock & blah\\
+\hline
+lottery & 157 & 2 & Data Race & blah\\
+\hline
+mergesort & 281 & 2 & Data Race & blah\\
+\hline
+pingpong & 143 & 4 & Data Race & blah\\
+\hline
 \end{tabular}
 \label{tbl:used_programs}
 \end{center}
@@ -757,39 +754,40 @@ used values for the experimentations.}
 \begin{center}
 \begin{tabular}{|p{3cm}|p{10cm}|r|}
 \hline
-\textbf{Parameter} &
-\textbf{Description} &
-\textbf{Value}
-\\\hline
-Project Test Mb & The amount of memory allocated for the testing & 2048
-\\\hline
-ConTest Runs & The number of test suite executions performed in the evaluation phase & 50
-\\\hline
-ConTest Timeout Seconds & The amount of time in seconds that a test suite execution will last before a timeout occurs & 20
-\\\hline
-Evolution Generations & The maximum number of generations that can occur within each phase  & 100
-\\\hline
-Evolution Population & The size of the population for the evolutionary algorithms, a collection of individuals& 80
-\\\hline
-Evolution Replace Lowest Percent & The scoring individuals that reside below the given percent of the population will be replaced/restarted & 10
-\\\hline
-Evolution Replace With Best Percent & The replaced individuals will be replaced with the best individual of the population with the given percent, otherwise it is restarted & 60
-\\\hline
-Evolution Replace Interval & The replacement of lowest individuals only occurs on the specified generational intervals & 10
-\\\hline
-Dynamic Ranking Window & The number of generations that are considered (in a sliding window fashion) when re-evaluating the weighting of mutation operators in terms of their successes & 10
-\\\hline
-Success Weight & The weighting applied for successful executions during the functional phase's evaluation & 100
-\\\hline
-Timeout Weight & The weighting applied for timeout executions during the functional phase's evaluation & 10
-\\\hline
-Generational Improvement Window & This specifies the size of the sliding window that check for convergence of the population & 10
-\\\hline
-Average Fitness Min Delta & When checking for convergence this represents the minimum acceptable delta for the average fitness of the population & 5
-\\\hline
-Best Fitness Min Delta & When checking for convergence this represents the minimum acceptable delta for the best fitness of the population & 5
-% TODO Does this actually look in the specific generation or over all generations?
-\\\hline
+\textbf{Parameter} & \textbf{Description} & \textbf{Value}\\
+\hline
+Project Test Mb & The amount of memory allocated for the testing & 2000\\
+\hline
+ConTest Runs & The number of test suite executions performed in the functional phase & 10\\
+\hline
+ConTest Validation Multiplier & A multiplier for the number of runs when validating the functionality & 15\\
+\hline
+ConTest Timeout Multiplier & A multiplier for the dynamically acquire average execution time that determines the length of time before a timeout occurs & 300\\
+\hline
+Evolution Generations & The maximum number of generations that can occur within each phase & 30\\
+\hline
+Evolution Population & The size of the population for the evolutionary strategy, a collection of individuals & 30\\
+\hline
+Evolution Replace Lowest Percent & The scoring individuals that reside below the given percent of the population will be replaced/restarted & 10\\
+\hline
+Evolution Replace With Best Percent & The replaced individuals will be replaced with the best individual of the population with the given percent, otherwise it is restarted & 75\\
+\hline
+Evolution Replace After Minimum Turns & The minimum number of turns an individual must be under-performing before being considered for replacement & 3\\
+\hline
+Evolution Replace Interval & The replacement of lowest individuals only occurs on the specified generational intervals & 5\\
+\hline
+Dynamic Ranking Window & The number of generations that are considered (in a sliding window fashion) when re-evaluating the weighting of mutation operators in terms of their successes & 5\\
+\hline
+Success Weight & The weighting applied for successful executions during the functional phase's evaluation & 100\\
+\hline
+Timeout Weight & The weighting applied for timeout executions during the functional phase's evaluation & 50\\
+\hline
+Generational Improvement Window & This specifies the size of the sliding window that check for convergence of the population & 10\\
+\hline
+Average Fitness Min Delta & When checking for convergence this represents the minimum acceptable delta for the average fitness of the population & 0.01\\
+\hline
+Best Fitness Min Delta & When checking for convergence this represents the minimum acceptable delta for the best fitness of the population & 1\\
+\hline
 \end{tabular}
 \label{tbl:used_parameters}
 \end{center}
@@ -809,34 +807,32 @@ summarized in Table~\ref{tbl:summary_results}.
 \begin{center}
 \begin{tabular}{|p{2cm}|p{0.6cm}|p{1.75cm}|p{2cm}|p{2cm}|p{2cm}|p{2cm}|}
 \hline
-\textbf{Program} &
-\textbf{\% of Fixes} &
-\textbf{Range of Fix Containing Generation} &
-\textbf{Range of Original's Execution Time (s)} &
-\textbf{Range of Solution's Execution Time (s)} &
-\textbf{Range of Original's \# of Context Switches} &
-\textbf{Range of Solution's \# of Context Switches}
-\\\hline
-Deadlock2 & 0.6 & [3--17] & [0.10--0.14] & [0.9--0.12] & [73--97] & [60--81]
-\\\hline
-Account & 0.6 & [3--17] & [0.10--0.14] & [0.9--0.12] & [73--97] & [60--81]
-\\\hline
-AirlineBug & 0.6 & [3--17] & [0.10--0.14] & [0.9--0.12] & [73--97] & [60--81]
-\\\hline
-AllocationVector & 0.6 & [3--17] & [0.10--0.14] & [0.9--0.12] & [73--97] & [60--81]
-\\\hline
-Buffer & 0.6 & [3--17] & [0.10--0.14] & [0.9--0.12] & [73--97] & [60--81]
-\\\hline
-BubbleSort & 0.6 & [3--17] & [0.10--0.14] & [0.9--0.12] & [73--97] & [60--81]
-\\\hline
-Deadlock & 0.6 & [3--17] & [0.10--0.14] & [0.9--0.12] & [73--97] & [60--81]
-\\\hline
-BufWriter & 0.6 & [3--17] & [0.10--0.14] & [0.9--0.12] & [73--97] & [60--81]
-\\\hline
-BankAccounts & 0.6 & [3--17] & [0.10--0.14] & [0.9--0.12] & [73--97] & [60--81]
-\\\hline
-Pingpong & 0.6 & [3--17] & [0.10--0.14] & [0.9--0.12] & [73--97] & [60--81]
-\\\hline
+\textbf{Program} & \textbf{\% of Fixes} & \textbf{Range of Fix Containing Generation} & \textbf{Range of Original's Execution Time (s)} & \textbf{Range of Solution's Execution Time (s)} & \textbf{Range of Original's \# of Context Switches} & \textbf{Range of Solution's \# of Context Switches}\\
+\hline
+account & 0.6 & [3--17] & [0.10--0.14] & [0.9--0.12] & [73--97] & [60--81]\\
+\hline
+accounts & 0.6 & [3--17] & [0.10--0.14] & [0.9--0.12] & [73--97] & [60--81]\\
+\hline
+airline & 0.6 & [3--17] & [0.10--0.14] & [0.9--0.12] & [73--97] & [60--81]\\
+\hline
+allocation & 0.6 & [3--17] & [0.10--0.14] & [0.9--0.12] & [73--97] & [60--81]\\
+\hline
+bubble & 0.6 & [3--17] & [0.10--0.14] & [0.9--0.12] & [73--97] & [60--81]\\
+\hline
+bubblesort2 & 0.6 & [3--17] & [0.10--0.14] & [0.9--0.12] & [73--97] & [60--81]\\
+\hline
+buffer & 0.6 & [3--17] & [0.10--0.14] & [0.9--0.12] & [73--97] & [60--81]\\
+\hline
+bufwriter & 0.6 & [3--17] & [0.10--0.14] & [0.9--0.12] & [73--97] & [60--81]\\
+\hline
+deadlock & 0.6 & [3--17] & [0.10--0.14] & [0.9--0.12] & [73--97] & [60--81]\\
+\hline
+lottery & 0.6 & [3--17] & [0.10--0.14] & [0.9--0.12] & [73--97] & [60--81]\\
+\hline
+mergesort & 0.6 & [3--17] & [0.10--0.14] & [0.9--0.12] & [73--97] & [60--81]\\
+\hline
+pingpong & 0.6 & [3--17] & [0.10--0.14] & [0.9--0.12] & [73--97] & [60--81]\\
+\hline
 \end{tabular}
 \label{tbl:summary_results}
 \end{center}
@@ -903,33 +899,32 @@ program to the optimized program.}
 \begin{center}
 \begin{tabular}{|l|p{2cm}|p{2cm}|p{2cm}|p{2cm}|p{2cm}|}
 \hline
-\textbf{Program} &
-\textbf{Buggy Program's Readability} &
-\textbf{Fixed Program's Readability} &
-\textbf{Optimized Program's Readability} &
-\textbf{Change from Buggy to Fixed} &
-\textbf{Change from Fixed to Optimized}
-\\\hline
-Deadlock2 & 100 & 110 & 105 & +10\% & -4.6\%
-\\\hline
-Account & 100 & 110 & 105 & +10\% & -4.6\%
-\\\hline
-AirlineBug & 100 & 110 & 105 & +10\% & -4.6\%
-\\\hline
-AllocationVector & 100 & 110 & 105 & +10\% & -4.6\%
-\\\hline
-Buffer & 100 & 110 & 105 & +10\% & -4.6\%
-\\\hline
-BubbleSort & 100 & 110 & 105 & +10\% & -4.6\%
-\\\hline
-Deadlock & 100 & 110 & 105 & +10\% & -4.6\%
-\\\hline
-BufWriter & 100 & 110 & 105 & +10\% & -4.6\%
-\\\hline
-BankAccounts & 100 & 110 & 105 & +10\% & -4.6\%
-\\\hline
-Pingpong & 100 & 110 & 105 & +10\% & -4.6\%
-\\\hline
+\textbf{Program} & \textbf{Buggy Program's Readability} & \textbf{Fixed Program's Readability} & \textbf{Optimized Program's Readability} & \textbf{Change from Buggy to Fixed} & \textbf{Change from Fixed to Optimized}\\
+\hline
+account & 100 & 110 & 105 & +10\% & -4.6\%\\
+\hline
+accounts & 100 & 110 & 105 & +10\% & -4.6\%\\
+\hline
+airline & 100 & 110 & 105 & +10\% & -4.6\%\\
+\hline
+allocation & 100 & 110 & 105 & +10\% & -4.6\%\\
+\hline
+bubble & 100 & 110 & 105 & +10\% & -4.6\%\\
+\hline
+bubblesort2 & 100 & 110 & 105 & +10\% & -4.6\%\\
+\hline
+buffer & 100 & 110 & 105 & +10\% & -4.6\%\\
+\hline
+bufwriter & 100 & 110 & 105 & +10\% & -4.6\%\\
+\hline
+deadlock & 100 & 110 & 105 & +10\% & -4.6\%\\
+\hline
+lottery & 100 & 110 & 105 & +10\% & -4.6\%\\
+\hline
+mergesort & 100 & 110 & 105 & +10\% & -4.6\%\\
+\hline
+pingpong & 100 & 110 & 105 & +10\% & -4.6\%\\
+\hline
 \end{tabular}
 \label{tbl:readability}
 \end{center}
@@ -955,7 +950,7 @@ WFGN10, GNFW11}. We believe it will do the same for multi-threaded programs.
 
 Generalizing the TXL operators is also important. Currently the add
 synchronization around synchronization operator (ASAS) for example, only adds
-\texttt{synchronize(this) \{...\}} to the Java source. When the analysis of the
+\texttt{synchronize(this) \{\ldots\}} to the Java source. When the analysis of the
 previous two paragraphs are implemented the operators need to be updated to
 work with them.
 
@@ -976,7 +971,7 @@ in parallel Java programs. It uses an evolutionary algorithm operating in two
 phases. Bugs are fixed in the first phase, then concurrency is optimized in the
 second.
 
-Experiments were conducted to evaluate ARC using a set of 10 programs found in
+Experiments were conducted to evaluate ARC using a set of 12 programs found in
 a concurrency benchmark. The results indicate that ARC is \ldots % TODO
 
 \bibliographystyle{splncs03}
