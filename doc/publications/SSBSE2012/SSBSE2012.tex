@@ -55,7 +55,7 @@ Oshawa, Ontario, Canada\\
 
 \begin{abstract}
 
-Automatic repair of single-threaded programs is being realised in practice.
+Automatic repair of single-threaded programs is being realized in practice.
 Similar progress has not been made on the automatic repair of parallel
 programs. We introduce a fully automated two-phase system for repairing
 deadlocks and data races in parallel Java programs. The approach works on any
@@ -65,7 +65,7 @@ mechanisms are targeted the semantic meaning of the program is not changed. In
 the first phase an evolutionary strategy is used to mutate the existing program
 until a variant is found that fixes the deadlocks and data races. As the first
 phase may introduce unneeded synchronization, a second phase attempts to
-optimize performance by removing the excess synchronization without sacraficing
+optimize performance by removing the excess synchronization without sacrificing
 program correctness. We describe the approach and report on early results.
 
 \end{abstract}
@@ -74,12 +74,12 @@ program correctness. We describe the approach and report on early results.
 \label{sec:introduction}
 
 As desktop computers now ship with more than one processor, programs must
-parallelize to continue to benefit from Moore's Law. Inevitibly these programs
+parallelize to continue to benefit from Moore's Law. Inevitably these programs
 contain bugs. If fixing bugs in single-threaded programs is a difficult and
 resource intensive task,  it is doubly so in multi-threaded programs.
 Parallelism~\cite{SL05} introduces new classes of bugs and makes them harder to
 find by having them only occur in rare execution interleavings~\cite{MQB07}.
-Data-races cause variables to take on unpredictable values as different threads
+Data races cause variables to take on unpredictable values as different threads
 race to write to them while deadlocks bring part or all of a running program to
 a halt.
 
@@ -87,7 +87,7 @@ We propose ARC (Automatic Repair of Concurrency bugs): An automatic technique
 to repair deadlocks and data races in parallel Java programs. Formal
 specifications, annotations and elaborate test suites are not required. Only
 the Java source code and test(s) demonstrating the deadlocks and data races are
-necessary. Evolutionary strategies are used to evolve variants until one is
+necessary. Evolutionary strategies (ES) are used to evolve variants until one is
 found that fixes the bugs in question.
 
 There has been a great deal of research in the area of search-based software
@@ -97,15 +97,15 @@ WNLF09, WFGN10}. Our proposed approach adapts the original idea of
 automatically fixing sequential programs to specifically target concurrent
 software.
 
-Evolutionary strategies (ES) is part of the family of heuristic search
-algorithms. They are population-based technique driven by mutation. Crossover
-and replacement are not used. All members of the population exist throughout an
-invocation of the search. A fitness function is used to evaluate each member's
-proposed fix. Bugs in a concurrent program are fixed by iteratively mutating
-the program and evaluating each mutation by executing the program many times.
-IBM's ConTest~\cite{EFN+02} tool is used to explore different interleavings of
-the program under test to increase our confidence bugs are not slipping by.
-Fitness improves with the number of correct executions.
+ES is part of the family of heuristic search algorithms. They are population-
+based technique driven by mutation. Crossover and replacement are not used. All
+members of the population exist throughout an invocation of the search. A
+fitness function is used to evaluate each member's proposed fix. Bugs in a
+concurrent program are fixed by iteratively mutating the program and evaluating
+each mutation by executing the program many times. IBM's ConTest~\cite{EFN+02}
+tool is used to explore different interleavings of the program under test to
+increase our confidence bugs are not slipping by. Fitness improves with the
+number of correct executions.
 
 Large search spaces are a problem faced by all bug fixing techniques.
 Parallelism introduces thread interleavings on top of this. A number of steps
@@ -167,7 +167,7 @@ Concurrent programs are able to exploit multi-core systems where threads are
 distributed across each of the CPUs to increase performance. Concurrency
 introduces a new class class of bugs, the \textit{heisenbugs}. Due to
 concurrent access to shared memory, threads are able to cause
-\textit{dataraces} and \textit{deadlocks}.
+\textit{data races} and \textit{deadlocks}.
 
 A \textbf{data race} has been defined as: \textit{``\ldots two or more
 concurrent threads access a shared variable and when at least one access is a
@@ -187,24 +187,24 @@ static analysis~\cite{NA07,NPSG09,HP04}, stress testing~\cite{HSU03}, dynamic
 analysis~\cite{JNPS09,EFN+02}, and model
 checking~\cite{BHPV00,RDH03,OM03,MQB07,Holz97,JM04,HP00}.
 
-\subsection{Evolutionary Programming}
-\label{sec:evolutionary_programming}
+\subsection{Evolutionary Strategies}
+\label{sec:evolutionary_strategies}
 
-Evolutionary programming (EP) is part of the family of heuristic search
-algorithms. The most commonly referenced heuristic search technique is the
-genetic algorithm~\cite{GA92}. For space reasons only the briefest outline of
-EP and it's place in the heuristic search family is given.
+ES is part of the family of heuristic search algorithms. The most commonly
+referenced heuristic search technique is the genetic algorithm~\cite{GA92}. For
+space reasons only the briefest outline of ES and it's place in the heuristic
+search family is given.
 
 A standard genetic algorithm is population based, uses mutation, crossover and
 a fitness function to evolve solutions to problems. A proposed solution to the
 problem is encoded as a member of the population. Each member is evaluated by a
 fitness function. The more fit a member solution is, the greater the chance it
 will pass it's genetic material (solution) on to the next generation.
-\textit{Selection pressure prefentially selects better solutions.} Crossover
+\textit{Selection pressure preferentially selects better solutions.} Crossover
 mixes these solutions to produce new ones while mutation injects fresh
 information in to the population so it doesn't become stagnant.
 
-EP is a simpler form of search than a genetic algorithm. A population of
+ES is a simpler form of search than a genetic algorithm. A population of
 proposed solutions is generated and mutated each generation. Crossover and
 selection aren't used, so the same population exists throughout the evolution.
 Every members fitness is evaluated every generation. It ends when a
@@ -224,7 +224,7 @@ Co-evolutionary competition between programs with bugs and test cases is used
 in~\cite{AY08, Arc08, WT10}. Both approaches require formal specifications and
 both use genetic programming to evolve fixes. Co-evolution is used to cause
 competition between the evolving fixes and test cases. In both cases the
-resulting framework is tested only againt a toy sorting algorithm with mixed
+resulting framework is tested only against a toy sorting algorithm with mixed
 success. The untargeted nature of the fixing process is the largest limitation.
 No effort is made to constrain the large search space of the problem.
 
@@ -246,7 +246,7 @@ both deadlocks and data races.
 
 A framework is created in~\cite{CB05} to ``repair'' buffer overflow attacks.
 When one is identified, the program state is reset to what it was before the
-attack. The attack packet is disgarded then the program continues running. As
+attack. The attack packet is discarded then the program continues running. As
 in the previous approach the goal is to hide the problem, not fix it.
 
 SAT solving is used in~\cite{AY07}  to repair shared memory concurrent programs
@@ -263,7 +263,7 @@ identify concurrent bugs. The identification of a problem is often not enough
 as multiple code fragments are involved, possibly in different units with
 differently named variables. In this ambiguous scenario the appropriate fix is
 not always clear. There has been work in concurrency anti-patterns that provide
-a definition, problem, context and solution for concurrency bugs~\cite{BJ09}.
+a definition, problem, context and solution for concurrency bugs~\cite{BJ09,FKLV12}.
 
 In the left part of Fig.~\ref{fig:fixed_sample_datarace} \texttt{read} and
 \texttt{write} method access a shared variable. A very simple data race exists
@@ -590,7 +590,7 @@ determine fitness. The time taken is an obvious choice to use to measure the
 performance, while the number of voluntary context switches gives us an
 indication on the amount of thread switching. By minimizing unnecessary
 synchronization the number of context switches should decrease along with the
-real time taken. Figure~\ref{fig:nonfunctional_function} shows the phase 2
+real time taken. Figure~\ref{fig:nonfunctional_fitness} shows the phase 2
 fitness function. Baseline time and context switches are generated from the
 newly fixed program by running it a large number of times and averaging. This
 baseline is used by the fitness function to evaluate any proposed improvements.
@@ -697,7 +697,7 @@ ability to find fixes and ARCs effect on performance of solutions found.
 
 ARC is not a quick process. Executing ConTest (population $\times$ generations
 $\times$ \# runs) times alone can take significant resources. Suffice it to say
-ARC is an offline process one could run over night.
+ARC is an off-line process one could run over night.
 
 \subsection{Experimental Setup}
 \label{sec:experimental_setup}
@@ -763,9 +763,9 @@ used values for the experimentations.}
 \\\hline
 Project Test Mb & The amount of memory allocated for the testing & 2048
 \\\hline
-ConTest Runs & The number of testsuite executions performed in the evaluation phase & 50
+ConTest Runs & The number of test suite executions performed in the evaluation phase & 50
 \\\hline
-ConTest Timeout Seconds & The amount of time in seconds that a testsuite execution will last before a timeout occurs & 20
+ConTest Timeout Seconds & The amount of time in seconds that a test suite execution will last before a timeout occurs & 20
 \\\hline
 Evolution Generations & The maximum number of generations that can occur within each phase  & 100
 \\\hline
@@ -885,7 +885,7 @@ modifying synchronization statements. Posnett et. al.~\cite{PHD11} use the
 following metrics to estimate readability:
 
 (What is the challenge/problem here? It sounds like we've fixed the problem
-aready.)
+already.)
 
 \begin{itemize}
   \item Moving lines around does not affect the program's readability
@@ -894,7 +894,7 @@ readability as much as adding new unique statements
 \end{itemize}
 
 Readability metrics for programs fixed by ARC are collected in
-Tabel~\ref{tbl:readability}.
+Table~\ref{tbl:readability}.
 \ldots % TODO
 
 \begin{table*}[!t]
@@ -945,13 +945,13 @@ Pingpong & 100 & 110 & 105 & +10\% & -4.6\%
 
 Currently ARC mutates all variables in the program under test. Ideally it
 should target only those involved in concurrency. We believe there are off-the-
-shelf solutions integrateable into ARC to give it this capability, similar
+shelf solutions that ARC can utilize to give it this capability, similar
 to~\cite{CM08, HP00}.
 
 Targeting the variables, functions and classes on the error path is another
 feature we would like to add. It has shown great success in helping to isolate
 and automatically fix bugs in single-threaded programs~\cite{FNWG09, NWLF09,
-WFGN10, GNFW11}. We believe it will do the same for multithreaded programs.
+WFGN10, GNFW11}. We believe it will do the same for multi-threaded programs.
 
 Generalizing the TXL operators is also important. Currently the add
 synchronization around synchronization operator (ASAS) for example, only adds
