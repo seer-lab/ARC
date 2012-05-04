@@ -266,7 +266,7 @@ not always clear. There has been work in concurrency anti-patterns that provide
 a definition, problem, context and solution for concurrency
 bugs~\cite{BJ09,FKLV12}.
 
-In the left part of Fig.~\ref{fig:fixed_sample_datarace} \texttt{read} and
+In the left part of Fig.~\ref{fig:fixed_sample_datarace} the \texttt{read} and
 \texttt{write} method access a shared variable. A very simple data race exists
 because there is no atomic access to the \texttt{data} variable during the
 reading or writing. Both methods are involved in the data race, and it is
@@ -281,7 +281,7 @@ method works in the loop and database sections. An optimization is to shrink
 the critical region (the synchronized statements) to only guard access to the
 shared variable (as shown in Fig.~\ref{fig:optimized_sample_datarace}).
 
-\begin{figure}[!h]
+\begin{figure}[h]
 \begin{minipage}{5cm}
 \footnotesize{\textbf{Buggy Program:}}
 \begin{lstlisting}[language=Java, morekeywords={synchronize}]
@@ -315,7 +315,7 @@ still exists. Synchronizing the \texttt{write} method as well fixes it.}
 \label{fig:fixed_sample_datarace}
 \end{figure}
 
-\begin{figure}[!h]
+\begin{figure}[t]
 \begin{minipage}{5cm}
 \footnotesize{\textbf{$1^{st}$ Optimization on Fix:}}
 \begin{lstlisting}[language=Java, morekeywords={synchronize}]
@@ -371,29 +371,31 @@ functional} performance of programs with deadlocks and data races.
 ARC aims to automatically repair concurrency bugs like the one presented in
 Sect.~\ref{sec:motivation}. A high-level overview of ARC's approach is
 presented in Fig.~\ref{fig:process}. There are two inputs to ARC: A buggy
-concurrent Java program and a JUnit test suite. This test suite is necessary as
-it acts like an oracle determining if the bug still exists in the program. One
-limitation of ARC (and of all automatic bug fixing techniques mentioned here)
-is that it can only fix bugs detectable by the test suite.
+concurrent Java program and a JUnit test suite. The test suite is necessary as
+it acts like an oracle to determine if the bug still exists in the program. One
+limitation of ARC (and of other automatic bug fixing techniques mentioned in
+Sect.~\ref{sec:related_works}) is that it can only fix bugs detectable by the
+test suite.
 
-\begin{figure}[!h]
+\begin{figure}[h]
   \centering
   \includegraphics[width=7.0cm]{figures/process.pdf}
   \caption{High Level Overview of ARC's Repair and Optimization Process}
   \label{fig:process}
 \end{figure}
 
-ARC is composed of two major phases, the \textit{Functional Phase} and the
-\textit{Non-Functional Phase}. Both are similar in terms of the steps they
-follow, with slight variations to accomplish different goals. The first phase
-attempts to fix the buggy program while the second attempts to optimize its
-performance.
+ARC's complete approach is accomplished in two phases, the \textit{Functional
+Phase} and the \textit{Non-Functional Phase}. Both are similar in terms of the
+steps they follow, with slight variations to accomplish different goals. The
+first phase attempts to fix the buggy program while the second attempts to
+optimize its performance.
 
-The next section details each step in the two phases, shown in
-Fig.~\ref{fig:phases_internals}. Differences between them are indicated. Key
-aspects of the approach are the mutation and evaluation steps.
+The next sections detail each step of the two phases as shown in
+Fig.~\ref{fig:phases_internals}, with the differences between phases being
+indicated. The key aspect of ARC's approach fall in the mutation and evaluation
+steps.
 
-\begin{figure}[!h]
+\begin{figure}[h]
   \centering
   \includegraphics[width=4.50cm]{figures/phases.pdf}
   \caption{Internal View of ARC's Phases}
@@ -403,30 +405,29 @@ aspects of the approach are the mutation and evaluation steps.
 \subsection{Initialize Population}
 \label{sec:initialize_population}
 
-Arc begins the repair phase by initialize the population of individuals. This
+ARC begins each phase first by initializing the population of individuals. This
 involves creating a copy of the program for each individual that is mutated by
 the ES. For the non-functional phase ARC has already produced the fixed
-program, so each individual receives a copy of the fixed program to optimize.
+program so each individual receives a copy of the fixed program to optimize.
 
 \subsection{Generate Mutants and Update Individual's Representation}
 \label{sec:update_individual_representation}
 
-Mutants are exhaustively created every generation from the previous
-generation's code. Internally the mutants are tracked by type in the
-representation. (Member x at generation y has z add sync mutants, q expand sync
-before mutants, \ldots) This step generates all mutants and updates the
-representation. (A mutation is actually applied to the project in the next
-step.)
+For each individual the previous generation's code is used to generate all
+possible mutations that can be applied for this generation. This step generates
+all possible mutants for each individual, though the actual mutation is applied
+in the next step. Internally ARC keeps track of the mutants using a
+representational form as shown in Table~\ref{tbl:individual_representation}. As
+there exists multiple types of mutations, individuals are represented using a
+2-dimensional array of the mutation operators and the number of mutation
+instances generated.
 
-The individual's representation consists of an array of the mutation operators
-applied each round of the ES. Table~\ref{tbl:individual_representation}
-illustrates the program representation.
-
-\begin{table}[!h]
+\begin{table}[h]
 \begin{center}
-\caption{Example representation of an individual, each 0 represents an instance
-of that mutation type. There can be up to $n$ mutation operators with no-limit
-to the number of instances per operator.}
+\caption{An example representation of an individual, each 0 represents an
+instance of that mutation type that has been generated. It is possible for up
+to $n$ mutation operators with no-limit to the number of instances per
+operator.}
 \begin{tabular}{|l|l|}
 \hline
 \textbf{Operator} & \textbf{Instances}\\
@@ -446,14 +447,16 @@ Mutation $n$ & 0 0\\
 \end{center}
 \end{table}
 
-The set of mutation operators is listed in Table~\ref{tbl:operators}. They are
-TXL operators derived from the ConMAn operators~\cite{BCD06}. TXL operators
-work by searching for a pattern and then transforming it according to a set of
-rules. An example operator is shown in Fig.~\ref{fig:EXSB_example}.
+The set of mutation operators ARC uses are listed in Table~\ref{tbl:operators},
+each operator can aid in repairing and/or optimizing the program. The majority
+of the ARC mutation operators have been derived from the ConMAn
+operators~\cite{BCD06}. These operators work by searching for a pattern within
+the source code and then transforming it according to a set of rules. An
+example of the EXSB mutation operator is shown in Fig.~\ref{fig:EXSB_example}.
 
-\begin{table}
-\caption{Set of mutation operators used by ARC, indicating which phases they
-are active mutators.}
+\begin{table}[h]
+\caption{Set of mutation operators used by ARC. Each mutation operator is
+active during the indicated phases.}
 \begin{center}
 \begin{tabular}{|l|l|c|c|}
 \hline
@@ -490,7 +493,7 @@ Shrink synch. after & SHSA & & $\surd$\\
 \end{center}
 \end{table}
 
-\begin{figure}[h!]
+\begin{figure}[h]
 \vspace{2mm}
 \begin{minipage}{5cm}
 
@@ -514,98 +517,114 @@ Shrink synch. after & SHSA & & $\surd$\\
 \end{lstlisting}
 \end{minipage}
 
-\caption{Example of EXSB, the expand synchronization before operator.}
+\caption{An example of the EXSB (expand synchronization before) mutation
+operator.}
 \label{fig:EXSB_example}
 \end{figure}
 
-Mutating the concurrency blocks of the program changes the places where future
-mutations can occur, causing the search space of possible mutations to changes
-every generation. The representation must be updated to account for this.
+As ARC mutates synchronization aspects of programs, the mutations themselves
+can alter the appearance of future mutations. This causing the search space of
+possible mutations to potentially changes in every generation. Thus ARC must
+update the representation according to the latest state of the program's source
+code each generation.
 
 \subsection{Apply a Mutation to an Individual}
 \label{sec:mutate_individuals}
 
-Once all mutations are generated a type of mutation and an instance of that
-type are selected from the representation and applied to the project.
+Once all mutations are generated for each individual ARC selects a type of
+mutation and then an instance of that from the individual's representation. The
+selected mutation of the previous generation's code then acts as the current
+generation's code. ARC at this point will re-compile the project to ensure that
+the mutation consists of valid syntax. In the situation that the compilation
+fails another mutation and instance is selected until a valid combination is
+found.
 
-ARC uses historical information about previous successes with the mutation
-operators and the current dominating bug type to select a mutation operator to
-apply. More weight is given to operators that have been successful in the past.
-This is further detailed in Sect.~\ref{sec:recalculate_operator_weighting}. We
-randomly select an instance of the operator to accept as our final mutation for
-that individual.
+ARC can leverage historical information about previous evaluations with the
+mutation operators along with information about the current dominating bug type
+found during testing. These two pieces of data add weight to operators
+that have been successful in the past, as well as to select operators that
+appear to reduce the occurrences of either deadlocks or data races more often.
+This heuristic is further detailed in
+Sect.~\ref{sec:recalculate_operator_weighting}. Currently, ARC randomly select
+an instance of the operator to accept as our final mutation for that
+individual.
 
 \subsection{Evaluate Individuals}
 \label{sec:evalute_individuals}
 
-A mutation may be beneficial, destructive or benign. It must be evaluated to
-determine it's effect on the program. A key problem is the unpredictability of
+A mutation may be beneficial, destructive or benign. We must evaluate it to
+determine the effect on the program. A key problem is the unpredictability of
 thread interleavings. If a concurrency bug appears only rarely, how can we gain
-confidence that a proposed fix actually works? IBM's ConTest tool~\cite{EFN+02}
-is used to instrument the project and inject noise into it's scheduled
-interleavings. ConTest is invoked by ARC many times to test each mutated
-project in turn. By running ConTest multiple times we gain confidence enough
-interleavings are explored to find bugs. Note that running ConTest many times
-for each member of the population at each generation is time intensive.
+confidence that a proposed fix actually works? ARC uses IBM's ConTest
+tool~\cite{EFN+02} to instrument the project by injecting noise into the
+program. The injected noise causes threads to yield, sleep and wait randomly,
+effectively causing an execution of the program to explore a diverse set of
+scheduled interleavings. By running ConTest (the instrumented version of the
+program) multiple times we gain more confidence that a larger set of the
+interleavings are explored. Running the instrumented program multiple times is
+the most time consuming aspect of ARC.
 
-In the first phase fitness is determined by the number of successful ConTest
-runs. More successes translates in to higher fitness. As a timeout could either
-result in a deadlock or a successful execution given more time, the are also
-awarded fitness 'points'. The weighting is less than a successful execution
-though. Figure~\ref{fig:functional_fitness} displays the first phase fitness
+In the first phase ARC attempts to repair the buggy program, thus the fitness
+is determined by the number of successful ConTest executions. More successes
+translates in to higher fitness value. We consider timeouts as a positive
+factor in the fitness function as it could either result in a deadlock or a
+successful execution given more time. We do weight timeouts less than a
+successful execution as it could still result in a deadlock.
+Figure~\ref{fig:functional_fitness} displays the first phase's fitness
 function.
 
-\begin{figure}
+\begin{figure}[h]
 \begin{footnotesize}
 \begin{center}
 $functional\ fitness(P) = (s \times sw) + (t \times tw)$
 \end{center}
 \end{footnotesize}
-\begin{tiny}
+\begin{scriptsize}
 \begin{center}
 $s = \#\ of\ successful\ executions$ \\
 $sw = success\ weighting$ \\
 $t = \#\ of\ timeout\ executions$ \\
 $tw = timeout\ weighting$
 \end{center}
-\end{tiny}
+\end{scriptsize}
 \caption{Fitness Function for Functional Phase}
 \label{fig:functional_fitness}
 \end{figure}
 
-If ARC finds an individual that achieves 100\% successful executions, we need
-to ensure it is truly a fix. Any proposed solutions could still hold a
-concurrency bug that escaped detection because the proper interleavings were
-not encountered. Our safeguard is to run ConTest an additional number of times
-(Default is 10x more runs then the original number of runs). If the fix still
-holds even after this safeguard we feel confident the solution is indeed a true
-solution. If any of these additional test fail, the proposed fix is rejected
-and the evolutionary process continues.
+If ARC finds an individual that achieves 100\% successful executions during the
+first phase, we need to ensure it is truly a fix. It is possible that a
+proposed solution could still contain a concurrency bug that escaped detection
+because the bug exhibiting interleavings was not encountered. Our safeguard is
+to run ConTest an additional number of times (some multiple of the previous
+number of runs). If the fix still holds even after this validation we feel
+confident the solution is indeed a true solution. If any of the additional
+executions fail, the proposed fix is rejected and the evolutionary process
+continues.
 
-Once a fix is found the second phase begins. A new fitness function is used
-with the goal of optimizing performance. We uses a combination of the real time
-required for an execution and the number of voluntary context switches made to
-determine fitness. The time taken is an obvious choice to use to measure the
-performance, while the number of voluntary context switches gives us an
-indication on the amount of thread switching. By minimizing unnecessary
-synchronization the number of context switches should decrease along with the
-real time taken. Figure~\ref{fig:nonfunctional_fitness} shows the phase 2
-fitness function. Baseline time and context switches are generated from the
-newly fixed program by running it a large number of times and averaging. This
-baseline is used by the fitness function to evaluate any proposed improvements.
-Note that the fitness function adjusts based on the significance and
-uncertainty of both variables (to be fair in situations where either variable
-is under-represented).
+Once a fix is found ARC begins the second phase, to optimize the found
+solution. We utilize a new fitness function that combines the real time
+required for an execution as well as the number of voluntary context switches
+made. The real time taken is an obvious choice to use to measure the
+performance of the program, while the number of voluntary context switches
+gives us an indication on the amount of thread switching. By minimizing
+unnecessary synchronization the number of context switches should decrease
+along with the real time taken as seen in Fig.~\ref{fig:nonfunctional_fitness}.
+Baseline time and context switches are generated from the newly fixed program
+by running it a large number of times and averaging the values acquire. This
+baseline is then used in the fitness function to evaluate relative improvements
+from the fixed unoptimized program. Note that the fitness function adjusts
+based on the significance and uncertainty of both variables (to be fair in
+situations where either variable is under-represented).
 
 
-\begin{figure}
+\begin{figure}[h]
 \begin{footnotesize}
 \begin{center}
 $non-functional\ fitness(P) = \frac{worst\ score}{[sig_t \times unc(t)] + [sig_c \times unc(c)]}$
 \end{center}
 \vspace{0.1cm} \textit{Where:} \vspace{0.1cm}
 \end{footnotesize}
-\begin{tiny}
+\begin{scriptsize}
 \begin{center}
 $unc(x) = \frac{(x_{max} - x_{min})}{x_{avg}}$ \\ \vspace{0.2cm}
 $
@@ -623,39 +642,37 @@ $
   \end{array} \right.
 $ \\
 \end{center}
-\end{tiny}
+\end{scriptsize}
 \caption{Fitness Function for Non-Functional Phase}
 \label{fig:nonfunctional_fitness}
 \end{figure}
 
 Removing and reducing synchronization runs the risk of introducing new bugs
 into the program. Before every non-functional phase evaluation we need to
-ensure that no bugs are present. We re-run the functional phase evaluation
-again. If any deadlock or data race is encountered the proposed optimization is
-rejected. The individual's program is reset to the previous generation.
+ensure that no bugs are present, thus we re-run the functional phase's
+evaluation with the multiplier on the number of runs. If any deadlocks or data
+races are encountered the proposed optimization is rejected and this individual
+is reset to the previous generation. After ARC validates the proposed
+optimization additional runs are conducted without using ConTest (avoids the
+inclusion of random noise) to obtain the values required for the non-functional
+fitness function.
 
-As it isn't clear when an individual's program reaches its maximum optimization
--- and there is no a-priori way to know this, ARC runs phase two for it's full
-allotment of generations. At the end it outputs the member program with the
-highest non-functional fitness (from any generation) as the final optimized
-fix.
+As it is not clear when an individual's program reaches its maximum
+optimization -- and there is no a-priori way to know this, ARC runs phase two
+for it's full allotment of generations. At the end it outputs the member
+program with the highest non-functional fitness (from any generation) as the
+final optimized fix.
 
 \subsection{Check Terminating Condition}
 \label{sec:check_terminating_condition}
 
 Each phase continues to evolve and evaluate individuals until some terminating
-condition is met. The following conditions are for the functional phase:
-
-\begin{enumerate}
-  \item A solution is found (100\% successful executions)
-  \item No solution is found within the generational limit
-  \item The population has converged (no improvement has been seen in $x$
-  generations)
-\end{enumerate}
-
-For the non-functional phase the terminating conditions are the same as the
-functional phase except for the first one. This condition is dropped because
-there is no actual best known solution for optimal performance.
+condition is met. The following conditions are for the functional phase: A
+solution is found (100\% successful executions in validation) or no solution is
+found within the generational limit. The following conditions are for the non-
+functional phase: The population has converged (no improvement has been seen in
+$x$ generations), no more mutations are generated, or the generational limit is
+hit.
 
 \subsection{Replace Weakest Individuals}
 \label{sec:replace_weakest_individuals}
@@ -665,12 +682,11 @@ stray down a path leading to little or no improvement. To encourage individuals
 to explore more fruitful areas of the state space we employ a replacement
 strategy that replaces the lower $w$ percentage of individuals with a random
 individual from the upper $x$ percent. These replacements only occur after an
-individual has been stagnant for $y$ generations. We believe the correct
+individual has underperformed for $y$ generations. We believe the correct
 program isn't very far away in the state space from the original buggy program.
-Alternatively, a straying program may be reset to it's initial state if it has
-not seen any improvement in $y$ generations.
-
-% TODO Double check that ARC actually does it like this
+Therefore we also provide a change for an under-performing individual to reset
+back the initial state to allow the individual to explore from the starting
+point again.
 
 \subsection{Recalculate All Operator's Weighting}
 \label{sec:recalculate_operator_weighting}
@@ -709,7 +725,9 @@ bugs\footnote{One incorrect program was fixed so that it properly exhibited its
 concurrency bug.}. Details on the programs are presented in
 Table~\ref{tbl:used_programs}.
 
-\begin{table}[!h]
+% TODO Figure out the bug pattern of the follow programs
+
+\begin{table}[h]
 \caption{The set of programs used to evaluate ARC. The test suite for each
 program is excluded from these values.}
 \begin{center}
@@ -751,7 +769,9 @@ configured. Table~\ref{tbl:used_parameters} lists and describes each parameter,
 including the values selected for evaluation. Values were selected based on our
 experience with ARC.
 
-\begin{table*}[!t]
+% TODO Maybe reduce this to the common ES parameters?
+
+\begin{table}[h]
 \caption{The set of parameters that ARC uses along with their descriptions and
 used values for the experimentations.}
 \begin{center}
@@ -794,7 +814,7 @@ Best Fitness Min Delta & When checking for convergence this represents the minim
 \end{tabular}
 \label{tbl:used_parameters}
 \end{center}
-\end{table*}
+\end{table}
 
 \subsection{Experimental Results}
 \label{sec:experimental_results}
@@ -802,9 +822,10 @@ Best Fitness Min Delta & When checking for convergence this represents the minim
 Each program was run through ARC a total of 10 times using the parameters
 described in Table~\ref{tbl:used_parameters}. The results of each program is
 summarized in Table~\ref{tbl:summary_results}.
-% TODO
 
-\begin{table*}[!t]
+% TODO Redo this table, and exclude the non-functional aspects of it and enumerate (somehow) the results instead of using ranges
+
+\begin{table}[h]
 \caption{Summary of the results of running the programs
 (Table~\ref{tbl:used_programs}) through ARC 10 times.}
 \begin{center}
@@ -839,7 +860,7 @@ pingpong & 0.6 & [3--17] & [0.10--0.14] & [0.9--0.12] & [73--97] & [60--81]\\
 \end{tabular}
 \label{tbl:summary_results}
 \end{center}
-\end{table*}
+\end{table}
 
 
 \section{Challenges}
@@ -856,8 +877,10 @@ mutation operators. Inherently ARC has a much smaller search space to explore
 to find a fix.
 
 The search space can be reduced even further by considering only the mutation
-falling on the error path (Used in Weimer's approach~\cite{GNFW11}). This is
-future work.
+falling on the error path (Used in Weimer's approach~\cite{GNFW11}) or even by
+using external detection tools for potential a locational where the bug might
+be residing. These two suggestions are considered for future work to minimize
+the solution space.
 
 \textbf{Dependence on Test Suite}: ARC depends on a minimal test suite for the
 program being repaired. In both Arcuri's and Weimer's
@@ -868,23 +891,16 @@ that occur outside of the test suite's coverage. Arcuri's and Weimer's
 approaches also has no solution for this.
 
 There has been some work that attempts to co-evolve the test suite at the same
-time to help check for new situations~\cite{WT10}. (Be specific.) We assume the
+time to help check for new situations~\cite{WT10}. We assume the
 test suite is comprehensive enough to detect all bugs. ARC will eventually only
 consider using mutation operators that fall within the coverage of the test
 suite to avoid introducing new bugs the test suite cannot detect.
 
-(What is the challenge/problem here? That only bugs in test suites can be
-detected? What are we going to do about it?)
-
 \textbf{Program Readability}: Automatically fixing and optimizing a program
 raises the question of source readability. None of the related work considers
 the readability of their fixes. This is a concern as developers want to
-understand the fix as well. In ARC's we are simply adding, removing and
-modifying synchronization statements. Posnett et. al.~\cite{PHD11} use the
-following metrics to estimate readability:
-
-(What is the challenge/problem here? It sounds like we've fixed the problem
-already.)
+understand the fix as well. Posnett et. al.~\cite{PHD11} use the following
+metrics to estimate readability:
 
 \begin{itemize}
   \item Moving lines around does not affect the program's readability
@@ -892,46 +908,53 @@ already.)
 readability as much as adding new unique statements
 \end{itemize}
 
-Readability metrics for programs fixed by ARC are collected in
-Table~\ref{tbl:readability}.
-\ldots % TODO
+ARC simply adds, removes manipulates synchronization statements. In most cases
+there will already tokens regarding synchronization within the program. Thus,
+the addition of new synchronization does not reduce the program's readability
+that much. For the mutations that manipulate the synchronization statements ARC
+is effectively moving lines around, which does not reduce the program's
+readability.
 
-\begin{table*}[!t]
-\caption{The program readability values from the buggy program to the fixed
-program to the optimized program.}
-\begin{center}
-\begin{tabular}{|l|p{2cm}|p{2cm}|p{2cm}|p{2cm}|p{2cm}|}
-\hline
-\textbf{Program} & \textbf{Buggy Program's Readability} & \textbf{Fixed Program's Readability} & \textbf{Optimized Program's Readability} & \textbf{Change from Buggy to Fixed} & \textbf{Change from Fixed to Optimized}\\
-\hline
-account & 100 & 110 & 105 & +10\% & -4.6\%\\
-\hline
-accounts & 100 & 110 & 105 & +10\% & -4.6\%\\
-\hline
-airline & 100 & 110 & 105 & +10\% & -4.6\%\\
-\hline
-allocation & 100 & 110 & 105 & +10\% & -4.6\%\\
-\hline
-bubble & 100 & 110 & 105 & +10\% & -4.6\%\\
-\hline
-bubblesort2 & 100 & 110 & 105 & +10\% & -4.6\%\\
-\hline
-buffer & 100 & 110 & 105 & +10\% & -4.6\%\\
-\hline
-bufwriter & 100 & 110 & 105 & +10\% & -4.6\%\\
-\hline
-deadlock & 100 & 110 & 105 & +10\% & -4.6\%\\
-\hline
-lottery & 100 & 110 & 105 & +10\% & -4.6\%\\
-\hline
-mergesort & 100 & 110 & 105 & +10\% & -4.6\%\\
-\hline
-pingpong & 100 & 110 & 105 & +10\% & -4.6\%\\
-\hline
-\end{tabular}
-\label{tbl:readability}
-\end{center}
-\end{table*}
+% Readability metrics for programs fixed by ARC are collected in
+% Table~\ref{tbl:readability}.
+% \ldots % TODO
+
+% \begin{table}[h]
+% \caption{The program readability values from the buggy program to the fixed
+% program to the optimized program.}
+% \begin{center}
+% \begin{tabular}{|l|p{2cm}|p{2cm}|p{2cm}|p{2cm}|p{2cm}|}
+% \hline
+% \textbf{Program} & \textbf{Buggy Program's Readability} & \textbf{Fixed Program's Readability} & \textbf{Optimized Program's Readability} & \textbf{Change from Buggy to Fixed} & \textbf{Change from Fixed to Optimized}\\
+% \hline
+% account & 100 & 110 & 105 & +10\% & -4.6\%\\
+% \hline
+% accounts & 100 & 110 & 105 & +10\% & -4.6\%\\
+% \hline
+% airline & 100 & 110 & 105 & +10\% & -4.6\%\\
+% \hline
+% allocation & 100 & 110 & 105 & +10\% & -4.6\%\\
+% \hline
+% bubble & 100 & 110 & 105 & +10\% & -4.6\%\\
+% \hline
+% bubblesort2 & 100 & 110 & 105 & +10\% & -4.6\%\\
+% \hline
+% buffer & 100 & 110 & 105 & +10\% & -4.6\%\\
+% \hline
+% bufwriter & 100 & 110 & 105 & +10\% & -4.6\%\\
+% \hline
+% deadlock & 100 & 110 & 105 & +10\% & -4.6\%\\
+% \hline
+% lottery & 100 & 110 & 105 & +10\% & -4.6\%\\
+% \hline
+% mergesort & 100 & 110 & 105 & +10\% & -4.6\%\\
+% \hline
+% pingpong & 100 & 110 & 105 & +10\% & -4.6\%\\
+% \hline
+% \end{tabular}
+% \label{tbl:readability}
+% \end{center}
+% \end{table}
 
 \section{Threats to Validity}
 \label{sec:threats}
