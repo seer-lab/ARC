@@ -57,16 +57,17 @@ Oshawa, Ontario, Canada\\
 
 Automatic repair of single-threaded programs is being realized in practice.
 Similar progress has not been made on the automatic repair of parallel
-programs. We introduce a fully automated two-phase system for repairing
+programs. We introduce a fully automated system for repairing
 deadlocks and data races in parallel Java programs. The approach works on any
 Java source code and requires only rudimentary test cases. Annotations, formal
 specifications or other notations are not required. As only the concurrency
-mechanisms are targeted the semantic meaning of the program is not changed. In
-the first phase an evolutionary strategy is used to mutate the existing program
-until a variant is found that fixes the deadlocks and data races. As the first
-phase may introduce unneeded synchronization, a second phase attempts to
-optimize performance by removing the excess synchronization without sacrificing
-program correctness. We describe the approach and report on early results.
+mechanisms are targeted the semantic meaning of the program is not changed. 
+An evolutionary strategy is used to mutate the existing program
+until a variant is found that fixes the deadlocks and data races. 
+%As the first
+%phase may introduce unneeded synchronization, a second phase attempts to
+%optimize performance by removing the excess synchronization without sacrificing
+%program correctness. We describe the approach and report on early results.
 
 \end{abstract}
 
@@ -103,7 +104,7 @@ A fitness function is used to evaluate each member's proposed fix. Bugs in a
 concurrent program are fixed by iteratively mutating the program and evaluating
 each mutation by executing the program many times. IBM's ConTest~\cite{EFN+02}
 tool is used to explore different interleavings of the program under test to
-increase our confidence bugs are not slipping by. Fitness improves with the
+increase our confidence bugs are not slipping by. Fitness is proportional to the
 number of correct executions.
 
 Large search spaces are a problem faced by all bug fixing techniques.
@@ -113,11 +114,13 @@ deadlocks and data races. Second, only the concurrency mechanisms are targeted.
 Specifically, \textit{synchronize} statements are added, removed, swapped,
 grown and shrunk. No other statements are affected. Third, we use a specific
 set of fourteen TXL~\cite{CHP91} operators based on the ConMAn
-operators~\cite{BCD06} to mutate the parallel Java code.
+operators~\cite{BCD06} to mutate the parallel Java code.  Fourth, only variables
+used in concurrency are targeted.
 
-ARC operates in two phases. In the first, synchronization blocks are added,
-expanded and swapped to attempt to fix the bugs. This may add unnecessary
-synchronization. Ongoing work is adding a second phase to ARC.  It
+ARC attempts to fix bugs by adding, expanding or removing synchronization 
+blocks.  Nested synchronization blocks may have their variables swapped.
+This fixing process may add unnecessary
+synchronization. In ongoing work we are adding a second phase to the system.  It
 attempts to improve performance by shrinking and removing synchronization
 blocks. As this can introduce data races or deadlocks, any mutant decreasing
 correctness is rejected. This second phase is still in development.  In the rest of
@@ -277,6 +280,9 @@ A solution involves synchronizing both accesses (Right part of
 Fig.~\ref{fig:fixed_sample_datarace}). Synchronizing one method alone does not
 fix the bug.
 
+Phase 2 - the optimization phase in development - addresses the issue of unnecessarily
+synchronizing the ``expensive loop'' and ``database query''.
+
 %The solution in the right part of Fig.~\ref{fig:fixed_sample_datarace} is far
 %from ideal. It forces other threads to wait unnecessarily while the write
 %method works in the loop and database sections. An optimization is to shrink
@@ -407,8 +413,8 @@ The key aspect of ARC's approach fall in the mutation and evaluation steps.
 \label{sec:initialize_population}
 
 ARC begins by initializing the population of individuals. This
-involves creating a copy of the program for each individual that is mutated by
-the ES.
+involves copying the program for each individual of the ES.  Each program
+is then mutated independently during the fixing process.
 %For the non-functional phase ARC has already produced the fixed
 %program so each individual receives a copy of the fixed program to optimize.
 
@@ -573,11 +579,12 @@ possible mutations to potentially changes in every generation.
 \label{sec:mutate_individuals}
 
 Once all mutations are generated for each individual ARC selects a type of
-mutation and then an instance of it from the individual's representation. The
-selected mutation of the previous generation's code then acts as the current
+mutation (e.g. EXSB) and then an instance of  
+it (e.g. 4th mutant generated) from those available. The
+selected mutation of the previous generation's code is applied and becomes the current
 generation's code. ARC at this point will re-compile the project to ensure that
 the mutation consists of valid syntax. In the situation that the compilation
-fails another mutation and instance is selected until a valid combination is
+fails another mutation type and instance is selected until a valid combination is
 found.
 
 ARC can leverage historical information about previous evaluations with the
@@ -586,9 +593,9 @@ found during testing. These two pieces of data add weight to operators
 that have been successful in the past, as well as to select operators that
 appear to reduce the occurrences of either deadlocks or data races more often.
 This heuristic is further detailed in
-Sect.~\ref{sec:recalculate_operator_weighting}. Currently, ARC randomly select
-an instance of the operator to accept as our final mutation for that
-individual.
+Sect.~\ref{sec:recalculate_operator_weighting}. Currently, operators are weighted.
+The mutants they generate are not.  Mutants are selected randomly with equal
+probability.
 
 \subsection{Evaluate Individuals}
 \label{sec:evalute_individuals}
@@ -600,8 +607,8 @@ confidence that a proposed fix actually works? ARC uses IBM's ConTest
 tool~\cite{EFN+02} to instrument the project by injecting noise into the
 program. The injected noise causes threads to yield, sleep and wait randomly,
 effectively causing an execution of the program to explore a diverse set of
-scheduled interleavings. By running ConTest (the instrumented version of the
-program) multiple times we gain more confidence that a larger set of the
+scheduled interleavings. By running the instrumented version of the
+program multiple times we gain more confidence that a larger set of the
 interleavings are explored. Running the instrumented program multiple times is
 the most time consuming aspect of ARC.
 
@@ -696,7 +703,7 @@ performance.
 %ability to find fixes and ARCs effect on performance of solutions found.
 
 ARC is not a quick process. Executing ConTest (population $\times$ generations
-$\times$ \# runs $times$ ConTest run time) many times alone can take significant
+$\times$ \# runs $\times$ ConTest run time) many times alone can take significant
 resources. Execution times on programs in the experimental section have ranged between
 roughly 5 minutes and 4 hours.
 
@@ -730,7 +737,7 @@ airline & 93 & 1 & Data Race & Interference\\
 \hline
 allocation & 165 & 3 & Data Race & TwoStageAccess\\
 \hline
-bubble & 246 & 4 & Data Race & NonAtomicAssumedAtomic, OrphanedThread\\
+bubble & 246 & 4 & Data Race & NonAtomicAssumedAtomic,\newline OrphanedThread\\
 \hline
 bubblesort2 & 104 & 2 & Data Race & Initialization-Sleep\\
 \hline
@@ -740,7 +747,7 @@ bufwriter & 170 & 5 & Deadlock & NoLock\\
 \hline
 deadlock & 109 & 2 & Deadlock & Deadlock\\
 \hline
-lottery & 157 & 2 & Data Race & NonAtomicAssumedAtomic, NoLock, BlockingCriticalSection\\
+lottery & 157 & 2 & Data Race & NonAtomicAssumedAtomic,\newline NoLock, BlockingCriticalSection\\
 \hline
 mergesort & 281 & 2 & Data Race & NonAtomicAssumedAtomic\\
 \hline
@@ -832,7 +839,8 @@ bubble & 1, 3, 2, 3, 2 & 0:12, 1:12, 1:12, 1:12, 1:12\\
 \hline
 bubblesort2 & 1, 3, 2, 3, 2 & 0:12, 1:12, 1:12, 1:12, 1:12\\
 \hline
-buffer & 1, 3, 2, 3, 2 & 0:12, 1:12, 1:12, 1:12, 1:12\\
+% One result so far for bufwriter as of this edit - DK
+buffer & --, 3, 2, 3, 2 & 4:43:50, 1:12, 1:12, 1:12, 1:12\\
 \hline
 bufwriter & 1, 3, 2, 3, 2 & 0:12, 1:12, 1:12, 1:12, 1:12\\
 \hline
@@ -842,7 +850,7 @@ lottery & 1, 3, 2, 3, 2 & 0:12, 1:12, 1:12, 1:12, 1:12\\
 \hline
 mergesort & 1, 3, 2, 3, 2 & 0:12, 1:12, 1:12, 1:12, 1:12\\
 \hline
-pingpong & 1, 3, 2, 3, 2 & 0:12, 1:12, 1:12, 1:12, 1:12\\
+pingpong & 1, 1, 1, 1, 1 & 0:39:57, 0:12:47, 0:46:21, 0:46:16, 0:42:02\\
 \hline
 \end{tabular}
 \label{tbl:summary_results}
@@ -866,7 +874,7 @@ further constrain the space.
 %combined with a large number of places to apply them it creates an extremely
 %large search space for finding the solution.
 
-The search space can be reduced even further by considering only the mutation
+The search space can be reduced even further by considering only the mutations
 falling on the error path (Used in Weimer's approach~\cite{GNFW11}) or even by
 using external detection tools for potential a locational where the bug might
 be residing.
@@ -891,7 +899,7 @@ that occur outside of the test suite's coverage.
 \textbf{Program Readability}: Automatically fixing a program
 raises the question of source readability. This is a concern as developers want to
 understand the fix as well. All TXL operators were constructed to follow Java's
-coding conventions.  All mutated code is pretty-printed on output.
+coding conventions and pretty-print all code on output.
 
 %Posnett et. al.~\cite{PHD11} use the following
 %metrics to estimate readability:
@@ -1005,8 +1013,9 @@ and automatically fix bugs in single-threaded programs~\cite{FNWG09, NWLF09,
 WFGN10, GNFW11}. We believe it will do the same for multi-threaded programs.
 
 We also plan to experiment with new operators. Potential additions include
-splitting or merging synchronization blocks and changing the argument in the
-synchronize call.
+splitting or merging synchronization blocks and adding new locks.  An intriguing
+possibility is adding crossover to the algorithm, changing it into a genetic
+algorithm.
 
 Many new concurrency structures were introduced in Java 5. Expanding ARC's
 operators to deal with new anti-patterns~\cite{BJ09, BCD06} gives ARC the
