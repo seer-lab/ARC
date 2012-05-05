@@ -698,7 +698,7 @@ performance.
 ARC is not a quick process. Executing ConTest (population $\times$ generations
 $\times$ \# runs $times$ ConTest run time) many times alone can take significant
 resources. Execution times on programs in the experimental section have ranged between
-roughly 10 minutes and 4 hours.
+roughly 5 minutes and 4 hours.
 
 \subsection{Experimental Setup}
 \label{sec:experimental_setup}
@@ -763,29 +763,29 @@ experience with ARC.
 used values for the experimentations.}
 \begin{center}
 \lstset{basicstyle=\scriptsize}
-\begin{tabular}{|p{3cm}|p{10cm}|r|}
+\begin{tabular}{|l|l|r|}
 \hline
 \textbf{Parameter} & \textbf{Description} & \textbf{Value}\\
 \hline
-Project Test Mb & The amount of memory allocated for the testing & 2000\\
+Project Test MB & The amount of memory allocated for the testing & 2000\\
 \hline
 ConTest Runs & Test suite executions per gen. per member & 10\\
 \hline
 Validation Mult. & Multiplier on ConTest runs when validating the functionality & 15\\
 \hline
-Timeout Mult. & Time multiplier for ConTest before timeout & 3\\
+Timeout Mult. & Time multiplier for ConTest before timeout & 15\\
 \hline
 Evolut. Gen. & Maximum number of generations in fixing phase & 30\\
 \hline
 Evolution Population & Population size for the evolutionary strategy & 30\\
 \hline
-Replace Lowest \% & Lowest N\% of population replaced & 10\\
+Replace Lowest \% & Lowest $n$\% of population replaced & 10\\
 \hline
-Replace With Best \% & Replace underperfomer with best \% & 75\\
+Replace With Best \% & Replace underperfomer with best individual $n$\% of the time & 75\\
 \hline
 Replace min turns & Minimum time underperforming & 3\\
 \hline
-Replace Interval & Every N generations, underperformers are replaced & 5\\
+Replace Interval & Every $n$ generations, underperformers are replaced & 5\\
 \hline
 Ranking Window & Size of sliding window for operator weighting & 5\\
 \hline
@@ -807,44 +807,42 @@ Best Fit. Delta & Minimum best fitness improvement required & 1\\
 \subsection{Experimental Results}
 \label{sec:experimental_results}
 
-Each program was run through ARC a total of $x$ times using the parameters
+Each program was run through ARC a total of 5 times using the parameters
 described in Table~\ref{tbl:used_parameters}. The results of each program is
 summarized in Table~\ref{tbl:summary_results}.
 
-% TODO Redo this table, and enumerate (somehow) the results instead of using ranges
-
 \begin{table}%[h]
 \caption{Summary of the results of running the programs
-(Table~\ref{tbl:used_programs}) through ARC 10 times.}
+(Table~\ref{tbl:used_programs}) through ARC 5 times.}
 \begin{center}
 \lstset{basicstyle=\scriptsize}
-\begin{tabular}{|p{1.8cm}|p{1.5cm}|p{1.75cm}|p{1.75cm}|p{1.75cm}|p{2cm}|p{2cm}|}
+\begin{tabular}{|l|l|l|}
 \hline
-\textbf{Program} & \textbf{Fix \%} & \textbf{Gen. Fix Found} & \textbf{Time for Fix (s)} & \textbf{Soln. Time (s)}  \\
+\textbf{Program} & \textbf{Gen. Fix Found} & \textbf{Time Taken (h:m:s)}\\
 \hline
-account & 0.6 & [3--17] & [0.10--0.14] & [0.9--0.12] \\
+account & 4, 15, 4, 1, 1 & 0:19:53, 1:08:30, 0:19:54, 0:06:39, 0:06:29\\
 \hline
-accounts & 0.6 & [3--17] & [0.10--0.14] & [0.9--0.12] \\
+accounts & 1, 3, 2, 3, 2 & 0:12, 1:12, 1:12, 1:12, 1:12\\
 \hline
-airline & 0.6 & [3--17] & [0.10--0.14] & [0.9--0.12] \\
+airline & --, --, --, --, -- & 3:58:07, 3:56:19, 3:49:34, 3:53:14, --\\
 \hline
-allocation & 0.6 & [3--17] & [0.10--0.14] & [0.9--0.12] \\
+allocation & 1, 3, 2, 3, 2 & 0:12, 1:12, 1:12, 1:12, 1:12\\
 \hline
-bubble & 0.6 & [3--17] & [0.10--0.14] & [0.9--0.12] \\
+bubble & 1, 3, 2, 3, 2 & 0:12, 1:12, 1:12, 1:12, 1:12\\
 \hline
-bubblesort2 & 0.6 & [3--17] & [0.10--0.14] & [0.9--0.12] \\
+bubblesort2 & 1, 3, 2, 3, 2 & 0:12, 1:12, 1:12, 1:12, 1:12\\
 \hline
-buffer & 0.6 & [3--17] & [0.10--0.14] & [0.9--0.12] \\
+buffer & 1, 3, 2, 3, 2 & 0:12, 1:12, 1:12, 1:12, 1:12\\
 \hline
-bufwriter & 0.6 & [3--17] & [0.10--0.14] & [0.9--0.12] \\
+bufwriter & 1, 3, 2, 3, 2 & 0:12, 1:12, 1:12, 1:12, 1:12\\
 \hline
-deadlock & 0.6 & [3--17] & [0.10--0.14] & [0.9--0.12] \\
+deadlock & 1, 1, 1, 1, 1 & 0:06:45, 0:05:43, 0:06:45, 0:05:40, 0:07:51\\
 \hline
-lottery & 0.6 & [3--17] & [0.10--0.14] & [0.9--0.12] \\
+lottery & 1, 3, 2, 3, 2 & 0:12, 1:12, 1:12, 1:12, 1:12\\
 \hline
-mergesort & 0.6 & [3--17] & [0.10--0.14] & [0.9--0.12] \\
+mergesort & 1, 3, 2, 3, 2 & 0:12, 1:12, 1:12, 1:12, 1:12\\
 \hline
-pingpong & 0.6 & [3--17] & [0.10--0.14] & [0.9--0.12] \\
+pingpong & 1, 3, 2, 3, 2 & 0:12, 1:12, 1:12, 1:12, 1:12\\
 \hline
 \end{tabular}
 \label{tbl:summary_results}
