@@ -107,7 +107,7 @@ not to mention that parallelism introduces thread interleavings on top of this.
 ARC innately lessens some of these problems due to a few design choices. First,
 we limit the algorithm to only fixing deadlocks and data races. Second, ARC
 only targets concurrency mechanisms (\texttt{synchronize} statements are added,
-removed, and manipulated). Third, we use a specific set of fourteen
+removed, and manipulated). Third, we use a specific set of 11
 TXL~\cite{CHP91} operators based on the ConMAn suite~\cite{BCD06} to mutate the
 concurrent program.  Finally, ARC only considers shared variables during the
 mutation process. By considering these four design choices ARC operates on a
@@ -163,16 +163,13 @@ Sect.~\ref{sec:future_work} \& Sect.~\ref{sec:conclusion}.
 \subsection{Concurrency Bugs}
 \label{sec:concurrency}
 
-In-proper synchronization in concurrent programs allows such conditions as data
-races and deadlocks to occur. ARC attempts to fix these bugs by evolving a
-program that contains proper synchronization.
+% Concurrency is the act of having multiple threads executing in parallel.
+% Concurrent programs are able to exploit multi-core systems where threads are
+% distributed across each of the CPUs to increase performance.
 
-%Concurrency is the act of having multiple threads executing in parallel.
-%Concurrent programs are able to exploit multi-core systems where threads are
-%distributed across each of the CPUs to increase performance. Concurrency
-%introduces a new class of bugs, the \textit{heisenbugs}. Due to
-%concurrent access to shared memory, threads are able to cause \textit{data
-%races} and \textit{deadlocks}.
+Concurrency introduces a new class of bugs, the \textit{heisenbugs}. Due to
+concurrent access to shared memory, threads are able to cause \textit{data
+races} and \textit{deadlocks}.
 
 A \textbf{data race} has been defined as: \textit{``\ldots two or more
 concurrent threads access a shared variable and when at least one access is a
@@ -183,6 +180,10 @@ A \textbf{deadlock} as: \textit{``\ldots a situation where two or more
 processes are unable to proceed because each is waiting for one of the others
 to do something in a deadlock cycle \ldots} For example, this occurs when a
 thread holds a lock that another thread desires and vice-versa''~\cite{LSW07}.
+
+Improper synchronization in concurrent programs allows such conditions as data
+races and deadlocks to occur. ARC attempts to fix these bugs by evolving a
+program that contains proper synchronization.
 
 These bugs are extremely difficult to detect due to the non-deterministic
 nature of how threads are interleaved (the way the system schedules them).
@@ -195,65 +196,59 @@ checking~\cite{BHPV00,RDH03,OM03,MQB07,Holz97,JM04,HP00}.
 \subsection{Evolutionary Strategies}
 \label{sec:evolutionary_strategies}
 
-ES is part of the family of heuristic search algorithms. The most commonly
-referenced heuristic search technique is the genetic algorithm~\cite{GA92}. For
-space reasons only the briefest outline of ES and it's place in the heuristic
-search family is given.
+ES is member of the heuristic search algorithm's family. The most commonly
+referenced heuristic search technique is the genetic algorithm
+(GA)~\cite{GA92}. For space limitations we provide a brief outline of ES and
+it's place in the heuristic search family.
 
-A standard genetic algorithm is population based, uses mutation, crossover and
+A standard GA is population based, uses mutation, crossover and
 a fitness function to evolve solutions to problems. A proposed solution to the
-problem is encoded as a member of the population. Each member is evaluated by a
-fitness function. The more fit a member solution is, the greater the chance it
-will pass it's genetic material (solution) on to the next generation.
-\textit{Selection pressure preferentially selects better solutions.} Crossover
-mixes these solutions to produce new ones while mutation injects fresh
-information in to the population so it doesn't become stagnant.
+problem is encoded as an individual of the population. Each individual is evaluated by a
+fitness function, which is an equation that determines how close the individual is to the solution. The more fit a individual's solution is, the greater the chance it
+will pass it's genetic material (i.e., part of the solution) on to the next generation.
+%\textit{Selection pressure preferentially selects better solutions.}
+Crossover mixes the individuals to produce new ones while mutation injects fresh
+information in to the population so it does not become stagnant.
 
 ES is a simpler form of search than a genetic algorithm. A population of
 proposed solutions is generated and mutated each generation. Crossover and
-selection aren't used. Every members fitness is evaluated every generation. ES
+selection aren't used. Every individual's fitness is evaluated every generation. ES
 end when a predetermined fitness is reached, after a set number of
 generations have passed or after a search budget is exhausted.
 
-%Why use mutation only? Sometimes it is unclear how to use crossover. For
-%example, if the member solutions are Java programs, how does one ensure that
-%when putting two halves of different programs together the resulting program is
-%correct, makes sense or even compiles?
+ARC uses an ES oppose to a GA as crossover intuitively does not seem to fit
+well with the problem. Mixing two states of a program in relation to repairing
+concurrency could lead to more troubles in regards to merging the two code
+bases. Our rational is to use ES and leave crossover/selection as possible
+future work.
 
-\section{Motivating Problem}
+\section{Motivation}
 \label{sec:motivation}
 
-\begin{quote}
-\textit{Some properties are difficult or impossible to encode using test cases,
-such as nondeterministic properties; GenProg cannot currently repair race
-conditions, for example.}~\cite{GNFW11}
-\end{quote}
-
-%Concurrency bugs are difficult to detect and fix. Many tools exist that
-%identify concurrent bugs.
-In concurrent bugs, multiple code fragments can be involved, possibly in different units with
-differently named variables. In this ambiguous scenario the appropriate fix is
-not always clear. There has been work in concurrency anti-patterns that provide
-a definition, problem, context and solution for concurrency
+For concurrency bugs, multiple code fragments can be involved, possibly in
+different units of code. In this ambiguous scenario the appropriate fix is not
+always clear. There has been work in concurrency anti-patterns that provide a
+definition, problem, context and solution for concurrency
 bugs~\cite{BJ09,FKLV12}.
 
+We now provide a simple example of a data race bug and how a developer might fix it.
 In the left part of Fig.~\ref{fig:fixed_sample_datarace} the \texttt{read} and
 \texttt{write} method access a shared variable. A very simple data race exists
 because there is no atomic access to the \texttt{data} variable during the
-reading or writing.
+concurrent reading or writing.
 %Both methods are involved in the data race, and it is because of the interactions between these methods the data race is possible.
-A solution involves synchronizing both accesses (Right part of
-Fig.~\ref{fig:fixed_sample_datarace}). Synchronizing one method alone does not
-fix the bug.
+A solution involves synchronizing both accesses as shown in the right part of
+Fig.~\ref{fig:fixed_sample_datarace}. Synchronizing one method alone does not
+completely fix the bug in this case.
 
-Phase 2 - the optimization phase in development - addresses the issue of unnecessarily
-synchronizing the ``expensive loop'' and ``database query''.
+% Phase 2 - the optimization phase in development - addresses the issue of unnecessarily
+% synchronizing the ``expensive loop'' and ``database query''.
 
-%The solution in the right part of Fig.~\ref{fig:fixed_sample_datarace} is far
-%from ideal. It forces other threads to wait unnecessarily while the write
-%method works in the loop and database sections. An optimization is to shrink
-%the critical region (the synchronized statements) to only guard access to the
-%shared variable (as shown in Fig.~\ref{fig:optimized_sample_datarace}).
+The solution in the right part of Fig.~\ref{fig:fixed_sample_datarace} is far
+from ideal. It forces other threads to wait unnecessarily while the write
+method works in the loop and database sections. An optimization is to shrink
+the critical region (the synchronized statements) to only guard access to the
+shared variable as shown in Fig.~\ref{fig:optimized_sample_datarace}.
 
 \begin{figure}[h]
 \begin{minipage}{5cm}
@@ -289,49 +284,49 @@ still exists. Synchronizing the \texttt{write} method as well fixes it.}
 \label{fig:fixed_sample_datarace}
 \end{figure}
 
-%\begin{figure}[t]
-%\begin{minipage}{5cm}
-%\footnotesize{\textbf{$1^{st}$ Optimization on Fix:}}
-%\begin{lstlisting}[language=Java, morekeywords={synchronize}]
-%public write(int var1){
-%  ... // Expensive loop
-%  synchronized(this){
-%    data = var1;
-%    ... // Database query
-%  }
-%}
-%
-%int synchronize read(){
-%  return data;
-%}
-%\end{lstlisting}
-%\end{minipage}\hfill
-%\begin{minipage}{5cm}
-%\footnotesize{\textbf{$2^{nd}$ Optimization on Fix:}}
-%\begin{lstlisting}[language=Java, morekeywords={synchronize}]
-%public write(int var1){
-%  ... // Expensive loop
-%  synchronized(this){
-%    data = var1;
-%  }
-%  ... // Database query
-%}
-%
-%int synchronize read(){
-%  return data;
-%}
-%\end{lstlisting}
-%\end{minipage}
-%\caption{A developer shrinks the critical region to exclude the expensive loop.
-%They shrink the critical region again to exclude the database query as a
-%further optimization.}
-%\label{fig:optimized_sample_datarace}
-%\end{figure}
+\begin{figure}[t]
+\begin{minipage}{5cm}
+\footnotesize{\textbf{$1^{st}$ Optimization on Fix:}}
+\begin{lstlisting}[language=Java, morekeywords={synchronize}]
+public write(int var1){
+ ... // Expensive loop
+ synchronized(this){
+   data = var1;
+   ... // Database query
+ }
+}
+
+int synchronize read(){
+ return data;
+}
+\end{lstlisting}
+\end{minipage}\hfill
+\begin{minipage}{5cm}
+\footnotesize{\textbf{$2^{nd}$ Optimization on Fix:}}
+\begin{lstlisting}[language=Java, morekeywords={synchronize}]
+public write(int var1){
+ ... // Expensive loop
+ synchronized(this){
+   data = var1;
+ }
+ ... // Database query
+}
+
+int synchronize read(){
+ return data;
+}
+\end{lstlisting}
+\end{minipage}
+\caption{A developer shrinks the critical region to exclude the expensive loop.
+They shrink the critical region again to exclude the database query as a
+further optimization.}
+\label{fig:optimized_sample_datarace}
+\end{figure}
 
 From a developer's standpoint there is a lot of work involved in creating a fix
 for parallel bugs as multiple, unrelated changes are not uncommon.
-%Two changes were required to functionally fix the example program.
-%Two additional changes were required to improve the non-functional performance.
+Two changes were required to functionally fix the example program, and two additional changes were required to improve the non-functional performance. An ideal fix only requires two changes which minimizes the time spent in the critical region. ARC currently finds a fix for a concurrency bug, it does not make any attempt at ensuring it is the optimized fix (this is ongoing research explained in Sect.~\ref{sec:ongoing}).
+
 Automated tools in software testing and debugging are needed as they have the
 potential to reduce the vast amount of resources spent on software testing
 (upwards to \$59.5 billion)~\cite{RTI02}.
@@ -339,25 +334,33 @@ potential to reduce the vast amount of resources spent on software testing
 %, and then optimizing the \textit{non-functional} performance
 %of programs with deadlocks and data races.
 
+\begin{quote}
+\textit{Some properties are difficult or impossible to encode using test cases,
+such as nondeterministic properties; GenProg cannot currently repair race
+conditions, for example.}~\cite{GNFW11}
+\end{quote}
+
 \section{ARC's Approach}
 \label{sec:approach}
 
 %ARC aims to automatically repair concurrency bugs like the one presented in
 %Sect.~\ref{sec:motivation}.
-A high-level overview of ARC's approach is
-presented in Fig.~\ref{fig:process}. There are two inputs to ARC: A buggy
-concurrent Java program and a JUnit test suite. The test suite is necessary as
-it acts like an oracle to determine if the bug still exists in the program. One
-limitation of ARC (and of other automatic bug fixing techniques mentioned in
+
+% A high-level overview of ARC's approach is presented in Fig.~\ref{fig:process}.
+
+There are two inputs to ARC: A buggy concurrent Java program and a JUnit test
+suite. The test suite is necessary as it acts like an oracle to determine if
+the bug still exists in the program. One limitation of ARC (and of other
+related automatic bug fixing techniques mentioned in
 Sect.~\ref{sec:related_works}) is that it can only fix bugs detectable by the
 test suite.
 
-\begin{figure}[h]
-  \centering
-  \includegraphics[width=7.0cm]{figures/process.pdf}
-  \caption{High Level Overview of ARC's Repair and Optimization Process}
-  \label{fig:process}
-\end{figure}
+% \begin{figure}[h]
+%   \centering
+%   \includegraphics[width=7.0cm]{figures/process.pdf}
+%   \caption{High Level Overview of ARC's Repair and Optimization Process}
+%   \label{fig:process}
+% \end{figure}
 
 %ARC's complete approach is accomplished in two phases, the \textit{Functional
 %Phase} and the \textit{Non-Functional Phase}. Both are similar in terms of the
@@ -365,33 +368,34 @@ test suite.
 %first phase attempts to fix the buggy program while the second attempts to
 %optimize its performance.
 
-The next sections detail the fixing process as shown in Fig.~\ref{fig:phases_internals}.
+The following sections detail the fixing process as shown in Fig.~\ref{fig:phases_internals}.
 The key aspect of ARC's approach fall in the mutation and evaluation steps.
 
 \begin{figure}[h]
   \centering
-  \includegraphics[width=4.50cm]{figures/phases.pdf}
-  \caption{Internal View of ARC's Phases}
+  \includegraphics[width=7cm]{figures/phases.pdf}
+  \caption{Detailed View of ARC's Approach}
   \label{fig:phases_internals}
 \end{figure}
 
-\subsection{Initialize Population}
-\label{sec:initialize_population}
+\subsection{Update Population}
+\label{sec:update_population}
 
-ARC begins by initializing the population of individuals. This
-involves copying the program for each individual of the ES.  Each program
-is then mutated independently during the fixing process.
+This step involves ARC updates the population of individuals. For each
+individual the previous generation (or the original program if ARC is just
+starting) is copied to the current generation. Each individual contains their
+own version of the program, which evolve independently of each other.
+
 %For the non-functional phase ARC has already produced the fixed
 %program so each individual receives a copy of the fixed program to optimize.
 
-\subsection{Generate Mutants and Update Individual's Representation}
+\subsection{Update Individual's Representation}
 \label{sec:update_individual_representation}
 
-For each individual the previous generation's Java code (original program in generation 1)
- is used to generate all
-possible mutations for each individual that can be applied for this generation.
-%This step generates all possible mutants for each individual, though the actual mutation is applied
-%in the next step.
+At this step ARC updates the individual's representation, which is accomplished
+by generate the possible mutations from the current generation's program (which
+is currently the previous generation's).
+
 %Internally ARC keeps track of the mutants using a
 %representational form as shown in Table~\ref{tbl:individual_representation}. As
 %there exists multiple types of mutations, individuals are represented using a
@@ -423,12 +427,13 @@ possible mutations for each individual that can be applied for this generation.
 %\end{center}
 %\end{table}
 
-The set of mutation operators ARC uses are listed in Table~\ref{tbl:operators}
-%each operator can aid in repairing and/or optimizing the program.
-Most have been derived from the ConMAn
-operators~\cite{BCD06}. These operators work by searching for a pattern within
-the source code and then transforming it according to a set of rules. An
-example of the EXSB mutation operator is shown in Fig.~\ref{fig:EXSB_example}.
+The set of mutation operators ARC uses are listed in Table~\ref{tbl:operators},
+which most have been derived from the ConMAn suite~\cite{BCD06}. These
+TXL~\cite{CHP91} operators work by searching for a pattern within the source
+code and then transforming it according to a set of rules. An example of the
+EXSB mutation operator is shown in Fig.~\ref{fig:EXSB_example}. Each mutant
+that is generated from the program creates a new mutant instance for that
+individual of the mutation type.
 
 % Original table with functional and non-functional
 %\begin{table}[h]
@@ -511,21 +516,19 @@ Remove synch. around method & RSM  \\
 
 \footnotesize{\textbf{ Program $P$:}}
 \begin{lstlisting}[language=Java, morekeywords={synchronize}]
-  ...
-  obj.write(var1);
-  synchronized(lock){
-    myHash.remove(var1);
-  }
+obj.write(var1);
+synchronized(lock){
+  myHash.remove(var1);
+}
 \end{lstlisting}
 \end{minipage}\hfill
 \begin{minipage}{5cm}
 \footnotesize{\textbf{ Program $P'$:}}
 \begin{lstlisting}[language=Java, morekeywords={synchronize}]
-  ...
-  synchronized(lock){
-    obj.write(var1);
-    myHash.remove(var1);
-  }
+synchronized(lock){
+  obj.write(var1);
+  myHash.remove(var1);
+}
 \end{lstlisting}
 \end{minipage}
 
@@ -535,7 +538,7 @@ operator.}
 \end{figure}
 
 As ARC mutates synchronization aspects of programs, the mutations themselves
-can alter the appearance of future mutations. This causing the search space of
+can alter the occurrence of future mutations. This causing the search space of
 possible mutations to potentially changes in every generation.
 %Thus ARC must
 %update the representation according to the latest state of the program's source
@@ -544,10 +547,10 @@ possible mutations to potentially changes in every generation.
 \subsection{Apply a Mutation to an Individual}
 \label{sec:mutate_individuals}
 
-Once all mutations are generated for each individual ARC selects a type of
+Once all mutants are generated for each individual ARC selects a type of
 mutation (e.g. EXSB) and then an instance of
-it (e.g. 4th mutant generated) from those available. The
-selected mutation of the previous generation's code is applied and becomes the current
+it (e.g. 4$^{th}$ mutant generated) from those available. The
+selected mutation is applied and becomes the current
 generation's code. ARC at this point will re-compile the project to ensure that
 the mutation consists of valid syntax. In the situation that the compilation
 fails another mutation type and instance is selected until a valid combination is
@@ -559,9 +562,7 @@ found during testing. These two pieces of data add weight to operators
 that have been successful in the past, as well as to select operators that
 appear to reduce the occurrences of either deadlocks or data races more often.
 This heuristic is further detailed in
-Sect.~\ref{sec:recalculate_operator_weighting}. Currently, operators are weighted.
-The mutants they generate are not.  Mutants are selected randomly with equal
-probability.
+Sect.~\ref{sec:recalculate_operator_weighting}. Currently, operators selection is weighted but the mutant instance are selected randomly with equal probability.
 
 \subsection{Evaluate Individuals}
 \label{sec:evalute_individuals}
@@ -616,14 +617,12 @@ executions fail, the proposed fix is rejected and the evolutionary process
 continues.
 
 
-
 \subsection{Check Terminating Condition}
 \label{sec:check_terminating_condition}
 
 ARC continues to evolve and evaluate individuals until
 %some terminating condition is met. The following conditions are for the functional phase:
-a solution is found (100\% successful executions in validation) or or the generational limit /
-evaluations budget is exceeded.
+a solution is found (100\% successful executions in validation) or the generational limit is reached. If solution is found ARC outputs the new corrected program for the user to examine.
 %The following conditions are for the non-
 %functional phase: The population has converged (no improvement has been seen in
 %$x$ generations), no more mutations are generated, or the generational limit is
@@ -636,10 +635,10 @@ With any evolutionary algorithm it is entirely possible for an individual to
 stray down a path leading to little or no improvement. To encourage individuals
 to explore more fruitful areas of the state space we employ a replacement
 strategy that replaces the lower $w$ percentage of individuals with a random
-individual from the upper $x$ percent or the original buggy program with y percent chance.
+individual from the upper $x$ percent or the original buggy program with $y$ percent chance.
 These replacements only occur after an
-individual has underperformed for $y$ generations. We believe the
-\textit{competent programmer hypothesis} applies so the corrected
+individual has underperformed for $z$ generations. We believe the
+\textit{competent programmer hypothesis}~\cite{?} applies so the corrected
 program isn't very far away in the state space from the original buggy program.
 %Therefore we provide a chance for an under-performing individual to reset
 %back the initial state to allow the individual to explore from the starting
@@ -648,18 +647,16 @@ program isn't very far away in the state space from the original buggy program.
 \subsection{Recalculate All Operator's Weighting}
 \label{sec:recalculate_operator_weighting}
 
-ARC utilizes a heuristic approach to select the mutation operator in the
-mutation step. A sliding window of $n$ generations is used to determine the
-success of previously used mutation operators. Operators that improve fitness
+As mentioned in Sect.~\ref{sec:mutate_individuals} ARC utilizes a heuristic approach in selecting the mutation operator. A sliding window of $n$ generations is used to determine the
+success of previously applied mutation operators. Operators that improve fitness
 are weighted more heavily and are more likely to be selected. A sliding window
 is used to prevent dominance of operators and to allow for flexibility in
-changing weighting based on recent history. The weighting is designed to ensure
-the chance of selecting an operator is always greater than zero regardless of
-performance.
+changing the weightings based on recent history. The weighting is designed to ensure
+the chance of selecting an operator is always greater than zero regardless of their performance.
 %To ensure this approach is up to date the current weighting for
 %each operator is recalculated based on the new feedback received from the
-%population. In the functional phase we consider a separate weighting for data
-%races and deadlocks to remain accurate in the use of this heuristic.
+%population.
+We consider a separate weighting for data races and deadlocks to remain accurate in the use of this heuristic based on the current bug ARC is trying to fix.
 
 \section{Experiments}
 \label{sec:experiments}
