@@ -1,0 +1,43 @@
+\section{Related Works}
+\label{sec:related_works}
+
+There are a number of approaches to automatically hide or fix bugs in programs.
+Co-evolutionary competition between programs with bugs and test cases is used
+in~\cite{AY08, Arc08, WT10}. Both approaches require formal specifications and
+both use genetic programming to evolve fixes.
+%Co-evolution is used to cause competition between the evolving fixes and test cases.
+%In both cases the
+%resulting framework is tested only against a toy sorting algorithm with mixed
+%success. The untargeted nature of the fixing process is the largest limitation.
+%No effort is made to constrain the search space of the problem.
+
+Significant advances are made in~\cite{FNWG09, WNLF09, NWLF09, WFGN10, GNFW11,
+LDFW12}. Formal specifications are not required. Instead, test cases are used
+to demonstrate the bug and describe the desired functionality that must be
+preserved. To address the limitations of the previous approach they introduce
+two innovations: First, they assume the bug is written correctly in another
+part of the program. Second, they determine the error path on which the bug
+occurs and target those statements specifically for repair. Together these
+additions constrain the state space enough that the framework can fix real bugs
+in real programs.
+
+Similar to the work done here,~\cite{KLT+07, LVK08} uses ConTest to heal data
+races. From their paper, \textit{``Healing concurrency problems is about
+limiting or changing the probability of interleaving, such that bugs will be
+seen less.''}
+%In contrast, our approach uses ConTest in a framework that fixes
+%both deadlocks and data races.
+
+A framework is created in~\cite{CB05} to ``repair'' buffer overflow attacks.
+When one is identified, the program state is reset to what it was before the
+attack. The attack packet is discarded then the program continues running.
+%As in the previous approach the goal is to hide the problem, not fix it.
+
+SAT solving is used in~\cite{AY07}  to repair shared memory concurrent programs
+``w.r.t. CTL specifications'' where processes atomically read, write one shared
+variable at a time. All that is required is the concurrent program and a
+specification in modal or temporal logic.
+%It is unclear if the fix is applied to the program or the specification of the program.
+
+% TODO
+Automated atomicity-violation fixing~\cite{JSZL+11}

@@ -1,0 +1,86 @@
+\section{Introduction}
+\label{sec:introduction}
+
+As computers and mobile devices now ship with more than one processor, programs
+must take advantage of multiple processes as we have approached the end of
+the\textit{free-lunch}~\cite{SL05}. Parallelism introduces a new class of bugs
+and what makes them difficult to find is that they only occur in a small set of
+execution interleavings~\cite{MQB07}. Even when a concurrency bug as been
+detected, the repair of such a bug may not be apparent to the developer. It is
+often the case that there are multiple threads and data accesses occurring at
+the same time in different locations within the program.
+
+We propose ARC (\textbf{A}utomatic \textbf{R}epair of \textbf{C}oncurrency
+bugs): An automatic technique to repair deadlocks and data races in parallel
+Java programs. Formal specifications, annotations and elaborate test suites are
+not required. Only the Java source code and test(s) demonstrating the deadlocks
+and/or data races are necessary. Evolutionary strategies (ES) are used to
+evolve variants of the program until one is found that fixes the bugs in
+question.
+
+The use of search-based software engineering (SBSE)~\cite{Har+10} techniques to
+automatically repair bugs is not a novel idea~\cite{FNWG09, WNLF09, NWLF09,
+WFGN10, GNFW11, LDFW12}. Our proposed approach adapts the original idea of
+automatically fixing \textit{sequential} programs to specifically target
+\textit{concurrent} programs.
+
+ARC uses ES to iteratively evolve a buggy program into a version that contains
+the proper synchronization that resolves the concurrency bug. To evaluate
+whether a program is fixed or now ARC takes advantage of the IBM's
+ConTest~\cite{EFN+02} tool, which is used to explore different interleavings of
+the program under test.
+
+A common criticism in automatic bug repair techniques is large search space,
+not to mention that parallelism introduces thread interleavings on top of this.
+ARC innately lessens some of these problems due to a few design choices. First,
+we limit the algorithm to only fixing deadlocks and data races. Second, ARC
+only targets concurrency mechanisms (\texttt{synchronize} statements are added,
+removed, and manipulated). Third, we use a specific set of 11 TXL~\cite{CHP91}
+operators based on the ConMAn suite~\cite{BCD06} to mutate the concurrent
+program.  Finally, ARC only considers shared variables during the mutation
+process. By considering these four design choices ARC operates on a limited set
+of operators, and possible places where mutation can occur.
+
+We cover background material related to concurrency and evolutionary strategies
+in Sect.~\ref{sec:background}. The motivation for ARC along with an example
+problem are presented in Sect.~\ref{sec:motivation}. In
+Sect.~\ref{sec:approach} we describe the approach ARC uses to evolve a fix for
+a concurrency bug using ES. We evaluate the fixing effectiveness of ARC in
+Sect.~\ref{sec:experiments} by conducing an experiment using several programs.
+Three challenges that ARC faces are identified in Sect.~\ref{sec:challenges}.
+Threats to validity are covered in Sect.~\ref{sec:threats}. We describe the
+current ongoing research to add a second phase to ARC that attempts to improve
+the performance of the found fixes in Sect.~\ref{sec:ongoing}. In
+Sect.~\ref{sec:related_works} we mention related works in the field of
+automatic bug repair. Finally, future work and conclusions are covered in
+Sect.~\ref{sec:future_work} \& Sect.~\ref{sec:conclusion}.
+
+% In ongoing work we are adding a second phase to the system.  It attempts to
+% improve performance by shrinking and removing synchronization blocks. As this
+% can introduce data races or deadlocks, any mutant decreasing correctness is
+% rejected. This second phase is still in development.  In the rest of the paper
+% we concentrate on the first phase, bug fixing.
+
+% To the best of our knowledge there has been no previous work using evolutionary
+% strategies to fix bugs in concurrent software. There has been work involving
+% the correction of concurrency bugs using self-healing~\cite{LVK08}. From the
+% paper, \textit{The healing techniques based on influencing the scheduling do
+% not guarantee that a detected problem will really be completely removed, but
+% they can decrease the probability of its manifestation.} In contrast ARC is an
+% off-line technique that fixes bugs by modifying the source code.
+
+% The main contributions of this paper are:
+
+% \begin{itemize}
+
+% \item An algorithm to create fixes for deadlocks and data races in concurrent Java
+% programs. Only the source code and tests demonstrating the bugs are necessary.
+% To the best of our knowledge this is the first approach to fix both kinds of
+% bugs in Java programs.
+
+% \item Methods to constrain the search space: First, by specifically targeting
+% synchronization mechanisms. Second, by using a limited number of TXL operators
+% to transform the Java source.  Third, by targeting the variables used by multiple
+% threads and ignoring the rest.
+
+% \end{itemize}

@@ -1,0 +1,122 @@
+\section{Motivation}
+\label{sec:motivation}
+
+For concurrency bugs, multiple code fragments can be involved, possibly in
+different units of code. In this ambiguous scenario the appropriate fix is not
+always clear. There has been work in concurrency anti-patterns that provide a
+definition, problem, context and solution for concurrency
+bugs~\cite{BJ09,FKLV12}.
+
+We now provide a simple example of a data race bug and how a developer might
+fix it. In the left part of Fig.~\ref{fig:fixed_sample_datarace} the
+\texttt{read} and \texttt{write} method access a shared variable. A very simple
+data race exists because there is no atomic access to the \texttt{data}
+variable during the concurrent reading or writing.
+%Both methods are involved in the data race, and it is because of the interactions between these methods the data race is possible.
+A solution involves synchronizing both accesses as shown in the right part of
+Fig.~\ref{fig:fixed_sample_datarace}. Synchronizing one method alone does not
+completely fix the bug in this case.
+
+% Phase 2 - the optimization phase in development - addresses the issue of unnecessarily
+% synchronizing the ``expensive loop'' and ``database query''.
+
+The solution in the right part of Fig.~\ref{fig:fixed_sample_datarace} is far
+from ideal. It forces other threads to wait unnecessarily while the write
+method works in the loop and database sections. An optimization is to shrink
+the critical region (the synchronized statements) to only guard access to the
+shared variable as shown in Fig.~\ref{fig:optimized_sample_datarace}.
+
+\begin{figure}[h]
+\begin{minipage}{5cm}
+\footnotesize{\textbf{Buggy Program:}}
+\begin{lstlisting}[language=Java, morekeywords={synchronize}]
+write(int var1){
+  ... // Expensive loop
+  data = var1;
+  ... // Database query
+}
+
+int public read(){
+  return data;
+}
+\end{lstlisting}
+\end{minipage}\hfill
+\begin{minipage}{5cm}
+\footnotesize{\textbf{Fixed Program:}}
+\begin{lstlisting}[language=Java, morekeywords={synchronize}]
+synchronize write(int var1){
+  ... // Expensive loop
+  data = var1;
+  ... // Database query
+}
+
+int synchronize read(){
+  return data;
+}
+\end{lstlisting}
+\end{minipage}
+\caption{A developer first synchronizes the \texttt{read} function, yet the bug
+still exists. Synchronizing the \texttt{write} method as well fixes it.}
+\label{fig:fixed_sample_datarace}
+\end{figure}
+
+\begin{figure}[t]
+\begin{minipage}{5cm}
+\footnotesize{\textbf{$1^{st}$ Optimization on Fix:}}
+\begin{lstlisting}[language=Java, morekeywords={synchronize}]
+public write(int var1){
+ ... // Expensive loop
+ synchronized(this){
+   data = var1;
+   ... // Database query
+ }
+}
+
+int synchronize read(){
+ return data;
+}
+\end{lstlisting}
+\end{minipage}\hfill
+\begin{minipage}{5cm}
+\footnotesize{\textbf{$2^{nd}$ Optimization on Fix:}}
+\begin{lstlisting}[language=Java, morekeywords={synchronize}]
+public write(int var1){
+ ... // Expensive loop
+ synchronized(this){
+   data = var1;
+ }
+ ... // Database query
+}
+
+int synchronize read(){
+ return data;
+}
+\end{lstlisting}
+\end{minipage}
+\caption{A developer shrinks the critical region to exclude the expensive loop.
+They shrink the critical region again to exclude the database query as a
+further optimization.}
+\label{fig:optimized_sample_datarace}
+\end{figure}
+
+From a developer's standpoint there is a lot of work involved in creating a fix
+for parallel bugs as multiple, unrelated changes are not uncommon. Two changes
+were required to functionally fix the example program, and two additional
+changes were required to improve the non-functional performance. An ideal fix
+only requires two changes which minimizes the time spent in the critical
+region. ARC currently finds a fix for a concurrency bug, it does not make any
+attempt at ensuring it is the optimized fix (this is ongoing research explained
+in Sect.~\ref{sec:ongoing}).
+
+Automated tools in software testing and debugging are needed as they have the
+potential to reduce the vast amount of resources spent on software testing
+(upwards to \$59.5 billion)~\cite{RTI02}.
+%ARC provides an automated approach to fixing the \textit{functionality}
+%, and then optimizing the \textit{non-functional} performance
+%of programs with deadlocks and data races.
+
+\begin{quote}
+\textit{Some properties are difficult or impossible to encode using test cases,
+such as nondeterministic properties; GenProg cannot currently repair race
+conditions, for example.}~\cite{GNFW11}
+\end{quote}

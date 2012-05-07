@@ -1,0 +1,40 @@
+\section{Ongoing Research}
+\label{sec:ongoing}
+
+ARC may introduce unnecessary concurrency during the fixing process. We are
+experimenting with and implementing a second phase where the same kind of
+evolutionary strategy attempts to optimize the program by shrinking and
+removing concurrency blocks.  Challenges include dealing with re-introducing
+bugs and finding metrics to determine when one proposed optimization performs
+better than another.  Execution time is one.  We are investigating others as
+well.
+
+%\begin{figure}[h]
+%\begin{footnotesize}
+%\begin{center}
+%$non-functional\ fitness(P) = \frac{worst\ score}{[sig_t \times unc(t)] + [sig_c \times unc(c)]}$
+%\end{center}
+%\vspace{0.1cm} \textit{Where:} \vspace{0.1cm}
+%\end{footnotesize}
+%\begin{scriptsize}
+%\begin{center}
+%$unc(x) = \frac{(x_{max} - x_{min})}{x_{avg}}$ \\ \vspace{0.2cm}
+%$
+%  sig_t = \left\{
+%  \begin{array}{l l}
+%    t/c & \quad if\ t\ > c \\
+%    c/t & \quad if\ c\ > t \\
+%  \end{array} \right.
+%$ \\ \vspace{0.2cm}
+%$
+%  sig_s = \left\{
+%  \begin{array}{l l}
+%    c/t & \quad if\ t\ > c \\
+%    t/c & \quad if\ c\ > t \\
+%  \end{array} \right.
+%$ \\
+%\end{center}
+%\end{scriptsize}
+%\caption{Fitness Function for Non-Functional Phase}
+%\label{fig:nonfunctional_fitness}
+%\end{figure}

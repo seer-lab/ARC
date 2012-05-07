@@ -1,0 +1,158 @@
+\section{Experiments}
+\label{sec:experiments}
+
+%Due to the ARCs heuristic nature it is entirely possible for a program to
+%perform better or worse then it did originally. We are interested in both ARCs
+%ability to find fixes and ARCs effect on performance of solutions found.
+
+ARC is not a quick process. Executing ConTest (population $\times$ generations
+$\times$ \# runs $\times$ ConTest run time) many times alone can take
+significant resources. Execution times on programs in the experimental section
+have ranged between roughly 5 minutes and 4 hours.
+
+\subsection{Experimental Setup}
+\label{sec:experimental_setup}
+
+ARC is evaluated against selected programs from the IBM Concurrency
+Benchmark~\cite{EHSU06}. This set of programs is rather small yet demonstrate a
+variety of concurrent bug types. Unfortunately, none of the programs contain
+JUnit test suite that ARC requires. We manually created JUnit test suites
+without altering the programs and their bugs's behaviour\footnote{One incorrect
+program was fixed so that it properly exhibited its concurrency bug.}. Details
+on the programs are presented in Table~\ref{tbl:used_programs}.
+% TODO Is the footnote still true? (CC: David)
+
+% TODO Maybe just remove the Bug Pattern (as it would need more explanation)
+\begin{table}[h]
+\caption{The set of programs used to evaluate ARC. The test suite for each
+program is excluded from these values.}
+\begin{center}
+\begin{tabular}{|l|r|r|l|l|}
+\hline
+\textbf{Program} & \textbf{SLOC} & \textbf{Classes} & \textbf{Bug Type} & \textbf{Bug Pattern}\\
+\hline
+account & 165 & 3 & Data Race & NoLock\\
+\hline
+accounts & 75 & 2 & Data Race & NonAtomicAssumedAtomic\\
+\hline
+airline & 93 & 1 & Data Race & Interference\\
+\hline
+allocation & 165 & 3 & Data Race & TwoStageAccess\\
+\hline
+bubble & 246 & 4 & Data Race & NonAtomicAssumedAtomic,\newline OrphanedThread\\
+\hline
+bubblesort2 & 104 & 2 & Data Race & Initialization-Sleep\\
+\hline
+buffer & 319 & 5 & Data Race & NotifiyInsteadOfNotifyAll\\
+\hline
+bufwriter & 170 & 5 & Deadlock & NoLock\\
+\hline
+deadlock & 109 & 2 & Deadlock & Deadlock\\
+\hline
+lottery & 157 & 2 & Data Race & NonAtomicAssumedAtomic,\newline NoLock, BlockingCriticalSection\\
+\hline
+mergesort & 281 & 2 & Data Race & NonAtomicAssumedAtomic\\
+\hline
+pingpong & 143 & 4 & Data Race & Null-Pointer Exception\\
+\hline
+\end{tabular}
+\label{tbl:used_programs}
+\end{center}
+\end{table}
+
+ARC was designed to be flexible in terms of the parameters that can be
+configured. Table~\ref{tbl:used_parameters} lists and describes each parameter,
+including the values selected for evaluation. Values were selected based on our
+experience with ARC.
+
+% TODO Maybe reduce this to the common ES parameters?
+\begin{table}%[h]
+\caption{The set of parameters that ARC uses along with their descriptions and
+used values for the experimentations.}
+\begin{center}
+\lstset{basicstyle=\scriptsize}
+\begin{tabular}{|l|l|r|}
+\hline
+\textbf{Parameter} & \textbf{Description} & \textbf{Value}\\
+\hline
+Project Test MB & The amount of memory allocated for the testing & 2000\\
+\hline
+ConTest Runs & Test suite executions per gen. per member & 10\\
+\hline
+Validation Mult. & Multiplier on ConTest runs when validating the functionality & 15\\
+\hline
+Timeout Mult. & Time multiplier for ConTest before timeout & 15\\
+\hline
+Evolut. Gen. & Maximum number of generations in fixing phase & 30\\
+\hline
+Evolution Population & Population size for the evolutionary strategy & 30\\
+\hline
+Replace Lowest \% & Lowest $n$\% of population replaced & 10\\
+\hline
+Replace With Best \% & Replace underperfomer with best individual $n$\% of the time & 75\\
+\hline
+Replace min turns & Minimum time underperforming & 3\\
+\hline
+Replace Interval & Every $n$ generations, underperformers are replaced & 5\\
+\hline
+Ranking Window & Size of sliding window for operator weighting & 5\\
+\hline
+Success Weight & The weighting applied for successful executions & 100\\
+\hline
+Timeout Weight & The weighting applied for timeout executions & 50\\
+\hline
+Improv. Window & Size of window for convergence check & 10\\
+\hline
+Avg. Fit. Delta & Minimum average fitness improvement required & 0.01\\
+\hline
+Best Fit. Delta & Minimum best fitness improvement required & 1\\
+\hline
+\end{tabular}
+\label{tbl:used_parameters}
+\end{center}
+\end{table}
+
+\subsection{Experimental Results}
+\label{sec:experimental_results}
+
+Each program was run through ARC a total of 5 times using the parameters
+described in Table~\ref{tbl:used_parameters}. The results of each program is
+summarized in Table~\ref{tbl:summary_results}.
+
+\begin{table}%[h]
+\caption{Summary of the results of running the programs
+(Table~\ref{tbl:used_programs}) through ARC 5 times.}
+\begin{center}
+\lstset{basicstyle=\scriptsize}
+\begin{tabular}{|l|l|l|}
+\hline
+\textbf{Program} & \textbf{Gen. Fix Found} & \textbf{Time Taken (h:m:s)}\\
+\hline
+account & 4, 15, 4, 1, 1 & 0:19:53, 1:08:30, 0:19:54, 0:06:39, 0:06:29\\
+\hline
+accounts & 1, 1, 1, 1, 1 & 2:02:57, 2:08:11, 2:05:31, 2:10:18, 2:36:24\\
+\hline
+airline & --, --, --, --, -- & 3:58:07, 3:56:19, 3:49:34, 3:53:14, 3:57:51\\
+\hline
+allocation &  & \\
+\hline
+bubble & 28, & 5:20:33, \\
+\hline
+bubblesort2 & 2, 2, 3, 2, -- & 3:15:06, 5:11:04, 5:53:14, 6:13:16, -- \\
+\hline
+buffer & --, --, --, --, -- & 4:43:50, 4:45:12, 5:07:03, 4:58:27, 5:02:30\\
+\hline
+bufwriter &  & \\
+\hline
+deadlock & 1, 1, 1, 1, 1 & 0:06:45, 0:05:43, 0:06:45, 0:05:40, 0:07:51\\
+\hline
+lottery & 3, 4, 2, 1, ?? & 2:19:18, 2:43:18, 1:54:00, 1:05:27, timeout\\
+\hline
+mergesort & & \\
+\hline
+pingpong & 1, 1, 1, 1, 1 & 0:39:57, 0:12:47, 0:46:21, 0:46:16, 0:42:02\\
+\hline
+\end{tabular}
+\label{tbl:summary_results}
+\end{center}
+\end{table}
