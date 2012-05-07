@@ -1,25 +1,30 @@
 \section{Experiments}
 \label{sec:experiments}
 
-%Due to the ARCs heuristic nature it is entirely possible for a program to
-%perform better or worse then it did originally. We are interested in both ARCs
-%ability to find fixes and ARCs effect on performance of solutions found.
-
-ARC is not a quick process. Executing ConTest (population $\times$ generations
-$\times$ \# runs $\times$ ConTest run time) many times alone can take
-significant resources. Execution times on programs in the experimental section
-have ranged between roughly 5 minutes and 4 hours.
+% Due to the ARCs heuristic nature it is entirely possible for a program to
+% perform better or worse then it did originally. We are interested in both ARCs
+% ability to find fixes and ARCs effect on performance of solutions found.
 
 \subsection{Experimental Setup}
 \label{sec:experimental_setup}
 
-ARC is evaluated against selected programs from the IBM Concurrency
-Benchmark~\cite{EHSU06}. This set of programs is rather small yet demonstrate a
-variety of concurrent bug types. Unfortunately, none of the programs contain
-JUnit test suite that ARC requires. We manually created JUnit test suites
-without altering the programs and their bugs's behaviour\footnote{One incorrect
-program was fixed so that it properly exhibited its concurrency bug.}. Details
-on the programs are presented in Table~\ref{tbl:used_programs}.
+We evaluate ARC's ability to repair concurrency bugs by conducing an experiment
+to gather preliminary results. The 12 buggy programs we chose come from a
+subset of the IBM Concurrency Benchmark~\cite{EHSU06}. Our selection criteria
+was to pick a subset of programs that contained bugs that ARC has the
+capability of fixing based on the set of mutation operators. For example, we
+ignored programs that used some of the newer concurrency structures from Java 5. We
+also included some programs that we identified that ARC could not fix just as a
+sanity check.
+
+Unfortunately, none of the programs contain JUnit test suite that ARC requires.
+We manually created JUnit test suites without altering the programs and their
+bugs's behaviour\footnote{One incorrect program was fixed so that it properly
+exhibited its concurrency bug.}. Each test suite consists of three unit tests
+each with a different \textit{level} of concurrency (IBM Concurrency Benchmark
+programs have an argument that controls the number of threads that are used in
+execution). Source code details on the programs are presented in
+Table~\ref{tbl:used_programs}
 % TODO Is the footnote still true? (CC: David)
 
 % TODO Maybe just remove the Bug Pattern (as it would need more explanation)
@@ -27,33 +32,33 @@ on the programs are presented in Table~\ref{tbl:used_programs}.
 \caption{The set of programs used to evaluate ARC. The test suite for each
 program is excluded from these values.}
 \begin{center}
-\begin{tabular}{|l|r|r|l|l|}
+\begin{tabular}{|l|r|r|l|l|l|}
 \hline
-\textbf{Program} & \textbf{SLOC} & \textbf{Classes} & \textbf{Bug Type} & \textbf{Bug Pattern}\\
+\textbf{Program} & \textbf{SLOC} & \textbf{Classes} & \textbf{Bug Type} & \textbf{Can Fix?} & \textbf{Bug Pattern}\\
 \hline
-account & 165 & 3 & Data Race & NoLock\\
+account & 165 & 3 & Data Race & Yes & NoLock\\
 \hline
-accounts & 75 & 2 & Data Race & NonAtomicAssumedAtomic\\
+accounts & 75 & 2 & Data Race & Yes & NonAtomicAssumedAtomic\\
 \hline
-airline & 93 & 1 & Data Race & Interference\\
+airline & 93 & 1 & Data Race & No & Interference\\
 \hline
-allocation & 165 & 3 & Data Race & TwoStageAccess\\
+allocation & 165 & 3 & Data Race & Yes & TwoStageAccess\\
 \hline
-bubble & 246 & 4 & Data Race & NonAtomicAssumedAtomic,\newline OrphanedThread\\
+bubble & 246 & 4 & Data Race & No & NonAtomicAssumedAtomic,\newline OrphanedThread\\
 \hline
-bubblesort2 & 104 & 2 & Data Race & Initialization-Sleep\\
+bubblesort2 & 104 & 2 & Data Race & No & Initialization-Sleep\\
 \hline
-buffer & 319 & 5 & Data Race & NotifiyInsteadOfNotifyAll\\
+buffer & 319 & 5 & Data Race & No & NotifiyInsteadOfNotifyAll\\
 \hline
-bufwriter & 170 & 5 & Deadlock & NoLock\\
+bufwriter & 170 & 5 & Deadlock & Yes & NoLock\\
 \hline
-deadlock & 109 & 2 & Deadlock & Deadlock\\
+deadlock & 109 & 2 & Deadlock & Yes & Deadlock\\
 \hline
-lottery & 157 & 2 & Data Race & NonAtomicAssumedAtomic,\newline NoLock, BlockingCriticalSection\\
+lottery & 157 & 2 & Data Race & No & NonAtomicAssumedAtomic,\newline NoLock, BlockingCriticalSection\\
 \hline
-mergesort & 281 & 2 & Data Race & NonAtomicAssumedAtomic\\
+mergesort & 281 & 2 & Data Race & No & NonAtomicAssumedAtomic\\
 \hline
-pingpong & 143 & 4 & Data Race & Null-Pointer Exception\\
+pingpong & 143 & 4 & Data Race & Yes & NonAtomicAssumedAtomic\\
 \hline
 \end{tabular}
 \label{tbl:used_programs}
@@ -63,7 +68,11 @@ pingpong & 143 & 4 & Data Race & Null-Pointer Exception\\
 ARC was designed to be flexible in terms of the parameters that can be
 configured. Table~\ref{tbl:used_parameters} lists and describes each parameter,
 including the values selected for evaluation. Values were selected based on our
-experience with ARC.
+experience with ARC. The selected parameters allowed for 10 ConTest executions
+to occur to evaluate each individual at each generation. If a potential
+solution is found, the validation of that potential solution will execute an
+addition 150 ConTest executions (10 ConTest Runs $\times$ Validation Mult. of
+15).
 
 % TODO Maybe reduce this to the common ES parameters?
 \begin{table}%[h]
@@ -81,9 +90,9 @@ ConTest Runs & Test suite executions per gen. per member & 10\\
 \hline
 Validation Mult. & Multiplier on ConTest runs when validating the functionality & 15\\
 \hline
-Timeout Mult. & Time multiplier for ConTest before timeout & 15\\
+Timeout Mult. & Time multiplier for ConTest before timeout & 20\\
 \hline
-Evolut. Gen. & Maximum number of generations in fixing phase & 30\\
+Evolution Gen & Maximum number of generations in fixing phase & 30\\
 \hline
 Evolution Population & Population size for the evolutionary strategy & 30\\
 \hline
@@ -116,12 +125,13 @@ Best Fit. Delta & Minimum best fitness improvement required & 1\\
 \label{sec:experimental_results}
 
 Each program was run through ARC a total of 5 times using the parameters
-described in Table~\ref{tbl:used_parameters}. The results of each program is
-summarized in Table~\ref{tbl:summary_results}.
+described in Table~\ref{tbl:used_parameters} and Programs in
+Table~\ref{tbl:used_programs}. The results of each program is summarized in
+Table~\ref{tbl:summary_results}.
 
 \begin{table}%[h]
 \caption{Summary of the results of running the programs
-(Table~\ref{tbl:used_programs}) through ARC 5 times.}
+(from Table~\ref{tbl:used_programs}) through ARC 5 times.}
 \begin{center}
 \lstset{basicstyle=\scriptsize}
 \begin{tabular}{|l|l|l|}
@@ -134,19 +144,19 @@ accounts & 1, 1, 1, 1, 1 & 2:02:57, 2:08:11, 2:05:31, 2:10:18, 2:36:24\\
 \hline
 airline & --, --, --, --, -- & 3:58:07, 3:56:19, 3:49:34, 3:53:14, 3:57:51\\
 \hline
-allocation & TO, TO, TO, 3, TO & --, --, --, 22h 39m 6s, --  \\
+allocation & TO, TO, TO, 3, TO & --, --, --, 22:39:6, --  \\
 \hline
 bubble & 28, & 5:20:33, \\
 \hline
-bubblesort2 & 2, 2, 3, 2, -- & 3:15:06, 5:11:04, 5:53:14, 6:13:16, -- \\
+bubblesort2 & 2, 2, 3, 2, 2 & 3:15:06, 5:11:04, 5:53:14, 6:13:16, 7:05:32 \\
 \hline
 buffer & --, --, --, --, -- & 4:43:50, 4:45:12, 5:07:03, 4:58:27, 5:02:30\\
 \hline
-bufwriter &  & \\
+bufwriter & TO, TO, TO, TO, TO & --, --, --, --, --\\
 \hline
 deadlock & 1, 1, 1, 1, 1 & 0:06:45, 0:05:43, 0:06:45, 0:05:40, 0:07:51\\
 \hline
-lottery & 3, 4, 2, 1, TO & 2:19:18, 2:43:18, 1:54:00, 1:05:27, --\\
+lottery & 3, 4, 2, 1, 2 & 2:19:18, 2:43:18, 1:54:00, 1:05:27, 1:28:39\\
 \hline
 mergesort & & \\
 \hline
@@ -156,3 +166,30 @@ pingpong & 1, 1, 1, 1, 1 & 0:39:57, 0:12:47, 0:46:21, 0:46:16, 0:42:02\\
 \label{tbl:summary_results}
 \end{center}
 \end{table}
+
+As we can see from the results, the time taken range to find a fix range from
+about 6 minutes to almost a whole day. ARC is currently not a efficient process
+as it is under-optimized in many aspects. The main bottle-neck in terms of time
+and resources within ARC is the repeated number of ConTest executions. In
+addition, ConTest executions are instrumented with random noise which
+negatively effects the performance of the execution. We specify a
+\textit{timeout} result if a single ConTest execution exceeded 5 minutes while
+dynamically acquiring the new timeout value. We utilized the default
+configuration for ConTest, we might be able to reduce the severity of the noise
+with finer tuning of ConTest.
+
+% TODO Add discussion of ARCs fix finding capabilities. Does it find fixes for
+% the programs we figured ARC should be able too, did it find fixes for those
+% we didn't thing it could (how?). Any comment on the generation fixes were
+% found on?
+
+% The state spaces of the found fixes, we would expect the larger state space
+% programs to have their fixes found later. This does not seem to be the case.
+% allocation 76
+% deadlock - 89
+% accounts - 102
+% bubblesort2 - 103
+% pingpong - 123
+% account - 163
+% bubble - 178
+% lottery - 188
