@@ -91,8 +91,7 @@ and/or data races are necessary. Evolutionary strategies (ES) are used to evolve
 variants of the program until one is found that fixes the bugs in question.
 
 The use of search-based software engineering (SBSE)~\cite{Har+10} techniques to
-automatically repair bugs is not a novel idea~\cite{FNWG09, AY08, Arc08, WT10,
-WNLF09, WFGN10}. Our proposed approach adapts the original idea of
+automatically repair bugs is not a novel idea~\cite{FNWG09, WNLF09, NWLF09, WFGN10, GNFW11, LDFW12}. Our proposed approach adapts the original idea of
 automatically fixing \textit{sequential} programs to specifically target
 \textit{concurrent} programs.
 
@@ -982,7 +981,7 @@ both use genetic programming to evolve fixes.
 %No effort is made to constrain the search space of the problem.
 
 Significant advances are made in~\cite{FNWG09, WNLF09, NWLF09, WFGN10,
-GNFW11}. Formal specifications are not required. Instead, test cases are
+GNFW11, LDFW12}. Formal specifications are not required. Instead, test cases are
 used to demonstrate the bug and describe the desired functionality that must be
 preserved. To address the limitations of the previous approach they introduce
 two innovations: First, they assume the bug is written correctly in another
@@ -1009,14 +1008,15 @@ variable at a time. All that is required is the concurrent program and a
 specification in modal or temporal logic.
 %It is unclear if the fix is applied to the program or the specification of the program.
 
+% TODO
+Automated atomicity-violation fixing~\cite{JSZL+11}
 
 \section{Future Work}
 \label{sec:future_work}
 
 Targeting the variables, functions and classes on the error path is another
 feature we would like to add. It has shown great success in helping to isolate
-and automatically fix bugs in single-threaded programs~\cite{FNWG09, NWLF09,
-WFGN10, GNFW11}. We believe it will do the same for multi-threaded programs.
+and automatically fix bugs in single-threaded programs~\cite{FNWG09, WNLF09, NWLF09, WFGN10, GNFW11, LDFW12}. We believe it will do the same for multi-threaded programs.
 
 We also plan to experiment with new operators. Potential additions include
 splitting or merging synchronization blocks and adding new locks. Through
@@ -1039,18 +1039,16 @@ the current generation.
 Little work has been done on automatically fixing parallel programs. We
 introduced ARC -- a framework that automatically fixes deadlocks and data races
 in parallel Java programs. We've implemented a test prototype which we are
-continuing to develop and refine.  Experiments were conducted to evaluate 
-ARC using a set of 12 programs found in a (IBM?) concurrency benchmark. The 
+continuing to develop and refine.  Experiments were conducted to evaluate
+ARC using a set of 12 programs found in a (IBM?) concurrency benchmark. The
 results indicate that ARC is \ldots % TODO
 
-In the future we plan to add a second phase that attempts to optimize the 
+In the future we plan to add a second phase that attempts to optimize the
 efficiency of the fixed programs.
 
 %It uses an evolutionary algorithm operating in two
 %phases. Bugs are fixed in the first phase, then concurrency is optimized in the
 %second.
-
-
 
 \bibliographystyle{splncs03}
 \bibliography{SSBSE2012}
