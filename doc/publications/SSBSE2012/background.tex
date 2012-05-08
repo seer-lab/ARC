@@ -8,26 +8,21 @@
 % Concurrent programs are able to exploit multi-core systems where threads are
 % distributed across each of the CPUs to increase performance.
 
-Concurrency introduces a new class of bugs, the \textit{heisenbugs}. Due to
-concurrent access to shared memory, threads are able to cause \textit{data
-races} and \textit{deadlocks}.
+%Concurrency introduces a new class of bugs, the \textit{heisenbugs}. Due to concurrent access to shared memory, threads are able to cause \textit{data
+%races} and \textit{deadlocks}.
 
-A \textbf{data race} has been defined as: \textit{``\ldots two or more
+Data races and deadlocks are two of the most common concurrency bugs. A \textbf{data race} can be defined as: \textit{``\ldots two or more
 concurrent threads access a shared variable and when at least one access is a
 write, and the threads use no explicit mechanism to prevent the access from
-being simultaneous.''}~\cite{LSW07}.
-
-A \textbf{deadlock} as: \textit{``\ldots a situation where two or more
+being simultaneous.''}~\cite{LSW07}. A \textbf{deadlock} can be defined as: \textit{``\ldots a situation where two or more
 processes are unable to proceed because each is waiting for one of the others
-to do something in a deadlock cycle \ldots} For example, this occurs when a
-thread holds a lock that another thread desires and vice-versa''~\cite{LSW07}.
+to do something in a deadlock cycle \ldots} For example, a deadlock can occur when one
+thread in a program holds a lock that another thread desires and vice-versa''~\cite{LSW07}.
 
-Improper synchronization in concurrent programs allows such conditions as data
-races and deadlocks to occur. ARC attempts to fix these bugs by evolving a
-program that contains proper synchronization.
-
+Improper synchronization in concurrent Java programs allows data
+races and deadlocks to occur. %ARC attempts to fix these bugs by evolving a program that contains proper synchronization.
 These bugs are extremely difficult to detect due to the non-deterministic
-nature of how threads are interleaved (the way the system schedules them).
+nature of how threads are interleaved (i.e., the way the system schedules threads).
 Various techniques are available to detect concurrency bugs such as static
 analysis~\cite{NA07,NPSG09,HP04}, stress testing~\cite{HSU03}, dynamic
 analysis~\cite{JNPS09,EFN+02}, and model
@@ -37,10 +32,9 @@ checking~\cite{BHPV00,RDH03,OM03,MQB07,Holz97,JM04,HP00}.
 \subsection{Evolutionary Strategies}
 \label{sec:evolutionary_strategies}
 
-ES is member of the heuristic search algorithm's family. The most commonly
-referenced heuristic search technique is the genetic algorithm
-(GA)~\cite{GA92}. For space limitations we provide a brief outline of ES and
-it's place in the heuristic search family.
+ES is an example of a heuristic search algorithm and shares some similarities  with the most commonly
+referenced heuristic search technique, the genetic algorithm
+(GA)~\cite{GA92}. Due to space limitations, we will now provide only a brief outline of ES.
 
 A standard GA is population based, uses mutation, crossover and a fitness
 function to evolve solutions to problems. A proposed solution to the problem is
@@ -59,8 +53,8 @@ selection aren't used. Every individual's fitness is evaluated every
 generation. ES end when a predetermined fitness is reached, after a set number
 of generations have passed or after a search budget is exhausted.
 
-ARC uses an ES oppose to a GA as crossover intuitively does not seem to fit
-well with the problem. Mixing two states of a program in relation to repairing
+ARC uses an ES instead of a GA because intuitively, crossover does not seem to fit
+well with the problem. In particular, using crossover to mix two states of a program in relation to repairing
 concurrency could lead to more troubles in regards to merging the two code
 bases. Our rational is to use ES and leave crossover/selection as possible
 future work.
