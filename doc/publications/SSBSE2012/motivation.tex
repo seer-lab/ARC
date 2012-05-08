@@ -37,7 +37,7 @@ int synchronize read(){
 \end{lstlisting}
 \end{minipage}
 \caption{A developer first synchronizes the \texttt{read} function, yet the bug
-still exists. Synchronizing the \texttt{write} method as well fixes it.}
+still exists. Synchronizing the \texttt{write} method as well fixes the bug.}
 \label{fig:fixed_sample_datarace}
 \end{figure}
 
@@ -74,9 +74,8 @@ int synchronize read(){
 }
 \end{lstlisting}
 \end{minipage}
-\caption{A developer shrinks the critical region to exclude the expensive loop.
-They shrink the critical region again to exclude the database query as a
-further optimization.}
+\caption{A developer shrinks the critical region to exclude the expensive loop (Optimization 1).
+Next, a developer shrink the critical region again to exclude the database query (Optimization 2).}
 \label{fig:optimized_sample_datarace}
 \end{figure}
 
