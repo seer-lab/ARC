@@ -42,7 +42,7 @@ airline & 93 & 1 & Data Race & No & Interference\\
 %\hline
 %bubble & 246 & 4 & Data Race & No & NonAtomicAssumedAtomic,\newline OrphanedThread\\
 %\hline
-bubblesort2 & 104 & 2 & Data Race & No & Initialization-Sleep\\
+bubblesort2 & 104 & 2 & Data Race & Yes & Initialization-Sleep\\
 \hline
 buffer & 319 & 5 & Data Race & No & NotifiyInsteadOfNotifyAll\\
 \hline
@@ -50,7 +50,7 @@ buffer & 319 & 5 & Data Race & No & NotifiyInsteadOfNotifyAll\\
 %\hline
 deadlock & 109 & 2 & Deadlock & Yes & Deadlock\\
 \hline
-lottery & 157 & 2 & Data Race & No & NonAtomicAssumedAtomic,\newline NoLock, BlockingCriticalSection\\
+lottery & 157 & 2 & Data Race & Yes & NonAtomicAssumedAtomic,\newline NoLock, BlockingCriticalSection\\
 \hline
 %mergesort & 281 & 2 & Data Race & No & NonAtomicAssumedAtomic\\
 %\hline
@@ -66,7 +66,7 @@ experience with ARC. The selected parameters allowed for 10 ConTest executions
 to occur to evaluate each individual at each generation. If a potential
 solution is found, the validation of that potential solution will execute an
 addition 150 ConTest executions (10 ConTest Runs $\times$ Validation Mult. of
-20).
+15).
 
 % TODO Maybe reduce this to the common ES parameters?
 \begin{table}[t!]
@@ -161,12 +161,12 @@ pingpong & 1, 1, 1, 1, 1 & 0:39:57, 0:12:47, 0:46:21, 0:46:16, 0:42:02\\
 \end{table}
 
 As we can see from the results, the time taken to repair the concurrency programs range from about 6
-minutes to almost a 3 hours. ARC is currently not an efficient process as it is
+minutes to almost 3 hours. ARC is currently not an efficient process as it is
 under-optimized in many aspects. The main bottle-neck in terms of time and
 resources within ARC is the repeated number of ConTest executions. ConTest
 instrumented a program with random noise, causing threads to delay and thus negatively effecting the
 execution time.  The \textit{Timeout Multiplier} in
-Table~\ref{tbl:used_parameters} allows ARC to wait up to 20 times the normal
+Table~\ref{tbl:used_parameters} allows ARC to wait up to 20 times the instrumented
 execution time for the program under test to complete due to the noise.
 
 % Results of inspecting the programs and their fixes
@@ -184,12 +184,11 @@ To better explain our results we will now provide details of the specific fixes 
 a \texttt{methodA} calls a \texttt{methodB}.  There is a data race in
 \texttt{methodB} so synchronizing either \texttt{methodA} or \texttt{methodB}
 fixes the program.  In these programs this is a valid solution as there are no
-other methods that call \texttt{methodB}.  ARC fixes \textit{bubblesort2)},\textit{lottery} and \textit{account} by synchronizing the \texttt{run()} method of the threads.  Unfortunately, this has the side-effect of making the
-programs sequential.  After further inspected these solution we found that for
-only the \texttt{account} program the fix is sub-optimal.  Only one of the
-methods called from\texttt{account}'s  \texttt{run()} method  needs to be
-synchronized, unfortunately ConTest could not identify the proper variable
-argument for the mutation operator to use.  
+other methods that call \texttt{methodB}.  ARC fixes \textit{bubblesort2}, \textit{lottery} and \textit{account} by synchronizing the \texttt{run()} method of the threads.  Unfortunately, this has the side-effect of making the
+programs sequential.  After further inspected these solution we found that only the \texttt{account} program's fix is sub-optimal.  Only one of the
+methods called from \texttt{account}'s  \texttt{run()} method  needs to be
+synchronized, unfortunately ConTest could not properly identify the variable
+argument. ARC was unable to use the proper mutation operator and ends synchronizing the whole \texttt{run()} method.
 
 We had two programs for which ARC was unable to find a fix -- these two programs were initially identified as not being fixable by ARC. \textit{buffer} has an unsupported bug pattern of
 \textit{notify vs. notifyall}. ARC does not have the the necessary mutation
