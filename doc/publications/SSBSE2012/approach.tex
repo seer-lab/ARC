@@ -30,7 +30,7 @@ The following sections detail the fixing process as shown in
 Fig.~\ref{fig:phases_internals}. The key aspect of ARC's approach fall in the
 mutation and evaluation steps.
 
-\begin{figure}[h]
+\begin{figure}[t!]
   \centering
   \includegraphics[width=7cm]{figures/phases.pdf}
   \caption{Detailed View of ARC's Approach}
@@ -135,41 +135,41 @@ individual of the mutation type.
 %\end{table}
 
 % Modified table of functional only operators
-\begin{table}[h]
+\begin{table}[t!]
 \caption{Set of mutation operators used by ARC.}
 \begin{center}
 \begin{tabular}{|l|l|c|c|}
 \hline
-\textbf{Operator} & \textbf{Acronym} \\
+\textbf{Operator Description} & \textbf{Acronym} \\
 \hline
-Add synch. around synch. & ASAS \\
+Add synchronized around synchronized & ASAS \\
 \hline
-Add synch. around variable & ASAV \\
+Add synchronized around variable & ASAV \\
 \hline
-Add synch. in method header & ASIM \\
+Add synchronized in method header & ASIM \\
 \hline
-Add synch. around method & ASM  \\
+Add synchronized around method & ASM  \\
 \hline
-Change synch. order & CSO  \\
+Change synchronized order & CSO  \\
 \hline
-Expand synch. before & EXSB  \\
+Expand synchronized before & EXSB  \\
 \hline
-Expand synch. after & EXSA  \\
+Expand synchronized after & EXSA  \\
 \hline
-Remove synch. around synch. & RSAS  \\
+Remove synchronized around synchronized & RSAS  \\
 \hline
-Remove synch. around variable & RSAV  \\
+Remove synchronized around variable & RSAV  \\
 \hline
-Remove synch. in method header & RSIM  \\
+Remove synchronized in method header & RSIM  \\
 \hline
-Remove synch. around method & RSM  \\
+Remove synchronized around method & RSM  \\
 \hline
 \end{tabular}
 \label{tbl:operators}
 \end{center}
 \end{table}
 
-\begin{figure}[h]
+\begin{figure}[b!]
 \vspace{2mm}
 \begin{minipage}{5cm}
 
