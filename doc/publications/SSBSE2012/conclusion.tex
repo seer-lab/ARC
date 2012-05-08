@@ -3,15 +3,16 @@
 
 Little work has been done on automatically fixing parallel programs. We
 introduced ARC -- a framework that automatically fixes deadlocks and data races
-in parallel Java programs. We've implemented a test prototype which we are
+in parallel Java programs. We've implemented a test prototype that we are
 continuing to develop and refine.  Experiments were conducted to evaluate ARC
-using a set of 8 programs found in a (IBM?) concurrency benchmark. The results
-indicate that ARC is \ldots
-% TODO
+using a set of 8 programs drawn from the IBM concurrency benchmark. It was able to
+fix the data races and deadlocks in all 6 of the fixable programs and find optimal fixes
+for 5 of them.  
 
-In the future we plan to add a second phase that attempts to optimize the
-efficiency of the fixed programs.
-
-%It uses an evolutionary algorithm operating in two
-%phases. Bugs are fixed in the first phase, then concurrency is optimized in the
-%second.
+ARC faces a number of challenges: Efficient use of noise making tools like ConTest,
+scalability and further testing.   We have learned a great deal from this experience. 
+Many ideas have come from the
+initial testing and checking of results. Going forward we plan to refine existing 
+features, add new ones and continue to test ARC against a wider array of larger 
+programs.  First on our list is the addition of  a second phase that attempts to 
+optimize the efficiency of the fixed programs.
