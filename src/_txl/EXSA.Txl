@@ -2,10 +2,17 @@
 % EXSA (EXpand Sync region After) Mutator for ARC
 % (Automatic Repair of Concurrency Bugs)
 %
-% Kevin Jalbert and David Kelk, Sept. 2011
+% Kevin Jalbert, David Kelk and Jeremy Bradbury, Mar. 2012
 % SBSE Reading Course Project
 %
 % Based on EXCR by J.S. Bradbury
+%
+% Typical invocation:
+% txl ManageAccount.java EXSA.Txl - -outfile ManageAccount.java -outdir EXSA/
+%
+% Notes:
+% - Only removes synchronization block around A := B
+% - Output directory must already exist.
 %***********************************************************
 
 %***********************************************************
@@ -31,9 +38,9 @@ include "JavaCommentOverrides.Grm"
 
 % Local grammar overrides
 redefine statement
-        [synchronized_statement]
-    | 	[other_statements]
-    |   [block]
+      [synchronized_statement]
+    | [other_statements]
+    | [block]
     |	[comment_NL]
 end redefine
 
@@ -54,37 +61,42 @@ define other_statements
 end define
 
 define declaration_or_other_statements
-        [local_variable_declaration]
-    |   [class_declaration]
-    |   [other_statements]
+    [local_variable_declaration]
+  | [class_declaration]
+  | [other_statements]
 end define
 
 redefine declaration_or_statement
 	 	[synchronized_statement]
 	|	[declaration_or_other_statements]
-	|       [block]
+	| [block]
 	|	[comment_NL]
 end redefine
 
 redefine synchronized_statement
-          [attr labelM] [synchronized_statement_2]
+    [attr labelM] [synchronized_statement_2]
 	| [attr labelM] [expanded_synchronized_statement]
 end redefine
+
+% How it looks before
 
 define synchronized_statement_2
 	'synchronized '( [expression] ')
 	'{                                        [NL][IN]
-    		[repeat declaration_or_statement]         [NL][EX]
-	'}	[NL]
-	[opt declaration_or_other_statements]   [NL]
+     [repeat declaration_or_statement]         [EX]
+	'} [NL]
+	[opt declaration_or_other_statements]
 end define
 
+% How it looks after
+
 define expanded_synchronized_statement
-    /* 'MUTANT: [stringlit] */ 				[NL]
+   /* 'MUTANT: [stringlit] */ 				[NL]
 	'synchronized '( [expression] ')
 	'{                                        [NL][IN]
-    		[repeat declaration_or_statement]         [NL][EX]
-	'}	[NL]
+     [repeat declaration_or_statement]         [EX]
+	'} [NL]
+  /* 'MUTANT: [stringlit] */   [NL]
 end define
 
 define labelM
@@ -97,9 +109,9 @@ end define
 function main
 	% initialize and export a mutant count that will be used in
 	% file name / folder name generation
-    	construct MutantCount [number]
+  construct MutantCount [number]
 		0
-    	export MutantCount
+  export MutantCount
 
 	% initialize and export the name of the current mutant while
 	% will be used for folder name generation
@@ -108,18 +120,19 @@ function main
 	export MutantOpName
 
 	replace [program]
-        		P [program]
+    P [program]
 
-    	by	% Expand all instances of synchronized blocks one at
+  by
+    % Expand all instances of synchronized blocks one at
 		% a time
-        		P [MutateExpandCriticalRegion]
+    P [MutateExpandCriticalRegion]
 end function
 
 %------------------------------------------------------------
 % Match all methods that have a synchronized block
 % and then perform the following 3 steps for each:
 %	1. Create mutant of program with synchronized block
-%      expanded
+%    expanded by one statement at the end
 %	2. Write mutant to a file
 %	3. Shrink synchronized block that was expanded
 %------------------------------------------------------------
@@ -133,16 +146,18 @@ rule MutateExpandCriticalRegion
 		P 	[?doExpandCriticalRegion]
 
 	by
-		P	% Create the mutant version of the program
+		P
+      % Create the mutant version of the program
 			[doExpandCriticalRegion]
 			%[print]
-			 [writeToFile]
+			[writeToFile]
 			% Undo mutation and return to original form
 			[undoExpandCriticalRegion]
 end rule
 
 %------------------------------------------------------------
-% Create an EXCR mutant by expanding a critical region
+% Create an EXSA mutant by expanding a critical region at
+% the end
 %------------------------------------------------------------
 function doExpandCriticalRegion
 	replace * [synchronized_statement]
@@ -150,6 +165,7 @@ function doExpandCriticalRegion
 
 	deconstruct SynchStatement
 		SynchStatement2 [synchronized_statement_2]
+
 	deconstruct SynchStatement2
 		'synchronized '( Expr [expression] ') '{
 			S2 [repeat declaration_or_statement]
@@ -171,6 +187,7 @@ function doExpandCriticalRegion
 		'synchronized '( Expr ') '{
 			S2 [. S3_b]
 		'}
+    /* 'MUTANT: MutantString */
 end function
 
 %------------------------------------------------------------
@@ -192,11 +209,11 @@ function undoExpandCriticalRegion
 
 	% extract body
 	deconstruct ExpandedStatement
-		/* 'MUTANT: MutantString1[stringlit] */
+		/* 'MUTANT: MutantString1 [stringlit] */
 		'synchronized '( Expr [expression] ') '{
 			NewBody [repeat declaration_or_statement]
 		'}
-
+    /* 'MUTANT: MutantString2 [stringlit] */
 	by
 		% replace mutated synchronized block with original but
 		% leave hidden attribute

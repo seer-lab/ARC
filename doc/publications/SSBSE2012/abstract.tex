@@ -1,0 +1,14 @@
+\begin{abstract}
+
+Automatic program repair using search-based algorithms has been successfully applied to single-threaded programs.
+Similar progress has not been made with respect to the automatic repair of concurrent
+programs. Several challenges exist in concurrent program repair  that are not relevant in sequential source code: (1) concurrent programs can have many possible thread interleavings which can make bugs harder to detect and (2) concurrent programs have to contend with complex interaction bugs that not possible in single-threaded source code. In this paper we introduce ARC, a fully automated system for repairing deadlocks and
+data races in concurrent Java programs. ARC uses an evolutionary strategy to mutate an existing ``buggy'' program searching for a variant of the original program that fixes any deadlocks or data races. %The approach works on any Java source code and requires only rudimentary test cases. Annotations, formal specifications or other notations are not required. As only the concurrency mechanisms are targeted the semantic meaning of the program is not changed. 
+%As the first
+%phase may introduce unneeded synchronization, a second phase attempts to
+%optimize performance by removing the excess synchronization without sacrificing
+%program correctness. We describe the approach and report on early results.
+In addition to introducing ARC, we also describe an evaluation of ARC using eight programs from the IBM concurrency benchmark. 
+
+
+\end{abstract}

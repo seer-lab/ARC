@@ -1,0 +1,205 @@
+\section{Evaluation}
+\label{sec:experiments}
+
+We will now describe the experimental setup and the results obtained from our evaluation of ARC.
+
+% Due to the ARCs heuristic nature it is entirely possible for a program to
+% perform better or worse then it did originally. We are interested in both ARCs
+% ability to find fixes and ARCs effect on performance of solutions found.
+
+\subsection{Experimental Setup}
+\label{sec:experimental_setup}
+
+In order to evaluate ARC's ability to repair concurrency bugs we selected 8 buggy programs from a subset of the IBM Concurrency Benchmark~\cite{EHSU06}. Our selection
+criteria was to pick six programs containing bugs that ARC has the
+capability of fixing. We also included two programs that we believed ARC could not fix as a sanity check.
+
+Unfortunately, none of the programs contained the JUnit test suite that ARC
+requires. We manually created JUnit test suites without altering the programs
+and their bugs's behaviour\footnote{One incorrect program was fixed so that it
+properly exhibited its concurrency bug.}. Each test suite consists of three
+unit tests each with a different \textit{level} of concurrency\footnote{IBM
+Concurrency Benchmark programs have an argument that controls the number of
+threads that are used in execution.}. Source code details on the programs are
+presented in Table~\ref{tbl:used_programs}
+
+% TODO Maybe just remove the Bug Pattern (as it would need more explanation)
+\begin{table}[h]
+\caption{The set of programs used to evaluate ARC. The test suite for each
+program is excluded from these values.}
+\begin{center}
+\begin{tabular}{|l|r|r|l|l|p{4.5cm}|}
+\hline
+\textbf{Program} & \textbf{SLOC} & \textbf{Classes} & \textbf{Bug Type} & \textbf{Can Fix?} & \textbf{Bug Pattern}\\
+\hline
+account & 165 & 3 & Data Race & Yes & NoLock\\
+\hline
+accounts & 75 & 2 & Data Race & Yes & NonAtomicAssumedAtomic\\
+\hline
+airline & 93 & 1 & Data Race & No & Interference\\
+\hline
+%allocation & 165 & 3 & Data Race & Yes & TwoStageAccess\\
+%\hline
+%bubble & 246 & 4 & Data Race & No & NonAtomicAssumedAtomic,\newline OrphanedThread\\
+%\hline
+bubblesort2 & 104 & 2 & Data Race & Yes & Initialization-Sleep\\
+\hline
+buffer & 319 & 5 & Data Race & No & NotifiyInsteadOfNotifyAll\\
+\hline
+%bufwriter & 170 & 5 & Deadlock & Yes & NoLock\\
+%\hline
+deadlock & 109 & 2 & Deadlock & Yes & Deadlock\\
+\hline
+lottery & 157 & 2 & Data Race & Yes & NonAtomicAssumedAtomic,\newline NoLock, BlockingCriticalSection\\
+\hline
+%mergesort & 281 & 2 & Data Race & No & NonAtomicAssumedAtomic\\
+%\hline
+pingpong & 143 & 4 & Data Race & Yes & NonAtomicAssumedAtomic\\
+\hline
+\end{tabular}
+\label{tbl:used_programs}
+\end{center}
+\end{table}
+
+ARC was designed to be flexible in terms of the underlying evolutionary strategy parameters. Table~\ref{tbl:used_parameters} lists each parameter and its value. Values were selected based on our
+experience with ARC. The selected parameters allowed for 10 ConTest executions
+to occur to evaluate each individual at each generation. If a potential
+solution is found, the validation of that potential solution will execute an
+addition 150 ConTest executions (10 ConTest Runs $\times$ Validation Mult. of
+15).
+
+% TODO Maybe reduce this to the common ES parameters?
+\begin{table}[t!]
+\caption{The set of parameters that ARC uses along with their descriptions and
+ values.}
+\begin{center}
+\lstset{basicstyle=\scriptsize}
+\begin{tabular}{|l|p{7.5cm}|r|}
+\hline
+\textbf{Parameter} & \textbf{Description} & \textbf{Value}\\
+\hline
+Project Test MB & The amount of memory allocated for the testing & 2000\\
+\hline
+ConTest Runs & Test suite executions per gen. per member & 10\\
+\hline
+Validation Mult. & Multiplier on ConTest runs when validating the functionality & 15\\
+\hline
+Timeout Mult. & Time multiplier for ConTest before timeout & 20\\
+\hline
+Evolution Gen & Maximum number of generations in fixing phase & 30\\
+\hline
+Evolution Population & Population size for the evolutionary strategy & 30\\
+\hline
+Replace Lowest \% & Lowest $n$\% of population replaced & 10\\
+\hline
+Replace With Best \% & Replace underperfomer with best individual $n$\% of the time & 75\\
+\hline
+Replace min turns & Minimum time underperforming & 3\\
+\hline
+Replace Interval & Every $n$ generations, underperformers are replaced & 5\\
+\hline
+Ranking Window & Size of sliding window for operator weighting & 5\\
+\hline
+Success Weight & The weighting applied for successful executions & 100\\
+\hline
+Timeout Weight & The weighting applied for timeout executions & 50\\
+\hline
+Improv. Window & Size of window for convergence check & 10\\
+\hline
+Avg. Fit. Delta & Minimum average fitness improvement required & 0.01\\
+\hline
+Best Fit. Delta & Minimum best fitness improvement required & 1\\
+\hline
+\end{tabular}
+\label{tbl:used_parameters}
+\end{center}
+\end{table}
+
+\subsection{Experimental Results}
+\label{sec:experimental_results}
+
+Each program was run through ARC a total of 5 times using the parameters
+described in Table~\ref{tbl:used_parameters} and the programs in
+Table~\ref{tbl:used_programs}. Results for all 5 runs of each program are summarized in
+Table~\ref{tbl:summary_results}.
+
+\begin{table}[t!]
+\caption{Summary of the results of running the programs through ARC 5 times.}
+\begin{center}
+\lstset{basicstyle=\scriptsize}
+\begin{tabular}{|l|l|l|}
+\hline
+\textbf{Program} & \textbf{Gen. Fix Found} & \textbf{Time Taken (h:m:s)}\\
+\hline
+account & 4, 15, 4, 1, 1 & 0:19:53, 1:08:30, 0:19:54, 0:06:39, 0:06:29\\
+\hline
+accounts & 1, 1, 1, 1, 1 & 2:02:57, 2:08:11, 2:05:31, 2:10:18, 2:36:24\\
+\hline
+airline & --, --, --, --, -- & 3:58:07, 3:56:19, 3:49:34, 3:53:14, 3:57:51\\
+\hline
+%allocation & TO, TO, TO, 3, TO & --, --, --, 22:39:6, --  \\
+%\hline
+%bubble & 28, & 5:20:33, \\
+%\hline
+bubblesort2 & 2, 2, 3, 2, 2 & 3:15:06, 5:11:04, 5:53:14, 6:13:16, 7:05:32 \\
+\hline
+buffer & --, --, --, --, -- & 4:43:50, 4:45:12, 5:07:03, 4:58:27, 5:02:30\\
+\hline
+%bufwriter & TO, TO, TO, TO, TO & --, --, --, --, --\\
+%\hline
+deadlock & 1, 1, 1, 1, 1 & 0:06:45, 0:05:43, 0:06:45, 0:05:40, 0:07:51\\
+\hline
+lottery & 3, 4, 2, 1, 2 & 2:19:18, 2:43:18, 1:54:00, 1:05:27, 1:28:39\\
+\hline
+%mergesort & & \\
+%\hline
+pingpong & 1, 1, 1, 1, 1 & 0:39:57, 0:12:47, 0:46:21, 0:46:16, 0:42:02\\
+\hline
+\end{tabular}
+\label{tbl:summary_results}
+\end{center}
+\end{table}
+
+As we can see from the results, the time taken to repair the concurrency programs range from about 6
+minutes to almost 3 hours. ARC is currently not an efficient process as it is
+under-optimized in many aspects. The main bottle-neck in terms of time and
+resources within ARC is the repeated number of ConTest executions. ConTest
+instrumented a program with random noise, causing threads to delay and thus negatively effecting the
+execution time.  The \textit{Timeout Multiplier} in
+Table~\ref{tbl:used_parameters} allows ARC to wait up to 20 times the instrumented
+execution time for the program under test to complete due to the noise.
+
+% Results of inspecting the programs and their fixes
+% Lottery all have the same solution (correct solution) (ARC can fix)
+% Bubblesort2 all have the same solution (correct solution, makes it sequential) (ARC can fix)
+% Pingpong all essentially the same solution (some synch the method itself, some synch around the method call) (ARC can fix)
+% Deadlock all essentially the same solution (a calls b, synch a or b) (ARC can fix)
+% Accounts all the same solution (correct solution) (ARC can fix)
+% Account all the same solution (makes the program sequential, not the optimal solution [limitation of ARC, ConTest does not identify all shared variable name changes]) (ARC can fix)
+% Airline no fixes (ARC cannot fix this, logic problems that involves moving code around)
+% Buffer no fixes (ARC cannot fix this, as it is a notify vs. notifyall bug)
+
+To better explain our results we will now provide details of the specific fixes identified by ARC. Overall ARC was able to fix all 6 of the programs we believed ARC should be capable of fixing. The fix for \textit{accounts} is achieved by synchronizing a method that handles where the data race occurs.  The \textit{pingpong} and
+\textit{deadlock} program have similar bug patterns and fixes.  In each program
+a \texttt{methodA} calls a \texttt{methodB}.  There is a data race in
+\texttt{methodB} so synchronizing either \texttt{methodA} or \texttt{methodB}
+fixes the program.  In these programs this is a valid solution as there are no
+other methods that call \texttt{methodB}.  ARC fixes \textit{bubblesort2}, \textit{lottery} and \textit{account} by synchronizing the \texttt{run()} method of the threads.  Unfortunately, this has the side-effect of making the
+programs sequential.  After further inspected these solution we found that only the \texttt{account} program's fix is sub-optimal.  Only one of the
+methods called from \texttt{account}'s  \texttt{run()} method  needs to be
+synchronized, unfortunately ConTest could not properly identify the variable
+argument. ARC was unable to use the proper mutation operator and ends synchronizing the whole \texttt{run()} method.
+
+We had two programs for which ARC was unable to find a fix -- these two programs were initially identified as not being fixable by ARC. \textit{buffer} has an unsupported bug pattern of
+\textit{notify vs. notifyall}. ARC does not have the the necessary mutation
+operator to fix this bug pattern (uses Java 5 concurrency structure). The fix
+for \textit{airline} requires the reorganization of code -- which ARC was not
+designed to perform.  A number of the fixes are found in the first generation,
+as the selected programs are rather small in size as well as state space due to
+the limited number of concurrency structures and shared variables.  After
+inspecting the fixes of a program, we realized that ARC has reached the same
+solution through different mutations. It is the case that different mutations
+lead to the same result (i.e., synchronizing on a lock object vs. synchronizing
+the method), this is another reason why there are many fixes found in the first
+generation  In  some cases there is some variation in the generation in which a
+fix is found, this is mostly the result of searching a larger state space.
