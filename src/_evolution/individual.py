@@ -52,13 +52,14 @@ class Individual():
     self.deadlocks = []
     self.errors = []
     self.realTime = []
-    self.wallTime = []
     self.voluntarySwitches = []
-    self.involuntarySwitches = []
-    self.percentCPU = []
-    self.goodRuns = []  # True || False
+    self.goodRuns = []  # Boolean
 
     self.score = []
+    self.validated = False  # Indicates if the validation was successful
+    self.wasRestarted = []  # Boolean & does not clone over
+    self.wasReplaced = []  # Boolean & does not clone over
+    self.stateSpace = []  # Integer & does not clone over
     self.switchGeneration = 0
 
     self.turnsUnderperforming = 0
@@ -71,7 +72,9 @@ class Individual():
     """
 
     # Acquire set of operators to use
-    if functionalPhase:
+    if config._RANDOM_MUTATION:
+      mutationOperators = config._ALL_MUTATIONS
+    elif functionalPhase:
       mutationOperators = config._FUNCTIONAL_MUTATIONS
     else:
       mutationOperators = config._NONFUNCTIONAL_MUTATIONS
@@ -86,12 +89,12 @@ class Individual():
                                                 mutationOperators)
 
     # Populate the genome string with the number of hits
-    # for i in xrange(len(hits)):
-    #    self.genome[i] = [0] * hits[i]
     i = 0
+    self.stateSpace.append(0)
     for mutationOp in mutationOperators:
       if mutationOp[1]:
         self.genome[i] = [0] * hits[mutationOp[0]]
+        self.stateSpace[-1] += hits[mutationOp[0]]
         i += 1
 
 
@@ -114,11 +117,14 @@ class Individual():
     ret += " Applied Operators: {}\n".format(self.appliedOperators)
     ret += " Successes: {}\n".format(self.successes)
     ret += " Real Time: {}\n".format(self.realTime)
-    ret += " Wall Time: {}\n".format(self.wallTime)
     ret += " Voluntary Switches: {}\n".format(self.voluntarySwitches)
-    ret += " Involuntary Switches: {}\n".format(self.involuntarySwitches)
-    ret += " Percent CPU {}\n".format(self.percentCPU)
     ret += " Score: {}\n".format(self.score)
+    ret += " Restarted: {}\n".format(self.wasRestarted)
+    ret += " Replaced: {}\n".format(self.wasReplaced)
+    ret += " stateSpace: {}\n".format(self.stateSpace)
+    ret += " turnsUnderperforming: {}\n".format(self.turnsUnderperforming)
+    ret += " validated: {}\n".format(self.validated)
+
     return ret
 
 
@@ -134,11 +140,13 @@ class Individual():
     newIndividual.deadlocks = self.deadlocks[:]
     newIndividual.errors = self.errors[:]
     newIndividual.realTime = self.realTime[:]
-    newIndividual.wallTime = self.wallTime[:]
     newIndividual.voluntarySwitches = self.voluntarySwitches[:]
-    newIndividual.involuntarySwitches = self.involuntarySwitches[:]
-    newIndividual.percentCPU = self.percentCPU[:]
     newIndividual.goodRuns = self.goodRuns[:]
     newIndividual.score = self.score[:]
+    newIndividual.wasRestarted = self.wasRestarted[:]
+    newIndividual.wasReplaced = self.wasReplaced[:]
+    newIndividual.stateSpace = self.stateSpace[:]
     newIndividual.switchGeneration = self.switchGeneration
+    newIndividual.turnsUnderperforming = 0
+
     return newIndividual

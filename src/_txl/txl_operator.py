@@ -16,6 +16,7 @@ import os.path
 import tempfile
 import time
 import shutil
+import re
 
 sys.path.append("..")  # To allow importing parent directory module
 import config
@@ -107,12 +108,10 @@ def generate_all_mutants(generation, memberNum, sourceFile, destDir,
   # Loop over the selected operators
   for operator in mutationOperators:
     if operator[1]:
-      generate_mutants(generation, memberNum, operator, sourceFile, destDir,
-                       mutationOperators)
+      generate_mutants(generation, memberNum, operator, sourceFile, destDir)
 
 
-def generate_mutants(generation, memberNum, txlOperator, sourceFile, destDir,
-                     mutationOperators):
+def generate_mutants(generation, memberNum, txlOperator, sourceFile, destDir):
   """See comment for recursively_mutate_project.  The only new parameter here
   is the txlOperator to apply to a file.
 
@@ -122,8 +121,6 @@ def generate_mutants(generation, memberNum, txlOperator, sourceFile, destDir,
   txlOperator (string): One of _MUTATION_ASAS, etc... from config.py
   sourceFile (string): The specific file from the source project we are mutating
   destDir (string): Where the project is being copied to
-  mutationOperators ([list]): one of {config._FUNCTIONAL_MUTATIONS,
-    config._NONFUNCTIONAL_MUTATIONS}
   """
 
   sourceNoExt = os.path.splitext(sourceFile)[0]
@@ -156,11 +153,9 @@ def generate_mutants(generation, memberNum, txlOperator, sourceFile, destDir,
   # print 'sourceExtOnly:    ' + sourceExtOnly
   # print 'txlDestDir:       ' + txlDestDir
 
-  # If it doesn't exist, create it
+  # If it doesn't exist, create it, otherwise clean subdirectories
   if not os.path.exists(txlDestDir):
     os.makedirs(txlDestDir)
-
-  # If it exists, delete any files and subdirectories in it
   else:
     shutil.rmtree(txlDestDir)
     os.makedirs(txlDestDir)
@@ -174,10 +169,45 @@ def generate_mutants(generation, memberNum, txlOperator, sourceFile, destDir,
   #logger.debug("sourceNameOnly + sourceExtOnly: {}".format(sourceNameOnly + sourceExtOnly))
   #logger.debug("txlDestDir: {}".format(txlDestDir))
 
-  process = subprocess.Popen(['txl', sourceFile, txlOperator[4], '-',
-            '-outfile', sourceNameOnly + sourceExtOnly, '-outdir', txlDestDir],
-            stdout=outFile, stderr=errFile, cwd=config._PROJECT_DIR, shell=False)
-  process.wait()
+  # Handle special TXL operator (ASAV,ASAS,ASM)
+  if txlOperator is config._MUTATION_ASAV or txlOperator is config._MUTATION_ASAS \
+      or txlOperator is config._MUTATION_ASM:
+
+    # Ensure that there is a shared variable file
+    if os.path.exists(config._SHARED_VARS_FILE):
+      counter = 1
+
+      for line in open(config._SHARED_VARS_FILE, 'r'):
+
+        mutantSource = sourceNameOnly + "_" + str(counter)
+
+        variableName = line.split('.')[-1].strip(' \t\n\r')
+        className = line.split('.')[-2].strip(' \t\n\r')
+
+        process = subprocess.Popen(['txl', sourceFile, txlOperator[4], '-',
+                  '-outfile', mutantSource + sourceExtOnly, '-outdir', txlDestDir,
+                  '-class', className, '-var', variableName],
+                  stdout=outFile, stderr=errFile, cwd=config._PROJECT_DIR, shell=False)
+        process.wait()
+        counter += 1
+
+      mutantSource = sourceNameOnly + "_" + str(counter)
+
+      # Use the mutation with the 'this' object
+      process = subprocess.Popen(['txl', sourceFile, txlOperator[4], '-',
+                '-outfile', mutantSource + sourceExtOnly, '-outdir', txlDestDir,
+                '-class', '', '-var', 'this'],
+                stdout=outFile, stderr=errFile, cwd=config._PROJECT_DIR, shell=False)
+      process.wait()
+    else:
+      logger.WARN("No shared file was found for this mutation operator.")
+
+  else:
+
+    process = subprocess.Popen(['txl', sourceFile, txlOperator[4], '-',
+              '-outfile', sourceNameOnly + sourceExtOnly, '-outdir', txlDestDir],
+              stdout=outFile, stderr=errFile, cwd=config._PROJECT_DIR, shell=False)
+    process.wait()
 
   #logger.debug("stdout: {}".format(outFile))
   #logger.debug("stderr: {}".format(errFile))
@@ -259,7 +289,7 @@ def restore_project():
   shutil.copytree(config._PROJECT_BACKUP_DIR, config._PROJECT_SRC_DIR)
 
 
-def create_local_project(generation, memberNum, restart):
+def create_local_project(generation, memberNum, restart, switchGeneration=0):
   """After mutating the files above, create the local project for a member of
   a given generation.  The source of the project depends on the generation:
   Gen 1: Original (pristine) project
@@ -278,9 +308,12 @@ def create_local_project(generation, memberNum, restart):
   logger.debug("Input arguments:  Gen: {}, Mem: {} and Restart: {}".format(generation, memberNum, restart))
 
   staticPart = os.sep + str(memberNum) + os.sep + 'project' + os.sep
-  # If the indivudal is on the first or restarted, use the original
+  # If the indivudal is on the first or restarted, use the original (or switch gen for non-functional)
   if generation is 1 or restart:
-    srcDir = config._PROJECT_BACKUP_DIR
+    if switchGeneration > 0:
+      srcDir = config._TMP_DIR + str(switchGeneration) + staticPart
+    else:
+      srcDir = config._PROJECT_BACKUP_DIR
   else:
     # Note: generation - 1 vs generation
     srcDir = config._TMP_DIR + str(generation - 1) + staticPart
@@ -361,6 +394,10 @@ def move_mutant_to_local_project(generation, memberNum, txlOperator, mutantNum):
         sourceDir += os.sep + aFile
         break
 
+  # Special handle for mutation operators that append _# to the filename
+  if txlOperator in ["ASAV", "ASM", "ASAS"]:
+    dst = re.sub("_\d+.java", ".java", dst)
+
   # print '---------------------------'
   # print 'mmtlp txlOperator:    ' + txlOperator
   # print 'mmtlp pathNoFileName: ' + pathNoFileName
@@ -439,17 +476,19 @@ def compile_project():
     os.mkdir(config._PROJECT_CLASS_DIR)
 
     # Make an ant call to compile the program
-    #os.chdir(config._PROJECT_DIR)
     antProcess = subprocess.Popen(['ant', config._PROJECT_COMPILE], stdout=outFile,
                         stderr=errFile, cwd=config._PROJECT_DIR, shell=False)
     antProcess.wait()
 
     # Look for a compilation error
+    outFile.seek(0)
+    outText = outFile.read().lower()
+    outFile.close()
     errFile.seek(0)
-    errorText = errFile.read().lower()
+    errText = errFile.read().lower()
     errFile.close()
 
-    if (errorText.find("build failed") >= 0):
+    if (outText.find("build failed") >= 0 or errText.find("build failed") >= 0):
       logger.error("ant 'compile' command failed, could not compile (global) project")
       return False
     else:
