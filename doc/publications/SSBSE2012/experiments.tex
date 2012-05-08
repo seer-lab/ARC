@@ -9,23 +9,22 @@
 \label{sec:experimental_setup}
 
 We evaluate ARC's ability to repair concurrency bugs by conducing an experiment
-to gather preliminary results. The 12 buggy programs we chose come from a
+to gather preliminary results. The 8 buggy programs we chose come from a
 subset of the IBM Concurrency Benchmark~\cite{EHSU06}. Our selection criteria
-was to pick a subset of programs that contained bugs that ARC has the
+was to pick a subset of programs containing bugs that ARC has the
 capability of fixing based on the set of mutation operators. For example, we
 ignored programs that used some of the newer concurrency structures from Java 5. We
-also included some programs that we identified that ARC could not fix just as a
+also included some programs that we identified that ARC could not fix as a
 sanity check.
 
-Unfortunately, none of the programs contain JUnit test suite that ARC requires.
+Unfortunately, none of the programs contained the JUnit test suite that ARC requires.
 We manually created JUnit test suites without altering the programs and their
 bugs's behaviour\footnote{One incorrect program was fixed so that it properly
 exhibited its concurrency bug.}. Each test suite consists of three unit tests
-each with a different \textit{level} of concurrency (IBM Concurrency Benchmark
+each with a different \textit{level} of concurrency\footnote{IBM Concurrency Benchmark
 programs have an argument that controls the number of threads that are used in
-execution). Source code details on the programs are presented in
+execution.}. Source code details on the programs are presented in
 Table~\ref{tbl:used_programs}
-% TODO Is the footnote still true? (CC: David)
 
 % TODO Maybe just remove the Bug Pattern (as it would need more explanation)
 \begin{table}[h]
@@ -42,22 +41,22 @@ accounts & 75 & 2 & Data Race & Yes & NonAtomicAssumedAtomic\\
 \hline
 airline & 93 & 1 & Data Race & No & Interference\\
 \hline
-allocation & 165 & 3 & Data Race & Yes & TwoStageAccess\\
-\hline
-bubble & 246 & 4 & Data Race & No & NonAtomicAssumedAtomic,\newline OrphanedThread\\
-\hline
+%allocation & 165 & 3 & Data Race & Yes & TwoStageAccess\\
+%\hline
+%bubble & 246 & 4 & Data Race & No & NonAtomicAssumedAtomic,\newline OrphanedThread\\
+%\hline
 bubblesort2 & 104 & 2 & Data Race & No & Initialization-Sleep\\
 \hline
 buffer & 319 & 5 & Data Race & No & NotifiyInsteadOfNotifyAll\\
 \hline
-bufwriter & 170 & 5 & Deadlock & Yes & NoLock\\
-\hline
+%bufwriter & 170 & 5 & Deadlock & Yes & NoLock\\
+%\hline
 deadlock & 109 & 2 & Deadlock & Yes & Deadlock\\
 \hline
 lottery & 157 & 2 & Data Race & No & NonAtomicAssumedAtomic,\newline NoLock, BlockingCriticalSection\\
 \hline
-mergesort & 281 & 2 & Data Race & No & NonAtomicAssumedAtomic\\
-\hline
+%mergesort & 281 & 2 & Data Race & No & NonAtomicAssumedAtomic\\
+%\hline
 pingpong & 143 & 4 & Data Race & Yes & NonAtomicAssumedAtomic\\
 \hline
 \end{tabular}
@@ -126,7 +125,7 @@ Best Fit. Delta & Minimum best fitness improvement required & 1\\
 
 Each program was run through ARC a total of 5 times using the parameters
 described in Table~\ref{tbl:used_parameters} and Programs in
-Table~\ref{tbl:used_programs}. The results of each program is summarized in
+Table~\ref{tbl:used_programs}. Results for each program is summarized in
 Table~\ref{tbl:summary_results}.
 
 \begin{table}%[h]
@@ -144,22 +143,22 @@ accounts & 1, 1, 1, 1, 1 & 2:02:57, 2:08:11, 2:05:31, 2:10:18, 2:36:24\\
 \hline
 airline & --, --, --, --, -- & 3:58:07, 3:56:19, 3:49:34, 3:53:14, 3:57:51\\
 \hline
-allocation & TO, TO, TO, 3, TO & --, --, --, 22:39:6, --  \\
-\hline
-bubble & 28, & 5:20:33, \\
-\hline
+%allocation & TO, TO, TO, 3, TO & --, --, --, 22:39:6, --  \\
+%\hline
+%bubble & 28, & 5:20:33, \\
+%\hline
 bubblesort2 & 2, 2, 3, 2, 2 & 3:15:06, 5:11:04, 5:53:14, 6:13:16, 7:05:32 \\
 \hline
 buffer & --, --, --, --, -- & 4:43:50, 4:45:12, 5:07:03, 4:58:27, 5:02:30\\
 \hline
-bufwriter & TO, TO, TO, TO, TO & --, --, --, --, --\\
-\hline
+%bufwriter & TO, TO, TO, TO, TO & --, --, --, --, --\\
+%\hline
 deadlock & 1, 1, 1, 1, 1 & 0:06:45, 0:05:43, 0:06:45, 0:05:40, 0:07:51\\
 \hline
 lottery & 3, 4, 2, 1, 2 & 2:19:18, 2:43:18, 1:54:00, 1:05:27, 1:28:39\\
 \hline
-mergesort & & \\
-\hline
+%mergesort & & \\
+%\hline
 pingpong & 1, 1, 1, 1, 1 & 0:39:57, 0:12:47, 0:46:21, 0:46:16, 0:42:02\\
 \hline
 \end{tabular}
@@ -167,16 +166,12 @@ pingpong & 1, 1, 1, 1, 1 & 0:39:57, 0:12:47, 0:46:21, 0:46:16, 0:42:02\\
 \end{center}
 \end{table}
 
-As we can see from the results, the time taken range to find a fix range from
-about 6 minutes to almost a whole day. ARC is currently not a efficient process
+As we can see from the results, the time taken to find a fix range from
+about 6 minutes to almost a whole day. ARC is currently not an efficient process
 as it is under-optimized in many aspects. The main bottle-neck in terms of time
-and resources within ARC is the repeated number of ConTest executions. In
-addition, ConTest executions are instrumented with random noise which
-negatively effects the performance of the execution. We specify a
-\textit{timeout} result if a single ConTest execution exceeded 5 minutes while
-dynamically acquiring the new timeout value. We utilized the default
-configuration for ConTest, we might be able to reduce the severity of the noise
-with finer tuning of ConTest.
+and resources within ARC is the repeated number of ConTest executions. ConTest
+instrumented a program with random noise that negatively effects the performance 
+of the execution.  The \textit{Timeout Multiplier} in Table~\ref{tbl:used_parameters} allows ARC to wait up to 20 times the normal execution time for the program under test to complete due to the noise. 
 
 % TODO Add discussion of ARCs fix finding capabilities. Does it find fixes for
 % the programs we figured ARC should be able too, did it find fixes for those
