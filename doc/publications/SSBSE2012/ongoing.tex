@@ -35,8 +35,8 @@ $ \\
 \end{scriptsize}
 
 
-\noindent The proposed fitness function combines the real time required for an execution and the number of
-voluntary context switches made. The real time taken is an obvious choice to
+\noindent The proposed fitness function combines the real time ($t$ in fitness function) required for an execution and the number of
+voluntary context switches ($c$ in fitness function) made. The real time taken is an obvious choice to
 use to measure the performance of the program, while the number of voluntary
 context switches gives us an indication on the amount of thread switching. By
 minimizing unnecessary synchronization the number of context switches should
