@@ -1,4 +1,4 @@
-\section{Ongoing Research}
+\section{Next Steps in ARC Approach}
 \label{sec:ongoing}
 
 ARC may introduce unnecessary concurrency during the fixing process. We are
@@ -6,33 +6,8 @@ experimenting with and implementing a second phase (non-functional phase) where
 the same kind of evolutionary strategy attempts to optimize the program by
 shrinking and removing concurrency blocks (solves issues as illustrated in
 Fig.~\ref{fig:optimized_sample_datarace} back in Sect.~\ref{sec:motivation}). A
-new fitness function would be required for this non-functional phase.
+new fitness function would be required for this non-functional phase:
 
-The proposed fitness function (as seen in Fig.~\ref{fig:nonfunctional_fitness})
-would combines the real time required for an execution as well as the number of
-voluntary context switches made. The real time taken is an obvious choice to
-use to measure the performance of the program, while the number of voluntary
-context switches gives us an indication on the amount of thread switching. By
-minimizing unnecessary synchronization the number of context switches should
-decrease along with the real time taken. We plan to acquire a baseline of the
-time and context switches from the newly fixed program by running it a large
-number of times and averaging the values acquire. This baseline is then used in
-the fitness function to evaluate relative improvements from the fixed
-unoptimized program. Note that the fitness function would adjust based on the
-significance and uncertainty of both variables (to be fair in situations where
-either variable is under-represented).
-
-Removing and reducing synchronization runs the risk of introducing new bugs
-into the program. Before every non-functional phase's evaluation we need to
-ensure that no bugs are present, thus we re-run the first phase's evaluation
-with the multiplier on the number of runs. If any deadlocks or data races are
-encountered the proposed optimization is rejected and this individual is reset
-to the previous generation. After ARC validates the proposed optimization
-additional runs are conducted without using ConTest (avoiding the inclusion of
-random noise) to obtain the values required for the non-functional fitness
-function.
-
-\begin{figure}[h]
 \begin{footnotesize}
 \begin{center}
 $non-functional\ fitness(P) = \frac{worst\ score}{[sig_t \times unc(t)] + [sig_c \times unc(c)]}$
@@ -58,6 +33,27 @@ $
 $ \\
 \end{center}
 \end{scriptsize}
-\caption{Tentative fitness function for non-functional phase}
-\label{fig:nonfunctional_fitness}
-\end{figure}
+
+
+\noindent The proposed fitness function combines the real time required for an execution and the number of
+voluntary context switches made. The real time taken is an obvious choice to
+use to measure the performance of the program, while the number of voluntary
+context switches gives us an indication on the amount of thread switching. By
+minimizing unnecessary synchronization the number of context switches should
+decrease along with the real time taken. We plan to acquire a baseline of the
+time and context switches from the newly fixed program by running it a large
+number of times and averaging the values acquire. This baseline is then used in
+the fitness function to evaluate relative improvements from the fixed
+unoptimized program. Note that the fitness function would adjust based on the
+significance and uncertainty of both variables (to be fair in situations where
+either variable is under-represented).
+
+Removing and reducing synchronization runs the risk of introducing new bugs
+into the program. Before every non-functional phase's evaluation we need to
+ensure that no bugs are present, thus we re-run the first phase's evaluation
+with the multiplier on the number of runs. If any deadlocks or data races are
+encountered the proposed optimization is rejected and this individual is reset
+to the previous generation. After ARC validates the proposed optimization
+additional runs are conducted without using ConTest (avoiding the inclusion of
+random noise) to obtain the values required for the non-functional fitness
+function. Currently, we have implemented most of this proposed extension but have not conducted any empirical evaluation.
