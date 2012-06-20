@@ -16,12 +16,12 @@ capability of fixing. We also included two programs that we believed ARC could n
 
 Unfortunately, none of the programs contained the JUnit test suite that ARC
 requires. We manually created JUnit test suites without altering the programs
-and their bugs's behaviour\footnote{One incorrect program was fixed so that it
+and their bug's behaviour\footnote{One incorrect program was broken.  It was fixed so that it
 properly exhibited its concurrency bug.}. Each test suite consists of three
 unit tests each with a different \textit{level} of concurrency\footnote{IBM
-Concurrency Benchmark programs have an argument that controls the number of
-threads that are used in execution.}. Source code details on the programs are
-presented in Table~\ref{tbl:used_programs}
+Concurrency Benchmark programs have an argument (low, medium, high) that controls the number of
+threads created and used by the program.}. Source code details on the programs are
+presented in Table~\ref{tbl:used_programs}.
 
 % TODO Maybe just remove the Bug Pattern (as it would need more explanation)
 \begin{table}[h]
@@ -191,8 +191,8 @@ synchronized, unfortunately ConTest could not properly identify the variable
 argument. ARC was unable to use the proper mutation operator and ends synchronizing the whole \texttt{run()} method.
 
 We had two programs for which ARC was unable to find a fix -- these two programs were initially identified as not being fixable by ARC. \textit{buffer} has an unsupported bug pattern of
-\textit{notify vs. notifyall}. ARC does not have the the necessary mutation
-operator to fix this bug pattern (uses Java 5 concurrency structure). The fix
+\textit{notify vs. notifyAll}. ARC does not have the necessary mutation
+operator to fix this bug pattern (uses Java 5 concurrency mechanism). The fix
 for \textit{airline} requires the reorganization of code -- which ARC was not
 designed to perform.  A number of the fixes are found in the first generation,
 as the selected programs are rather small in size as well as state space due to
@@ -201,5 +201,5 @@ inspecting the fixes of a program, we realized that ARC has reached the same
 solution through different mutations. It is the case that different mutations
 lead to the same result (i.e., synchronizing on a lock object vs. synchronizing
 the method), this is another reason why there are many fixes found in the first
-generation  In  some cases there is some variation in the generation in which a
+generation.  In  some cases there is some variation in the generation in which a
 fix is found, this is mostly the result of searching a larger state space.

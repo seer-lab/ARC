@@ -146,7 +146,7 @@ operator.}
 \end{figure}
 
 The set of mutation operators ARC uses are listed in Table~\ref{tbl:operators},
-and have mostly been derived by reversing the ConMAn operators~\cite{BCD06}. The ConMAn operators are used in mutation testing to create bugs while the ARC operators are used to fix bugs. The ARC operators are implement in 
+and have mostly been derived by reversing the ConMAn operators~\cite{BCD06}. The ConMAn operators are used in mutation testing to create bugs while the ARC operators are used to fix bugs. The ARC operators are implemented in 
 TXL~\cite{CHP91} using pattern matching and replacement rules. An example of one of the ARC operators, 
 EXSB, is shown in Fig.~\ref{fig:EXSB_example}. Each mutant
 that is generated from the program creates a new mutant instance for that
@@ -253,7 +253,7 @@ $tw = timeout\ weighting$
 \end{center}
 \end{scriptsize}
 
-\noindent In determining fitness we consider both a successful execution and a timeout as positive factors. Timeouts are consider positive because given more time an execution that times out may result in a successful execution. We weight timeouts less than a successful execution as it could still result in a bug.
+\noindent In determining fitness we consider both a successful execution and a timeout as positive factors. Timeouts are considered positive because given more time an execution that times out may result in a successful execution. We weight timeouts less than a successful execution as it could still result in a bug.
 
 If ARC finds an individual that achieves 100\% successful executions, we need
 to ensure it is truly a fix. It is possible that a proposed solution could

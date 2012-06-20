@@ -1,4 +1,4 @@
-\section{Introduction}
+ \section{Introduction}
 \label{sec:introduction}
 
 As computers and even mobile devices now ship with more than one processor, programs
@@ -18,7 +18,7 @@ The use of search-based software engineering (SBSE)~\cite{Har+10} techniques to
 automatically repair bugs is not a novel idea~\cite{FNWG09, WNLF09, NWLF09,
 WFGN10, GNFW11, LDFW12}. Our proposed approach adapts the original idea of
 automatically fixing \textit{sequential} programs to specifically target
-\textit{concurrent} programs. Several challenges exist in concurrent program repair  that are not relevant in sequential source code: (1) concurrent programs can have many possible thread interleavings which can make bugs harder to detect and (2) concurrent programs have to contend with complex interaction bugs that not possible in single-threaded source code. In a recent paper, Goues et al., who developed one of the first approaches to search-based code repair, acknowledged the challenge of fixing concurrent programs -- \textit{``Some properties are difficult or impossible to encode using test cases, such as nondeterministic properties; GenProg cannot currently repair race conditions, for example.''}~\cite{GNFW11}.
+\textit{concurrent} programs. Several challenges exist in concurrent program repair  that are not relevant in sequential source code: (1) concurrent programs can have many possible thread interleavings which can make bugs harder to detect and (2) concurrent programs have to contend with complex interaction bugs that not possible in single-threaded source code. In a recent paper, Le Goues et al., who developed one of the first approaches to search-based code repair, acknowledged the challenge of fixing concurrent programs -- \textit{``Some properties are difficult or impossible to encode using test cases, such as nondeterministic properties; GenProg cannot currently repair race conditions, for example.''}~\cite{GNFW11}.
 
 As was previously mentioned, ARC uses ES to iteratively evolve a buggy concurrent program into a version that contains the proper synchronization and concurrency mechanisms to resolve any bugs. To evaluate
 whether a program is fixed or not, ARC uses IBM's testing tool,

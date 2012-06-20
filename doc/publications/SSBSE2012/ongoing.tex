@@ -36,13 +36,10 @@ $ \\
 
 
 \noindent The proposed fitness function combines the real time ($t$ in fitness function) required for an execution and the number of
-voluntary context switches ($c$ in fitness function) made. The real time taken is an obvious choice to
-use to measure the performance of the program, while the number of voluntary
-context switches gives us an indication on the amount of thread switching. By
-minimizing unnecessary synchronization the number of context switches should
+voluntary context switches ($c$ in fitness function) made.  Voluntary context switches is the number of times a thread voluntarily gives up control of the CPU. By minimizing unnecessary synchronization the number of context switches should
 decrease along with the real time taken. We plan to acquire a baseline of the
 time and context switches from the newly fixed program by running it a large
-number of times and averaging the values acquire. This baseline is then used in
+number of times and averaging the values acquired. This baseline is then used in
 the fitness function to evaluate relative improvements from the fixed
 unoptimized program. Note that the fitness function would adjust based on the
 significance and uncertainty of both variables (to be fair in situations where
