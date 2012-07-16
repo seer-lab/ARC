@@ -105,9 +105,8 @@ def generate_all_mutants(generation, memberNum, sourceFile, destDir,
                          mutationOperators):
   """See comment for recursively_mutate_project."""
 
-  # Loop over the selected operators
   for operator in mutationOperators:
-    if operator[1]:
+    if operator[1]:  # If enabled
       generate_mutants(generation, memberNum, operator, sourceFile, destDir)
 
 
@@ -489,7 +488,7 @@ def compile_project():
     errFile.close()
 
     if (outText.find("build failed") >= 0 or errText.find("build failed") >= 0):
-      logger.error("ant 'compile' command failed, could not compile (global) project")
+      logger.debug("Ant 'compile' command failed, could not compile (global) project")
       return False
     else:
       return True

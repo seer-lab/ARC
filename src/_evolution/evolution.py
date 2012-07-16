@@ -39,6 +39,7 @@ def initialize(bestIndividual=None):
   global _population
   global _functionalPhase
 
+  # If we are testing against random, we use all operators
   if config._RANDOM_MUTATION:
     setOfOperators = config._ALL_MUTATIONS
   elif _functionalPhase:
@@ -56,10 +57,10 @@ def initialize(bestIndividual=None):
   # Create and initialize the population of individuals
   for i in xrange(1, config._EVOLUTION_POPULATION + 1):
 
-    if bestIndividual is None:
+    if bestIndividual is None:  # Functional phase
       logger.debug("Creating individual {}".format(i))
       individual = Individual(mutationOperators, i)
-    else:
+    else:  # Non-functional phase
       logger.debug("Cloning best functional individual {} into individual {}".format(
                                                           bestIndividual.id, i))
       individual = bestIndividual.clone(mutationOperators, i)
@@ -81,10 +82,13 @@ def start():
     initialize()
 
     # Evolve the population to find the best functional individual
+    logger.info("**************************************************")
     logger.info("Evolving population towards functional correctness")
+    logger.info("**************************************************")
     bestFunctional, bestFunctionalGeneration = evolve(0)
 
     # Check to see if bestFunctional is valid for progress to next phase
+    # (That is, if a fix was found during the functional phase)
     if bestFunctional.successes[-1]/config._CONTEST_RUNS == 1.0 and bestFunctional.validated:
 
       # Proceed with the non-functional phase if enabled
@@ -120,7 +124,9 @@ def start():
           config._CONTEST_RUNS * config._CONTEST_VALIDATION_MULTIPLIER)
 
         # Evolve the population to find the best non-functional individual
-        logger.info("Evolving population towards non-functional performance")
+        logger.info("*****************************************************************")
+        logger.info("Evolving population towards optimizing non-functional performance")
+        logger.info("*****************************************************************")
         bestNonFunctional, bestNonFunctionalGeneration = evolve(bestFunctional.generation, worstScore)
 
         logger.info("******************************************************")
@@ -252,6 +258,7 @@ def mutation(individual, deadlockVotes, dataraceVotes, nonFunctionalVotes):
     mutationOperators = config._NONFUNCTIONAL_MUTATIONS
 
   # Repopulate the individual's genome with new possible mutation locations
+  # (Generates all mutations for the individual)
   individual.repopulateGenome(_functionalPhase)
 
   # Definite check to see if ANY mutants exists for an individual
@@ -264,6 +271,7 @@ def mutation(individual, deadlockVotes, dataraceVotes, nonFunctionalVotes):
         mutantsExist = True
 
   # If no mutants exist, reset and re-attempt mutation
+
   if not mutantsExist:
     logger.debug("No possible mutations for individual")
 
@@ -272,8 +280,10 @@ def mutation(individual, deadlockVotes, dataraceVotes, nonFunctionalVotes):
       return False
 
     # Repopulate the individual's genome with new possible mutation locations
+    # (Reset this member back to the pristine project)
     txl_operator.create_local_project(individual.generation, individual.id,
                                     True)
+    # Generates all mutations for the pristine individual
     individual.repopulateGenome(_functionalPhase)
 
     # Definite check to see if ANY mutants exists for an individual
@@ -478,6 +488,7 @@ def feedback_selection(individual, deadlockVotes, dataraceVotes, nonFunctionalVo
   global _functionalPhase
 
   # candidateChoices is a list of config._MUTATIONS
+  # {ASAS, ASAV, ...}
   candatateChoices = []
 
   # Acquire set of operators to use
@@ -492,7 +503,7 @@ def feedback_selection(individual, deadlockVotes, dataraceVotes, nonFunctionalVo
   if config._RANDOM_MUTATION:
 
     for operator in mutationOperators:
-        if operator[1]:
+        if operator[1]: # If enabled
           candatateChoices.append(operator)
 
     return candatateChoices[random.randint(0,len(candatateChoices)-1)]
@@ -512,7 +523,7 @@ def feedback_selection(individual, deadlockVotes, dataraceVotes, nonFunctionalVo
     totalBugRate = (deadlockRate + dataraceRate)
     choice = random.uniform(0, totalBugRate)
 
-    # Determine which it bug type to use
+    # Determine which bug type to use
     if (dataraceRate > deadlockRate):
       # If choice falls past the datarace range then type is lock
       if choice >= dataraceRate:
@@ -523,22 +534,31 @@ def feedback_selection(individual, deadlockVotes, dataraceVotes, nonFunctionalVo
         opType = 'lock'
 
     # Select the appropriate operator based on enable/type/functional
+    # (See config.py)
     if opType is 'race':
       for operator in mutationOperators:
         if operator[1] and operator[2]:
-          candatateChoices.append(operator)
+          # For the functional phase we can now specify what operators are used by
+          # the deadlock and data race fixing process (See config.py)
+          if _functionalPhase and operator[5]:
+              candatateChoices.append(operator)
+          if not _functionalPhase:
+            candatateChoices.append(operator)
     elif opType is 'lock':
       for operator in mutationOperators:
         if operator[1] and operator[3]:
-          candatateChoices.append(operator)
+          if _functionalPhase and operator[6]:
+              candatateChoices.append(operator)
+          if not _functionalPhase:
+            candatateChoices.append(operator)
 
     # Acquire the operator chances based on what voting condition we have
     if _functionalPhase and opType is 'lock':
       operatorChances = get_operator_chances(candatateChoices, deadlockVotes)
-      logger.debug("Operator chance for functional phase with deadlocks: {}".format(operatorChances))
+      logger.debug("Deadlock weighting: {}".format(operatorChances))
     elif _functionalPhase and opType is 'race':
       operatorChances = get_operator_chances(candatateChoices, dataraceVotes)
-      logger.debug("Operator chance for functional phase with dataraces: {}".format(operatorChances))
+      logger.debug("Datarace weighting: {}".format(operatorChances))
     else:
       operatorChances = get_operator_chances(candatateChoices, nonFunctionalVotes)
       logger.debug("Operator chance for non-functional phase: {}".format(operatorChances))
@@ -552,6 +572,7 @@ def feedback_selection(individual, deadlockVotes, dataraceVotes, nonFunctionalVo
         selectedOperator = candatateChoices[i]
         break
 
+    logger.debug("Selected operator: {}".format(selectedOperator))
     return selectedOperator
 
 

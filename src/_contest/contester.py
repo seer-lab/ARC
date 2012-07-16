@@ -49,7 +49,7 @@ def run_test_execution(runs):
   timer = timeit.Timer(cmd, "from _contest.contester import test_execution")
 
   averageTime = timer.timeit(1) / runs
-  logger.debug("Practice testsuite runs took {}s as an AVG".format(averageTime))
+  logger.debug("Practice testsuite runs took on average {}s".format(averageTime))
   return averageTime
 
 def test_execution(runs):
@@ -78,9 +78,9 @@ def test_execution(runs):
     elif (testRunner.timeouts >= 1):
       raise Exception('ERROR', 'config._CONTEST_TIMEOUT_SEC is too low')
     elif (testRunner.successes >= 1):
-      logger.info("Capable of a successful execution of the testsuite")
+      logger.info("Test suite execution successful")
     else:
-      logger.warn("No successful execution of the testsuite")
+      logger.warn("The test suite wasn't executed successfully")
 
   except Exception as message:
     print (message.args)
