@@ -187,8 +187,6 @@ class Tester():
 
         # Some tests have failed
         if numTests > 0 and numFailures > 0:
-        #if faultTests is not None and numFailures > 0:
-          #totalFaults = int(faultTests.groups()[0])
           totalFaults = numFailures
           logger.info("Test {} - Datarace Encountered ({} errors)".format(i,
                                                                   totalFaults))
@@ -196,14 +194,12 @@ class Tester():
           self.goodRuns.append(False)
 
         # Tests have no faults and no successes
-        #elif faultTests is None and successTests is None:
         elif numTests is 0 and numSuccesses is 0:
           logger.info("Test {} - Deadlock Encountered".format(i))
           self.deadlocks += 1
           self.goodRuns.append(False)
 
         # Tests have successes
-        #elif successTests is not None:
         elif numSuccesses > 0 or (numTests > 0 and numFailures is 0):
           if numTests > 0:
             totalSuccesses = numTests
@@ -231,6 +227,7 @@ class Tester():
                 #       All 0 causes a division by zero error in
                 #       function evolution.py.get_average_non_functional_score
                 #       Is involuntary context switches valid? Think about this!
+                # Note: The MAC is used for development only.
                 voluntarySwitches = re.search("(\d+)\s+ involuntary context switches", error).groups()[0]
               else: # Linux
                 userTime = re.search("User time \(seconds\): (\d+\.\d+)", error).groups()[0]

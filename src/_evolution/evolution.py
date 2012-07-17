@@ -120,7 +120,9 @@ def start():
                                                     bestFunctional.id)
         txl_operator.compile_project()
         logger.debug("Acquiring Non-Functional worst score")
-        worstScore = get_average_non_functional_score(bestFunctional,
+        contest = tester.Tester()
+        contest.begin_testing(False, False, config._CONTEST_RUNS * config._CONTEST_VALIDATION_MULTIPLIER)  # Measure performance
+        worstScore = get_average_non_functional_score(contest, bestFunctional,
           config._CONTEST_RUNS * config._CONTEST_VALIDATION_MULTIPLIER)
 
         # Evolve the population to find the best non-functional individual
@@ -188,7 +190,7 @@ def evolve(generation=0, worstScore=0):
 
     # Mutate each individual
     moreMutations = False
-    highestSoFar = -1 # DK
+    highestSoFar = -1
     highestID = -1
     runningSum = 0
 
@@ -219,22 +221,6 @@ def evolve(generation=0, worstScore=0):
         # No more possible mutations in non-functional phase, time to terminate
         return get_best_individual(True)
 
-    # Evaluate each individual
-    #for individual in _population:
-    #  evaluate(individual, worstScore)
-
-    # Calculate average/best fitness and set replace/restarted state to false
-    #highestSoFar = -1
-    #highestID = -1
-    #runningSum = 0
-    #for individual in _population:
-      #individual.wasRestarted.append(False)
-      #individual.wasReplaced.append(False)
-      #runningSum += individual.score[-1]
-      #if individual.score[-1] >= highestSoFar:
-      #  highestSoFar = individual.score[-1]
-      #  highestID = individual.id
-
     averageFitness.append(runningSum / config._EVOLUTION_POPULATION)
     bestFitness.append((highestSoFar, highestID))
 
@@ -242,12 +228,6 @@ def evolve(generation=0, worstScore=0):
     if not _functionalPhase:
       if convergence(generation, bestFitness, averageFitness):
         return get_best_individual()
-    #terminating, bestIndividual = terminate(generation, generationLimit)
-    #if terminating:
-    #  if bestIndividual is None:
-    #   return get_best_individual()
-    #  else:
-    #    return bestIndividual, generation
 
     # If there are no more mutations, this process cannot go any further
     if not moreMutations:
@@ -452,8 +432,6 @@ def evaluate(individual, worstScore):
   # ConTest testing
   contest = tester.Tester()
 
-  # Copied from the evaluate function.  We need to move the local project
-  # to the original before testing for both phases
   # As we create mutated projects and evaluate them right away, it is
   # redundant to move the project a second time and compile it again
   #txl_operator.move_local_project_to_original(individual.generation,
@@ -476,13 +454,14 @@ def evaluate(individual, worstScore):
     individual.errors.append(contest.errors)
   else:
     # Ensure functionality is still there
+    # _functionalPhase is false here
     if contest.begin_testing(_functionalPhase, True,
           config._CONTEST_RUNS * config._CONTEST_VALIDATION_MULTIPLIER):
       logger.debug("Nonfunctional phase: Mutation didn't introduce any bugs")
-      contest.clear_results()
+      #contest.clear_results()
 
       # Nonfunctional fitness
-      individual.score.append(get_average_non_functional_score(individual))
+      individual.score.append(get_average_non_functional_score(contest, individual, config._CONTEST_RUNS * config._CONTEST_VALIDATION_MULTIPLIER))
     else:
       logger.debug("Nonfunctional phase: Mutation introduced a bug")
       individual.score.append(-1)
@@ -490,10 +469,10 @@ def evaluate(individual, worstScore):
       # Need to ensure that the project from the last generation is used again
       if individual.generation-1 is 0:
         # Restarting the mutant if at 0th generation
-        logger.debug("Resetting back to pristine")
+        logger.debug("Nonfunctional phase: Resetting back to pristine")
         txl_operator.create_local_project(individual.generation, individual.id, True)
       else:
-        logger.debug("Resetting back to an earlier generation")
+        logger.debug("Nonfunctional phase: Resetting back to the previous generation")
         txl_operator.copy_local_project_a_to_b(individual.generation-1,
                                               individual.id,
                                               individual.generation,
@@ -631,13 +610,13 @@ def get_operator_chances(candatateChoices, votes):
   return operatorChances
 
 
-def get_average_non_functional_score(individual, numberOfRuns = config._CONTEST_RUNS):
+def get_average_non_functional_score(contest, individual, numberOfRuns = config._CONTEST_RUNS):
 
   logger.info("Getting average non-functional score")
 
   # This individual's best generation should be the last one compiled
-  contest = tester.Tester()
-  contest.begin_testing(False, False, numberOfRuns)  # Measure performance
+  #contest = tester.Tester()
+  #contest.begin_testing(False, False, numberOfRuns)  # Measure performance
 
   # Get the average of realTime and voluntarySwitches
   avgRealTime = sum(contest.realTime, 0.0) / len(contest.realTime)
