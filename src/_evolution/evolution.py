@@ -99,8 +99,8 @@ def start():
 
         logger.info("**************************************************")
         logger.info("Best individual found during the bug fixing phase:")
-        logger.info(bestFunctional)
         logger.info("**************************************************")
+        logger.info(bestFunctional)
         logger.info("")
 
         # Reinitialize the population with the best functional individual
@@ -131,21 +131,30 @@ def start():
 
         logger.info("******************************************************")
         logger.info("Best individual found during the non-functional phase:")
-        logger.info(bestNonFunctional)
         logger.info("******************************************************")
+        logger.info(bestNonFunctional)
         logger.info("")
 
       else:
         bestNonFunctional = bestFunctional
         bestNonFunctionalGeneration = bestFunctionalGeneration
 
+      logger.info("******************************************************")
       logger.info("Copying fixed project Individual:{} Generation:{} to {}".format(bestNonFunctional.id, bestNonFunctionalGeneration, config._PROJECT_OUTPUT_DIR))
+      logger.info("******************************************************")
       txl_operator.move_best_project_to_output(bestNonFunctionalGeneration,
         bestNonFunctional.id)
-      logger.info(_population)
+
+
     else:
       logger.info("No individual was found that functions correctly")
-      logger.info(_population)
+
+    logger.info("------------------------------")
+    logger.info("Here is the entire population:")
+    logger.info(_population)
+    logger.info("------------------------------")
+    logger.info("Note: Results of the run can be found before the listing of the population.")
+    logger.info("(Scroll up)")
 
   except:
     logger.error("Unexpected error:\n", traceback.print_exc(file=sys.stdout))
@@ -179,30 +188,52 @@ def evolve(generation=0, worstScore=0):
 
     # Mutate each individual
     moreMutations = False
+    highestSoFar = -1 # DK
+    highestID = -1
+    runningSum = 0
+
     for individual in _population:
       individual.generation = generation
       mutationSuccess = mutation(individual, deadlockVotes, dataraceVotes, nonFunctionalVotes)
+
       if mutationSuccess:
         moreMutations = True
+
+        # Mutate an individual, then evaluate it right away
+        evaluate(individual, worstScore)
+        individual.wasRestarted.append(False)
+        individual.wasReplaced.append(False)
+        runningSum += individual.score[-1]
+        if individual.score[-1] >= highestSoFar:
+          highestSoFar = individual.score[-1]
+          highestID = individual.id
+
+        terminating, bestIndividual = terminate(individual, generation, generationLimit)
+        if terminating:
+          if bestIndividual is None:
+            return get_best_individual()
+          else:
+            return bestIndividual, generation
+
       elif not mutationSuccess and not _functionalPhase:
         # No more possible mutations in non-functional phase, time to terminate
         return get_best_individual(True)
 
     # Evaluate each individual
-    for individual in _population:
-      evaluate(individual, worstScore)
+    #for individual in _population:
+    #  evaluate(individual, worstScore)
 
     # Calculate average/best fitness and set replace/restarted state to false
-    highestSoFar = -1
-    highestID = -1
-    runningSum = 0
-    for individual in _population:
-      individual.wasRestarted.append(False)
-      individual.wasReplaced.append(False)
-      runningSum += individual.score[-1]
-      if individual.score[-1] >= highestSoFar:
-        highestSoFar = individual.score[-1]
-        highestID = individual.id
+    #highestSoFar = -1
+    #highestID = -1
+    #runningSum = 0
+    #for individual in _population:
+      #individual.wasRestarted.append(False)
+      #individual.wasReplaced.append(False)
+      #runningSum += individual.score[-1]
+      #if individual.score[-1] >= highestSoFar:
+      #  highestSoFar = individual.score[-1]
+      #  highestID = individual.id
 
     averageFitness.append(runningSum / config._EVOLUTION_POPULATION)
     bestFitness.append((highestSoFar, highestID))
@@ -211,12 +242,12 @@ def evolve(generation=0, worstScore=0):
     if not _functionalPhase:
       if convergence(generation, bestFitness, averageFitness):
         return get_best_individual()
-    terminating, bestIndividual = terminate(generation, generationLimit)
-    if terminating:
-      if bestIndividual is None:
-        return get_best_individual()
-      else:
-        return bestIndividual, generation
+    #terminating, bestIndividual = terminate(generation, generationLimit)
+    #if terminating:
+    #  if bestIndividual is None:
+    #   return get_best_individual()
+    #  else:
+    #    return bestIndividual, generation
 
     # If there are no more mutations, this process cannot go any further
     if not moreMutations:
@@ -423,9 +454,11 @@ def evaluate(individual, worstScore):
 
   # Copied from the evaluate function.  We need to move the local project
   # to the original before testing for both phases
-  txl_operator.move_local_project_to_original(individual.generation,
-                                              individual.id)
-  txl_operator.compile_project()
+  # As we create mutated projects and evaluate them right away, it is
+  # redundant to move the project a second time and compile it again
+  #txl_operator.move_local_project_to_original(individual.generation,
+  #                                            individual.id)
+  #txl_operator.compile_project()
 
   if _functionalPhase:
     contest.begin_testing(_functionalPhase)
@@ -443,20 +476,15 @@ def evaluate(individual, worstScore):
     individual.errors.append(contest.errors)
   else:
     # Ensure functionality is still there
-    # Copied from the evaluate function.  We need to move the local project
-    # to the original before testing for both phases
-    #txl_operator.move_local_project_to_original(individual.generation,
-    #                                            individual.id)
-    #txl_operator.compile_project()
     if contest.begin_testing(_functionalPhase, True,
           config._CONTEST_RUNS * config._CONTEST_VALIDATION_MULTIPLIER):
-      logger.debug("Functionality was unchanged")
+      logger.debug("Nonfunctional phase: Mutation didn't introduce any bugs")
       contest.clear_results()
 
       # Nonfunctional fitness
       individual.score.append(get_average_non_functional_score(individual))
     else:
-      logger.debug("Functionality was broken by change")
+      logger.debug("Nonfunctional phase: Mutation introduced a bug")
       individual.score.append(-1)
 
       # Need to ensure that the project from the last generation is used again
@@ -605,6 +633,8 @@ def get_operator_chances(candatateChoices, votes):
 
 def get_average_non_functional_score(individual, numberOfRuns = config._CONTEST_RUNS):
 
+  logger.info("Getting average non-functional score")
+
   # This individual's best generation should be the last one compiled
   contest = tester.Tester()
   contest.begin_testing(False, False, numberOfRuns)  # Measure performance
@@ -746,28 +776,30 @@ def convergence(generation, bestFitness, averageFitness):
   return False
 
 
-def terminate(generation, generationLimit):
+def terminate(individual, generation, generationLimit):
 
   global _population
   global _functionalPhase
 
   # Check for terminating conditions
-  for individual in _population:
-    if _functionalPhase and individual.successes[-1]/config._CONTEST_RUNS == 1:
-      logger.info("Found potential best individual {}".format(individual.id))
+  #for individual in _population:
+  if _functionalPhase and individual.successes[-1]/config._CONTEST_RUNS == 1:
+    logger.info("Found potential best individual {}".format(individual.id))
 
-      txl_operator.move_local_project_to_original(individual.generation,
-                                                  individual.id)
-      txl_operator.compile_project()
-      if tester.Tester().begin_testing(True, True,
-            config._CONTEST_RUNS * config._CONTEST_VALIDATION_MULTIPLIER):
-        tester.Tester().clear_results()
-        logger.info("Found best individual {}".format(individual.id))
-        individual.validated = True
-        return True, individual
-      else:
-        tester.Tester().clear_results()
-        logger.info("Potential best individual still has errors")
+    # As we mutate and then evaluate each project, moving the project again
+    # and compiling it again is redundant
+    #txl_operator.move_local_project_to_original(individual.generation,
+    #                                            individual.id)
+    #txl_operator.compile_project()
+    if tester.Tester().begin_testing(True, True,
+          config._CONTEST_RUNS * config._CONTEST_VALIDATION_MULTIPLIER):
+      tester.Tester().clear_results()
+      logger.info("Found best individual {}".format(individual.id))
+      individual.validated = True
+      return True, individual
+    else:
+      tester.Tester().clear_results()
+      logger.info("Potential best individual still has errors")
   if generation == generationLimit:
     logger.info("Exhausted all generations")
     return True, None

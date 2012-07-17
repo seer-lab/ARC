@@ -65,7 +65,14 @@ class Tester():
                     config._PROJECT_TESTSUITE], stdout=outFile,
                     stderr=errFile, cwd=config._PROJECT_DIR, shell=False)
       else:
-        process = subprocess.Popen(['/usr/bin/time', '-v', 'java',
+        # MAC uses a different time argument then Linux
+        # http://developer.apple.com/library/mac/#documentation/Darwin/Reference/ManPages/man1/time.1.html
+        if config._OS is 'MAC':
+          timeArg = '-lp' # BSD-style
+        else:
+          timeArg = '-v'  # Linux-style
+
+        process = subprocess.Popen(['/usr/bin/time', timeArg, 'java',
                     '-Xmx{}m'.format(config._PROJECT_TEST_MB), '-cp',
                     config._PROJECT_CLASSPATH + ":" + config._JUNIT_JAR, 'org.junit.runner.JUnitCore',
                     config._PROJECT_TESTSUITE],
@@ -77,7 +84,7 @@ class Tester():
       # If last run was unsuccessful and we are in the non-functional, exit
       if len(self.goodRuns) > 0:
         if nonFunctional and not self.goodRuns[-1]:
-          logger.debug("Last run was unsuccesful functionally")
+          logger.debug("Non-functional testing: A bug exists in the program")
           return False
 
     logger.debug("Test Runs Results...")
@@ -136,7 +143,7 @@ class Tester():
 
         # Check if there is any deadlock using "Java-level deadlock:"
         if (output.find(b"Java-level deadlock:") >= 0):
-          logger.info("Test {} - Deadlock Encountered".format(i))
+          logger.info("Test {} - Deadlock Encountered (Java-level deadlock)".format(i))
           self.deadlocks += 1
         else:
           if functional:
@@ -160,31 +167,48 @@ class Tester():
         errFile.close()
 
         # Acquire the number of faults (accoring to ant test)
-        # logger.debug("Test, Output text:\n")
-        # logger.debug(output)
-        # logger.debug("Test, Error text:\n")
-        # logger.debug(error)
+        #logger.debug("Test, Output text:\n")
+        #logger.debug(output)
+        #logger.debug("Test, Error text:\n")
+        #logger.debug(error)
 
-        faultTests = re.search("Tests run: \d+,\s+Failures: (\d+)", output)
-        successTests = re.search("OK \((\d+) test", output)
+        numTests = 0
+        numFailures = 0
+        numSuccesses = 0
 
-        # Tests have faults
+        faultTests = re.search("Tests run: (\d+),\s+Failures: (\d+)", output)
         if faultTests is not None:
-          totalFaults = int(faultTests.groups()[0])
+          numTests = faultTests.group(1)
+          numFailures = faultTests.group(2)
+
+        successTests = re.search("OK \((\d+) test", output)
+        if successTests is not None:
+            numSuccesses = successTests.group(1)
+
+        # Some tests have failed
+        if numTests > 0 and numFailures > 0:
+        #if faultTests is not None and numFailures > 0:
+          #totalFaults = int(faultTests.groups()[0])
+          totalFaults = numFailures
           logger.info("Test {} - Datarace Encountered ({} errors)".format(i,
                                                                   totalFaults))
           self.dataraces += 1
           self.goodRuns.append(False)
 
         # Tests have no faults and no successes
-        elif faultTests is None and successTests is None:
+        #elif faultTests is None and successTests is None:
+        elif numTests is 0 and numSuccesses is 0:
           logger.info("Test {} - Deadlock Encountered".format(i))
           self.deadlocks += 1
           self.goodRuns.append(False)
 
         # Tests have successes
-        elif successTests is not None:
-          totalSuccesses = int(successTests.groups()[0])
+        #elif successTests is not None:
+        elif numSuccesses > 0 or (numTests > 0 and numFailures is 0):
+          if numTests > 0:
+            totalSuccesses = numTests
+          else:
+             totalSuccesses = numSuccesses
 
           # No tests were ran, thus some error occurred
           if totalSuccesses is 0:
@@ -200,9 +224,19 @@ class Tester():
 
             if not functional:
               # Take the performance measures of exection
-              userTime = re.search("User time \(seconds\): (\d+\.\d+)", error).groups()[0]
-              systemTime = re.search("System time \(seconds\): (\d+\.\d+)", error).groups()[0]
-              voluntarySwitches = re.search("Voluntary context switches: (\d+)", error).groups()[0]
+              if config._OS is 'MAC':
+                userTime = re.search("user \s+ (\d+\.\d+)", error).groups()[0]
+                systemTime = re.search("sys \s+ (\d+\.\d+)", error).groups()[0]
+                # TODO: Investigate why 'voluntary context switches' is 0 on MAC
+                #       All 0 causes a division by zero error in
+                #       function evolution.py.get_average_non_functional_score
+                #       Is involuntary context switches valid? Think about this!
+                voluntarySwitches = re.search("(\d+)\s+ involuntary context switches", error).groups()[0]
+              else: # Linux
+                userTime = re.search("User time \(seconds\): (\d+\.\d+)", error).groups()[0]
+                systemTime = re.search("System time \(seconds\): (\d+\.\d+)", error).groups()[0]
+                voluntarySwitches = re.search("Voluntary context switches: (\d+)", error).groups()[0]
+
               self.realTime.append(float(userTime) + float(systemTime))
               self.voluntarySwitches.append(float(voluntarySwitches))
 

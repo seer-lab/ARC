@@ -44,12 +44,12 @@ def setup():
 
 def run_test_execution(runs):
   # Check if the testsuite can successfully execute with the set parameters
-  logger.debug("Practice testsuite run {} times".format(runs))
+  logger.debug("Practice test suite run {} times".format(runs))
   cmd = "test_execution({})".format(runs)
   timer = timeit.Timer(cmd, "from _contest.contester import test_execution")
 
   averageTime = timer.timeit(1) / runs
-  logger.debug("Practice testsuite runs took on average {}s".format(averageTime))
+  logger.debug("Practice test suite runs took on average {}s".format(averageTime))
   return averageTime
 
 def test_execution(runs):
@@ -100,7 +100,7 @@ def _check_tools():
     bool: if the tools are present, then True
   """
 
-  logger.info("Checking if txl is present")
+  logger.info("Checking if TXL is present")
   try:
     subprocess.check_call(["which", "txl"])
   except subprocess.CalledProcessError:

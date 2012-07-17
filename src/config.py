@@ -13,9 +13,10 @@ _MAX_CORES = 2
 _TMP_DIR = _ROOT_DIR + "tmp/"
 _TXL_DIR = _ROOT_DIR + "src/_txl/"
 _JUNIT_JAR = _ROOT_DIR + "lib/junit-4.8.1.jar"
-_LOG_LEVEL = "DEBUG"  # {OFF,ERROR,WARN,INFO,DEBUG}
+_LOG_LEVEL = "INFO"  # {OFF,ERROR,WARN,INFO,DEBUG}
 _LOG_FILE = "log.txt"  # If None then use stdout, otherwise specify a file
 _RANDOM_SEED = None  # None means use the system time, non-zero is fixed
+_OS = "MAC" # {MAC, LINUX}  Macintosh uses a different time command (BSD vs Linux) (see tester.py)
 
 # Target project variables
 _PROJECT_DIR = _ROOT_DIR + "input/"
@@ -24,8 +25,8 @@ _PROJECT_TEST_DIR = _PROJECT_DIR + "test/"
 _PROJECT_CLASS_DIR = _PROJECT_DIR + "class/"
 _PROJECT_BACKUP_DIR = _ROOT_DIR + "project_backup/"
 _PROJECT_OUTPUT_DIR = _ROOT_DIR + "output/"
-_PROJECT_PREFIX = "org.example.project,AirlineBug"  # Comma separated fully-qualifying class names or package prefixes
-_PROJECT_TESTSUITE = "AirlineTest"
+_PROJECT_PREFIX = "org.example.project,Account,Main,ManageAccount"  # Comma separated fully-qualifying class names or package prefixes
+_PROJECT_TESTSUITE = "AccountTest"
 _PROJECT_COMPILE = "compile"
 _PROJECT_TEST = "test"
 _PROJECT_CLASSPATH = None  # Automatically acquired using ant test if None
@@ -79,7 +80,7 @@ _ONLY_FUNCTIONAL = False
 
 # Evolution variables
 _EVOLUTION_GENERATIONS = 30
-_EVOLUTION_POPULATION = 10
+_EVOLUTION_POPULATION = 5
 _EVOLUTION_REPLACE_LOWEST_PERCENT = 10
 _EVOLUTION_REPLACE_INTERVAL = 5  # Consider replacement on this generational interval
 _EVOLUTION_REPLACE_WEAK_MIN_TURNS = 3  # Min number of turns of underperforming before replacement
