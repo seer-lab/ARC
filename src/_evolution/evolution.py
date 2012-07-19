@@ -13,6 +13,7 @@ sys.path.append("..")  # To allow importing parent directory module
 import config
 from _contest import tester
 from _txl import txl_operator
+import hashlist
 
 import logging
 logger = logging.getLogger('arc')
@@ -432,26 +433,30 @@ def evaluate(individual, worstScore):
   # ConTest testing
   contest = tester.Tester()
 
-  # As we create mutated projects and evaluate them right away, it is
-  # redundant to move the project a second time and compile it again
-  #txl_operator.move_local_project_to_original(individual.generation,
-  #                                            individual.id)
-  #txl_operator.compile_project()
-
   if _functionalPhase:
-    contest.begin_testing(_functionalPhase)
+    hash = hashlist.generate_hash(individual.generation, individual.id)
+    if hash is not None:
+      if hashlist.find_hash(hash):
+        logger.debug("Found this mutated project hash in hash list: {}.  Skipping evaluation".format(hash))
+      else:
+        logger.debug("Didn't find this mutated project hash in hash list: {}.  Adding it".format(hash))
+        hashlist.add_hash(hash)
 
-    individual.score.append((contest.successes * \
-                                  config._SUCCESS_WEIGHT) + \
-                                  (contest.timeouts * \
-                                  config._TIMEOUT_WEIGHT))
+        contest.begin_testing(_functionalPhase)
 
-    # Store results into genome
-    individual.successes.append(contest.successes)
-    individual.timeouts.append(contest.timeouts)
-    individual.dataraces.append(contest.dataraces)
-    individual.deadlocks.append(contest.deadlocks)
-    individual.errors.append(contest.errors)
+        individual.score.append((contest.successes * \
+                                    config._SUCCESS_WEIGHT) + \
+                                    (contest.timeouts * \
+                                    config._TIMEOUT_WEIGHT))
+
+        # Store results into genome
+        individual.successes.append(contest.successes)
+        individual.timeouts.append(contest.timeouts)
+        individual.dataraces.append(contest.dataraces)
+        individual.deadlocks.append(contest.deadlocks)
+        individual.errors.append(contest.errors)
+    else:
+      logger.debug("Problem: Hash value is NULL")
   else:
     # Ensure functionality is still there
     # _functionalPhase is false here
