@@ -197,12 +197,11 @@ def evolve(generation=0, worstScore=0):
 
     for individual in _population:
       individual.generation = generation
+      # Mutate an individual, then evaluate it right away
       mutationSuccess = mutation(individual, deadlockVotes, dataraceVotes, nonFunctionalVotes)
 
       if mutationSuccess:
         moreMutations = True
-
-        # Mutate an individual, then evaluate it right away
         evaluate(individual, worstScore)
         individual.wasRestarted.append(False)
         individual.wasReplaced.append(False)
@@ -434,13 +433,26 @@ def evaluate(individual, worstScore):
   contest = tester.Tester()
 
   if _functionalPhase:
+    # Check if we have encountered this mutant already
     hash = hashlist.generate_hash(individual.generation, individual.id)
     if hash is not None:
-      if hashlist.find_hash(hash):
+      hashGen, hashMem =  hashlist.find_hash(hash)
+      # If we have, we can skip the contest runs (saves time) and copy the testing
+      # results from the first mutatn
+      if hashGen != -1 and hashMem != -1:
         logger.debug("Found this mutated project hash in hash list: {}.  Skipping evaluation".format(hash))
+        prevIndvidual = _population[hashMem]
+
+        individual.score.append(hashMem.score[hashGen])
+        individual.successes.append(hashMem.successes[hashMem])
+        individual.timeouts.append(hashMem.timeouts[hashMem])
+        individual.dataraces.append(hashMem.dataraces[hashMem])
+        individual.deadlocks.append(hashMem.deadlocks[hashMem])
+        individual.errors.append(hashMem.errors[hashMem])
+      # If we haven't seen this mutant before, evaluate it with contest
       else:
         logger.debug("Didn't find this mutated project hash in hash list: {}.  Adding it".format(hash))
-        hashlist.add_hash(hash)
+        hashlist.add_hash(hash, individual.generation, individual.id)
 
         contest.begin_testing(_functionalPhase)
 
@@ -456,7 +468,7 @@ def evaluate(individual, worstScore):
         individual.deadlocks.append(contest.deadlocks)
         individual.errors.append(contest.errors)
     else:
-      logger.debug("Problem: Hash value is NULL")
+      logger.error("Hash value of member {} generation {} is NULL".format(individual.id, individual.generation))
   else:
     # Ensure functionality is still there
     # _functionalPhase is false here
@@ -770,11 +782,6 @@ def terminate(individual, generation, generationLimit):
   if _functionalPhase and individual.successes[-1]/config._CONTEST_RUNS == 1:
     logger.info("Found potential best individual {}".format(individual.id))
 
-    # As we mutate and then evaluate each project, moving the project again
-    # and compiling it again is redundant
-    #txl_operator.move_local_project_to_original(individual.generation,
-    #                                            individual.id)
-    #txl_operator.compile_project()
     if tester.Tester().begin_testing(True, True,
           config._CONTEST_RUNS * config._CONTEST_VALIDATION_MULTIPLIER):
       tester.Tester().clear_results()

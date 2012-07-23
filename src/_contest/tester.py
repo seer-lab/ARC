@@ -101,14 +101,14 @@ class Tester():
   def run_test(self, process, outFile, errFile, i, functional):
     """Runs a single test process.
 
-    The test process is ran with a timeout mechanism in place to determine if
+    The test process is run with a timeout mechanism in place to determine if
     the process is timing out or just deadlocked. The results of a test is
     either:
      * Success - the testsuite had no errors
-     * Timeout - the testsuite  never finished in time
+     * Timeout - the testsuite  didn't finished in time
      * Datarace - the testsuite had at least one failing test case
      * Deadlock - the testsuite timed out, and the JVM dump showed a deadlock
-     * Error - the testsuite was unable to run correctly
+     * Error - the testsuite didn't run correctly
 
     Args:
       process (Popen): testsuite execution process
@@ -204,7 +204,7 @@ class Tester():
           if numTests > 0:
             totalSuccesses = numTests
           else:
-             totalSuccesses = numSuccesses
+            totalSuccesses = numSuccesses
 
           # No tests were ran, thus some error occurred
           if totalSuccesses is 0:
@@ -228,6 +228,7 @@ class Tester():
                 #       function evolution.py.get_average_non_functional_score
                 #       Is involuntary context switches valid? Think about this!
                 # Note: The MAC is used for development only.
+                #       Using involuntary switches on the MAC for now
                 voluntarySwitches = re.search("(\d+)\s+ involuntary context switches", error).groups()[0]
               else: # Linux
                 userTime = re.search("User time \(seconds\): (\d+\.\d+)", error).groups()[0]

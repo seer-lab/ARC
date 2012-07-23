@@ -12,7 +12,15 @@ import logging
 logger = logging.getLogger('arc')
 
 # List of previously seen mutated projects that didn't contain a full fix
-prevSeenMutantProj = []
+#prevSeenMutantProj = []
+
+# A dictionary to hold the path of unique mutations by individual's and
+# generation. The mapping is:
+# hash => generation, member number
+# For example:
+# EIUERIWWI -> 12, 3
+
+prevSeenMutantProj = {}
 
 def generate_hash(generation, memberNum):
 
@@ -44,15 +52,15 @@ def find_hash(hash):
 
   for listHash in prevSeenMutantProj:
     # TODO: Check this comparison is correct.  listHash is a string, hash is an int
-    #logger.debug("Comparing '{}' and '{}'".format(hash, listHash))
+    logger.debug("Comparing '{}' and '{}'".format(hash, listHash))
     if listHash == str(hash):
-      return True
-  return False
+      return PrevSeenMutantProject[listHash]
+  return (-1, -1)
 
-def add_hash(hash):
+def add_hash(hash, generation, memberNum):
 
   if not find_hash(hash):
-    prevSeenMutantProj.append(hash)
+    uniqueMutants[hash] = (generation, membernum)
 
 # This bit of code comes from StackOverflow
 def zipdir(dirPath=None, zipFilePath=None, includeDirInZip=True):
