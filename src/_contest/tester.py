@@ -10,6 +10,8 @@ import time
 import subprocess
 import tempfile
 import re
+import os
+import shutil
 
 sys.path.append("..")  # To allow importing parent directory module
 import config
@@ -49,6 +51,12 @@ class Tester():
   def begin_testing(self, functional, nonFunctional=False,
                     runs=config._CONTEST_RUNS):
     """Begins the testing phase by creating the test processes."""
+
+    # Delete old ConTest longs.  Thousands can accumulate if this isn't done regularly
+    conTestLogDir = config._PROJECT_DIR + os.sep + 'com_ibm_contest' + os.sep + 'instLogs' + os.sep
+    if os.path.exists(conTestLogDir):
+      shutil.rmtree(conTestLogDir)
+      os.makedirs(conTestLogDir)
 
     logger.debug("Performing {} Test Runs...".format(runs))
     for i in range(1, runs + 1):

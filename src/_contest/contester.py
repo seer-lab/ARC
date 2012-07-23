@@ -1,4 +1,4 @@
-"""This module that the ConTest testing can occur then starts the approach.
+"""Configure ConTest for this run.
 
 The setup() method should be called first to ensure that the testsuite and
 ConTest are setup correctly. The run_contest() method will start the testing
@@ -21,7 +21,7 @@ logger = logging.getLogger('arc')
 
 
 def setup():
-  """Check if the directories and tools are present for testing process."""
+  """Check if the directories and tools are present for the testing process."""
 
   try:
     _check_directories()
@@ -39,8 +39,46 @@ def setup():
       line = "sourceDirs = {} ".format(config._PROJECT_SRC_DIR)
     elif line.find("keepBackup =") is 0:
       line = "keepBackup = false "
-    print(line[0:-1])  # Remove extra newlines (a trailling-space must exists in modified lines)
+    print(line[0:-1])  # Remove extra newlines (a trailing-space must exists in modified lines)
 
+def _check_directories():
+  """Checks that the required directories are present.
+
+  Returns:
+    bool: if the directories are present, True
+  """
+
+  if(not os.path.isdir(config._PROJECT_SRC_DIR)):
+    raise Exception('ERROR MISSING DIRECTORY', 'config._PROJECT_SRC_DIR')
+
+  if(not os.path.isdir(config._PROJECT_TEST_DIR)):
+    raise Exception('ERROR MISSING DIRECTORY', 'config._PROJECT_TEST_DIR')
+
+  return True
+
+def _check_tools():
+  """Check that the required tools are installed and present.
+
+  Returns:
+    bool: if the tools are present, True
+  """
+
+  logger.info("Checking if TXL is present")
+  try:
+    subprocess.check_call(["which", "txl"])
+  except subprocess.CalledProcessError:
+    raise Exception('ERROR MISSING TOOL', 'txl')
+
+  logger.info("Checking if ConTest is present")
+  if (not os.path.exists(config._CONTEST_JAR)):
+    raise Exception('ERROR MISSING TOOL', 'config._CONTEST_JAR')
+
+  logger.info("Checking if ConTest's KingProperties is present")
+  if (not os.path.exists(config._CONTEST_KINGPROPERTY)):
+    raise Exception('ERROR MISSING CONFIGURATION', 'config._CONTEST_KINGPROPERTY')
+
+  logger.info("All Pass")
+  return True
 
 def run_test_execution(runs):
   # Check if the testsuite can successfully execute with the set parameters
@@ -93,45 +131,10 @@ def run_contest():
   testRunner.begin_testing(True)
 
 
-def _check_tools():
-  """Check that the required tools are installed and present.
-
-  Returns:
-    bool: if the tools are present, then True
-  """
-
-  logger.info("Checking if TXL is present")
-  try:
-    subprocess.check_call(["which", "txl"])
-  except subprocess.CalledProcessError:
-    raise Exception('ERROR MISSING TOOL', 'txl')
-
-  logger.info("Checking if ConTest is present")
-  if (not os.path.exists(config._CONTEST_JAR)):
-    raise Exception('ERROR MISSING TOOL', 'ConTest')
-
-  logger.info("Checking if ConTest's KingProperties is present")
-  if (not os.path.exists(config._CONTEST_KINGPROPERTY)):
-    raise Exception('ERROR MISSING CONFIGURATION', 'KingProperties')
-
-  logger.info("All Pass")
-  return True
 
 
-def _check_directories():
-  """Checks that the required directories are present.
 
-  Returns:
-    bool: if the directories are present. then True
-  """
 
-  if(not os.path.isdir(config._PROJECT_SRC_DIR)):
-    raise Exception('ERROR MISSING DIRECTORY', 'source')
-
-  if(not os.path.isdir(config._PROJECT_TEST_DIR)):
-    raise Exception('ERROR MISSING DIRECTORY', 'test')
-
-  return True
 
 # If this module is ran as main
 if __name__ == '__main__':
