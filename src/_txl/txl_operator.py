@@ -41,7 +41,9 @@ uniqueMutants = {}
 
 def mutate_project(generation, memberNum, mutationOperators):
   """Create all of the mutants for a member of the genetic pool.  Mutants and
-  projects are stored by generation and member.
+  projects are stored by generation and member. The source project depends on the generation:
+  Gen 1: The source project is the original project
+  Gen >= 2: Source project is from generation -1, for the same memberNum
 
   Attributes:
   generation (int): Current generation of the evolutionary strategy
@@ -122,10 +124,29 @@ def generate_mutants(generation, memberNum, txlOperator, sourceFile, destDir):
   destDir (string): Where the project is being copied to
   """
 
+  # Ensure that there is a shared variable file
+  if not os.path.exists(config._SHARED_VARS_FILE):
+    raise Exception("config._SHARED_VARS_FILE doesn't exist")
+
   sourceNoExt = os.path.splitext(sourceFile)[0]
   sourceNoFileName = os.path.split(sourceNoExt)[0] + os.sep
   sourceNameOnly = os.path.split(sourceNoExt)[1]
   sourceExtOnly = os.path.splitext(sourceFile)[1]
+
+  # Consider only files with shared variables
+  foundMatch = False
+  for line in open(config._SHARED_VARS_FILE, 'r'):
+    variableName = line.split('.')[-1].strip(' \t\n\r')
+    className = line.split('.')[-2].strip(' \t\n\r')
+
+    # TODO: Is this a good idea? Assuming the class and file name are the same?
+    #       Is it common in java to declare additional classes in a file with
+    #       different names?
+    if className == sourceNameOnly:
+      foundMatch = True
+
+  if not foundMatch:
+    return
 
   sourceRelPath = ''
   if (generation == 1):
@@ -152,13 +173,6 @@ def generate_mutants(generation, memberNum, txlOperator, sourceFile, destDir):
   # print 'sourceExtOnly:    ' + sourceExtOnly
   # print 'txlDestDir:       ' + txlDestDir
 
-  # If it doesn't exist, create it, otherwise clean subdirectories
-  if not os.path.exists(txlDestDir):
-    os.makedirs(txlDestDir)
-  else:
-    shutil.rmtree(txlDestDir)
-    os.makedirs(txlDestDir)
-
   outFile = tempfile.SpooledTemporaryFile()
   errFile = tempfile.SpooledTemporaryFile()
 
@@ -168,38 +182,46 @@ def generate_mutants(generation, memberNum, txlOperator, sourceFile, destDir):
   #logger.debug("sourceNameOnly + sourceExtOnly: {}".format(sourceNameOnly + sourceExtOnly))
   #logger.debug("txlDestDir: {}".format(txlDestDir))
 
-  # Handle special TXL operator (ASAV,ASAS,ASM)
+  # If the output directory doesn't exist, create it, otherwise clean subdirectories
+  if os.path.exists(txlDestDir):
+    shutil.rmtree(txlDestDir)
+  os.makedirs(txlDestDir)
+
+  # Only add synchronization to classes and their variables involved in
+  # synchronization (ASAS, ASAV, ASM)
   if txlOperator is config._MUTATION_ASAV or txlOperator is config._MUTATION_ASAS \
       or txlOperator is config._MUTATION_ASM:
 
-    # Ensure that there is a shared variable file
-    if os.path.exists(config._SHARED_VARS_FILE):
-      counter = 1
+    counter = 1
 
-      for line in open(config._SHARED_VARS_FILE, 'r'):
+    for line in open(config._SHARED_VARS_FILE, 'r'):
+      variableName = line.split('.')[-1].strip(' \t\n\r')
+      className = line.split('.')[-2].strip(' \t\n\r')
 
-        mutantSource = sourceNameOnly + "_" + str(counter)
+      # TODO: Is this a good idea? Assuming the class and file name are the same?
+      #       Is it common in java to declare additional classes in a file with
+      #       different names?
+      if not className == sourceNameOnly:
+        continue
 
-        variableName = line.split('.')[-1].strip(' \t\n\r')
-        className = line.split('.')[-2].strip(' \t\n\r')
-
-        process = subprocess.Popen(['txl', sourceFile, txlOperator[4], '-',
-                  '-outfile', mutantSource + sourceExtOnly, '-outdir', txlDestDir,
-                  '-class', className, '-var', variableName],
-                  stdout=outFile, stderr=errFile, cwd=config._PROJECT_DIR, shell=False)
-        process.wait()
-        counter += 1
 
       mutantSource = sourceNameOnly + "_" + str(counter)
 
-      # Use the mutation with the 'this' object
+      process = subprocess.Popen(['txl', sourceFile, txlOperator[4], '-',
+                '-outfile', mutantSource + sourceExtOnly, '-outdir', txlDestDir,
+                '-class', className, '-var', variableName],
+                stdout=outFile, stderr=errFile, cwd=config._PROJECT_DIR, shell=False)
+      process.wait()
+      counter += 1
+
+      mutantSource = sourceNameOnly + "_" + str(counter)
+
+      # Use the mutation with the 'this' object: synchronize(this)
       process = subprocess.Popen(['txl', sourceFile, txlOperator[4], '-',
                 '-outfile', mutantSource + sourceExtOnly, '-outdir', txlDestDir,
                 '-class', '', '-var', 'this'],
                 stdout=outFile, stderr=errFile, cwd=config._PROJECT_DIR, shell=False)
       process.wait()
-    else:
-      logger.WARN("No shared file was found for this mutation operator.")
 
   else:
 
@@ -207,6 +229,10 @@ def generate_mutants(generation, memberNum, txlOperator, sourceFile, destDir):
               '-outfile', sourceNameOnly + sourceExtOnly, '-outdir', txlDestDir],
               stdout=outFile, stderr=errFile, cwd=config._PROJECT_DIR, shell=False)
     process.wait()
+
+  # Delete empty directories
+  if sum((len(f) for _, _, f in os.walk(txlDestDir))) == 0:
+    shutil.rmtree(txlDestDir)
 
   #logger.debug("stdout: {}".format(outFile))
   #logger.debug("stderr: {}".format(errFile))
@@ -237,8 +263,7 @@ def generate_representation(generation, memberNum, mutationOperators):
   recurDir = config._TMP_DIR + str(generation) + os.sep + str(memberNum) + os.sep
   for root, dirs, files in os.walk(recurDir):
     for aDir in dirs:
-      #if (aDir == str('project'))
-        # continue;
+
       # Count mutant operator if present in dir name
       for mutationOp in mutationOperators:
 

@@ -9,7 +9,7 @@
 %
 % Typical invocation:
 % txl ManageAccount.java ASM.Txl - -outfile ManageAccount_1.java -outdir ASM/
-% -contestfile sharedVars.txt -class ManageAccount -var account
+% -class ManageAccount -var account
 %
 % Notes:
 % - Java files must be named _1.java, _2.java due to the fact that

@@ -9,7 +9,7 @@
 %
 % Typical invocation:
 % txl ManageAccount.java ASAV.Txl - -outfile ManageAccount_1.java -outdir ASAV/
-% -contestfile sharedVars.txt -class ManageAccount -var account
+% -class ManageAccount -var account
 %
 % Notes:
 % - Only adds synchronization block around A := B statements
