@@ -201,8 +201,9 @@ def generate_mutants(generation, memberNum, txlOperator, sourceFile, destDir):
       # TODO: Is this a good idea? Assuming the class and file name are the same?
       #       Is it common in java to declare additional classes in a file with
       #       different names?
-      if not className == sourceNameOnly:
-        continue
+      # Note: This is probably a bad idea
+      #if not className == sourceNameOnly:
+      #  continue
 
 
       mutantSource = sourceNameOnly + "_" + str(counter)
@@ -214,14 +215,14 @@ def generate_mutants(generation, memberNum, txlOperator, sourceFile, destDir):
       process.wait()
       counter += 1
 
-      mutantSource = sourceNameOnly + "_" + str(counter)
+    mutantSource = sourceNameOnly + "_" + str(counter)
 
-      # Use the mutation with the 'this' object: synchronize(this)
-      process = subprocess.Popen(['txl', sourceFile, txlOperator[4], '-',
-                '-outfile', mutantSource + sourceExtOnly, '-outdir', txlDestDir,
-                '-class', '', '-var', 'this'],
-                stdout=outFile, stderr=errFile, cwd=config._PROJECT_DIR, shell=False)
-      process.wait()
+    # Use the mutation with the 'this' object: synchronize(this)
+    process = subprocess.Popen(['txl', sourceFile, txlOperator[4], '-',
+              '-outfile', mutantSource + sourceExtOnly, '-outdir', txlDestDir,
+              '-class', '', '-var', 'this'],
+              stdout=outFile, stderr=errFile, cwd=config._PROJECT_DIR, shell=False)
+    process.wait()
 
   else:
 
