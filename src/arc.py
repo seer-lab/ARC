@@ -22,11 +22,15 @@ logger = logging.getLogger('arc')
 def main():
   """The entry point to ARC, to start the evolutionary approach."""
 
+  # Compiling initial project
+  if os.path.exists(config._PROJECT_DIR):
+    shutil.rmtree(config._PROJECT_DIR)
+  shutil.copytree(config._PROJECT_PRISTINE_DIR, config._PROJECT_DIR)
+
+  txl_operator.compile_project()
+
   # Setup ConTest
   contester.setup()
-
-  # Compiling initial project
-  txl_operator.compile_project()
 
   # Acquire classpath dynamically using 'ant test'
   if config._PROJECT_CLASSPATH is None:

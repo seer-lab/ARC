@@ -57,7 +57,7 @@ def mutate_project(generation, memberNum, mutationOperators):
   destDir = config._TMP_DIR + str(generation) + os.sep + str(memberNum) + os.sep
 
   if generation == 1:
-    sourceDir = config._PROJECT_BACKUP_DIR
+    sourceDir = config._PROJECT_DIR
   else:
     sourceDir = (config._TMP_DIR + str(generation - 1) + os.sep + str(memberNum) \
                 + os.sep + 'project' + os.sep)
@@ -150,7 +150,7 @@ def generate_mutants(generation, memberNum, txlOperator, sourceFile, destDir):
 
   sourceRelPath = ''
   if (generation == 1):
-    sourceRelPath = sourceNoFileName.replace(config._PROJECT_BACKUP_DIR, '')
+    sourceRelPath = sourceNoFileName.replace(config._PROJECT_DIR, '')
   else:
     sourceRelPath = sourceNoFileName.replace(config._TMP_DIR +
                     str(generation - 1) + os.sep + str(memberNum) + os.sep +
@@ -287,35 +287,35 @@ def generate_representation(generation, memberNum, mutationOperators):
 
 # TODO: Split the project related functions into a separate file?
 
-def backup_project():
-  """Back up the remote, pristine project.
-  This has to be done as we copy mutant files to the project directory and
-  compile them there.  We don't want to damage the original project!
-  """
+# def backup_project():
+#   """Back up the remote, pristine project.
+#   This has to be done as we copy mutant files to the project directory and
+#   compile them there.  We don't want to damage the original project!
+#   """
 
-  logger.debug("Backing up (global) project:")
-  logger.debug("\nSrc: {} \nDst: {}".format(config._PROJECT_SRC_DIR,
-    config._PROJECT_BACKUP_DIR))
+#   logger.debug("Backing up (global) project:")
+#   logger.debug("\nSrc: {} \nDst: {}".format(config._PROJECT_SRC_DIR,
+#     config._PROJECT_PRISTINE_DIR))
 
-  if os.path.exists(config._PROJECT_BACKUP_DIR):
-    shutil.rmtree(config._PROJECT_BACKUP_DIR)
-  shutil.copytree(config._PROJECT_SRC_DIR, config._PROJECT_BACKUP_DIR)
+#   if os.path.exists(config._PROJECT_PRISTINE_DIR):
+#     shutil.rmtree(config._PROJECT_PRISTINE_DIR)
+#   shutil.copytree(config._PROJECT_SRC_DIR, config._PROJECT_PRISTINE_DIR)
 
 
-def restore_project():
-  """At the end of an ARC run, restore the project to it's pristine state."""
+# def restore_project():
+#   """At the end of an ARC run, restore the project to it's pristine state."""
 
-  logger.debug("Restoring (global) project:")
-  logger.debug("\nSrc: {} \nDst: {}".format(config._PROJECT_BACKUP_DIR,
-    config._PROJECT_SRC_DIR))
+#   logger.debug("Restoring (global) project:")
+#   logger.debug("\nSrc: {} \nDst: {}".format(config._PROJECT_PRISTINE_DIR,
+#     config._PROJECT_SRC_DIR))
 
-  if os.path.exists(config._PROJECT_SRC_DIR):
-    shutil.rmtree(config._PROJECT_SRC_DIR)
-  shutil.copytree(config._PROJECT_BACKUP_DIR, config._PROJECT_SRC_DIR)
+#   if os.path.exists(config._PROJECT_SRC_DIR):
+#     shutil.rmtree(config._PROJECT_SRC_DIR)
+#   shutil.copytree(config._PROJECT_PRISTINE_DIR, config._PROJECT_SRC_DIR)
 
 
 def create_local_project(generation, memberNum, restart, switchGeneration=0):
-  """After mutating the files above, create the local project for a member of
+  """After mutating the files, create the project for a member of
   a given generation.  The source of the project depends on the generation:
   Gen 1: Original (pristine) project
   Gen >= 2: Source project is from generation - 1, for the same memberNum.
@@ -338,7 +338,7 @@ def create_local_project(generation, memberNum, restart, switchGeneration=0):
     if switchGeneration > 0:
       srcDir = config._TMP_DIR + str(switchGeneration) + staticPart
     else:
-      srcDir = config._PROJECT_BACKUP_DIR
+      srcDir = config._PROJECT_PRISTINE_DIR
   else:
     # Note: generation - 1 vs generation
     srcDir = config._TMP_DIR + str(generation - 1) + staticPart
@@ -354,7 +354,6 @@ def create_local_project(generation, memberNum, restart, switchGeneration=0):
   if os.path.exists(destDir):
     shutil.rmtree(destDir)
   shutil.copytree(srcDir, destDir)
-
 
 def copy_local_project_a_to_b(generationSrc, memberNumSrc, generationDst,
                               memberNumDst):
@@ -407,11 +406,14 @@ def move_mutant_to_local_project(generation, memberNum, txlOperator, mutantNum):
 
   basePath = config._TMP_DIR + str(generation) + os.sep + str(memberNum)
 
+  relPath = None
+
   if (pathNoFileName != basePath):
     relPath = pathNoFileName.replace(basePath, '')
-    relPath = os.path.split(relPath)[0] #+ os.sep
-  #else:
-  #  relPath = '/'
+    relPath = os.path.split(relPath)[0] + os.sep
+
+  if relPath is None:
+    relPath = os.sep
 
   for root, dirs, files in os.walk(sourceDir):
       for aFile in files:
@@ -439,9 +441,9 @@ def move_mutant_to_local_project(generation, memberNum, txlOperator, mutantNum):
   shutil.copy(sourceDir, dst)
 
 
-def move_local_project_to_original(generation, memberNum):
+def move_local_project_to_workarea(generation, memberNum):
   """When the mutants are generated, project assembled and mutant copied
-  in, the final step is to copy the local project back to the original
+  in, the final step is to copy the local project to the work area
   directory and compile it.
 
   Attributes:
@@ -450,21 +452,36 @@ def move_local_project_to_original(generation, memberNum):
   """
 
   # Check for existence of a backup
-  for root, dirs, files in os.walk(config._PROJECT_BACKUP_DIR):
-    if files == [] and dirs == []:
-      logger.error("No backup for original project found")
-      return
+  #for root, dirs, files in os.walk(config._PROJECT_PRISTINE_DIR):
+  #  if files == [] and dirs == []:
+  #    logger.error("No backup for original project found")
+  #    return
 
   srcDir = (config._TMP_DIR + str(generation) + os.sep + str(memberNum) + os.sep \
             + 'project' + os.sep)
 
-  logger.debug("Moving local project to original:")
-  logger.debug("\nSrc: {}\nDst: {}".format(srcDir, config._PROJECT_SRC_DIR))
+  logger.debug("Moving local project to work area:")
+  logger.debug("\nSrc: {}\nDst: {}".format(srcDir, config._PROJECT_DIR))
 
+  # HACK: Preserve the shared vars file when the test area directory is deleted
+  #       It isn't being consistently regenerated all the time
 
-  if os.path.exists(config._PROJECT_SRC_DIR):
-    shutil.rmtree(config._PROJECT_SRC_DIR)
-  shutil.copytree(srcDir, config._PROJECT_SRC_DIR)
+  if os.path.exists(os.path.join(config._ROOT_DIR, 'sv.txt')):
+    os.remove(os.path.join(config._ROOT_DIR, 'sv.txt'))
+
+  # Preserve the shared variables file.  Wierd errors result if it can't be
+  # found
+  if os.path.exists(config._SHARED_VARS_FILE):
+    shutil.move(config._SHARED_VARS_FILE, os.path.join(config._ROOT_DIR, 'sv.txt'))
+
+  # This part isn't part of the HACK
+  if os.path.exists(config._PROJECT_DIR):
+    shutil.rmtree(config._PROJECT_DIR)
+  shutil.copytree(srcDir, config._PROJECT_DIR)
+
+  if os.path.exists(os.path.join(config._ROOT_DIR, 'sv.txt')):
+    os.mkdir(os.path.dirname(config._SHARED_VARS_FILE))
+    shutil.move(os.path.join(config._ROOT_DIR, 'sv.txt'), config._SHARED_VARS_FILE)
 
 def move_best_project_to_output(generation, memberNum):
   """At the end of the process, copy the correct mutant program to the output
@@ -486,10 +503,11 @@ def move_best_project_to_output(generation, memberNum):
   shutil.copytree(srcDir, config._PROJECT_OUTPUT_DIR)
 
 def compile_project():
-  """After the local project is copied back to the original, compile it."""
+  """After the local project is copied to the work area, compile it."""
 
   if not os.path.isfile(config._PROJECT_DIR + 'build.xml'):
-    logger.error("No ant build.xml file found in project under test's directory")
+    logger.error("No ant build.xml file found in workarea directory")
+    return False
   else:
     logger.debug("Compiling new source files")
 
@@ -514,7 +532,7 @@ def compile_project():
     errFile.close()
 
     if (outText.find("build failed") >= 0 or errText.find("build failed") >= 0):
-      logger.debug("Ant 'compile' command failed, could not compile (global) project")
+      logger.debug("Ant 'compile' command failed, could not compile project in work area")
       return False
     else:
       return True

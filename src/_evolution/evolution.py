@@ -75,7 +75,7 @@ def start():
   global _functionalPhase
 
   # Backup project
-  txl_operator.backup_project()
+  #txl_operator.backup_project()
 
   try:
     # Initialize the population
@@ -117,7 +117,7 @@ def start():
 
         # Acquire worst possible non-functional score for best individual.
         # Here "worst" is the average of a large number of executions
-        txl_operator.move_local_project_to_original(bestFunctional.generation,
+        txl_operator.move_local_project_to_workarea(bestFunctional.generation,
                                                     bestFunctional.id)
         txl_operator.compile_project()
         logger.debug("Acquiring Non-Functional worst score")
@@ -161,9 +161,9 @@ def start():
 
   except:
     logger.error("Unexpected error:\n", traceback.print_exc(file=sys.stdout))
-    txl_operator.restore_project()
-  else:
-    txl_operator.restore_project()
+    #txl_operator.restore_project()
+  #else:
+    #txl_operator.restore_project()
 
 
 def evolve(generation=0, worstScore=0):
@@ -377,7 +377,7 @@ def mutation(individual, deadlockVotes, dataraceVotes, nonFunctionalVotes):
                                               selectedOperator[0], randomMutant + 1)
 
     # Move the local project to the target's source
-    txl_operator.move_local_project_to_original(individual.generation,
+    txl_operator.move_local_project_to_workarea(individual.generation,
                                                 individual.id)
 
     logger.debug("Attempting to compile...")

@@ -151,15 +151,15 @@ class Tester():
 
         # Check if there is any deadlock using "Java-level deadlock:"
         if (output.find(b"Java-level deadlock:") >= 0):
-          logger.info("Test {} - Deadlock Encountered (Java-level deadlock)".format(i))
+          logger.info("Test {} - Deadlock Encountered (Java-level deadlock)(Process didn't finish in time)".format(i))
           self.deadlocks += 1
         else:
           if functional:
-            logger.info("Test {} - Timeout Encountered".format(i))
+            logger.info("Test {} - Timeout Encountered (Process didn't finish in time)".format(i))
             self.timeouts += 1
           else:
             # If on non-functional, we cannot tell when deadlock thus assume it
-            logger.info("Test {} - Deadlock/Timeout Encountered".format(i))
+            logger.info("Test {} - Deadlock/Timeout Encountered (Process didn't finish in time)".format(i))
             self.deadlocks += 1
         self.goodRuns.append(False)
 
@@ -184,14 +184,14 @@ class Tester():
         numFailures = 0
         numSuccesses = 0
 
-        faultTests = re.search("Tests run: (\d+),\s+Failures: (\d+)", output)
-        if faultTests is not None:
-          numTests = faultTests.group(1)
-          numFailures = faultTests.group(2)
+        stmtOne = re.search("Tests run: (\d+),\s+Failures: (\d+)", output)
+        if stmtOne is not None:
+          numTests = stmtOne.group(1)
+          numFailures = stmtOne.group(2)
 
-        successTests = re.search("OK \((\d+) test", output)
-        if successTests is not None:
-            numSuccesses = successTests.group(1)
+        stmtTwo = re.search("OK \((\d+) test", output)
+        if stmtTwo is not None:
+            numSuccesses = stmtTwo.group(1)
 
         # Some tests have failed
         if numTests > 0 and numFailures > 0:

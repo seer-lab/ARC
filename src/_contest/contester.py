@@ -117,6 +117,10 @@ def test_execution(runs):
       raise Exception('ERROR', 'config._CONTEST_TIMEOUT_SEC is too low')
     elif (testRunner.successes >= 1):
       logger.info("Test suite execution successful")
+    elif (testRunner.dataraces >= 1):
+      logger.info("Data races were encountered")
+    elif (testRunner.deadlocks >= 1):
+      logger.info("Deadlocks were encountered")
     else:
       logger.warn("The test suite wasn't executed successfully")
 

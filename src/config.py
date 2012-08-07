@@ -13,25 +13,34 @@ _MAX_CORES = 2
 _TMP_DIR = _ROOT_DIR + "tmp/"
 _TXL_DIR = _ROOT_DIR + "src/_txl/"
 _JUNIT_JAR = _ROOT_DIR + "lib/junit-4.8.1.jar"
-_LOG_LEVEL = "DEBUG"  # {OFF,ERROR,WARN,INFO,DEBUG}
+_LOG_LEVEL = "INFO"  # {OFF,ERROR,WARN,INFO,DEBUG}
 _LOG_FILE = "log.txt"  # If None then use stdout, otherwise specify a file
 _RANDOM_SEED = None  # None means use the system time, non-zero is fixed
 _OS = "MAC" # {MAC, LINUX}  Macintosh uses a different time command (BSD vs Linux) (see tester.py)
 
 # Target project variables
-_PROJECT_DIR = _ROOT_DIR + "input/"
+
+# Original project is placed in the input directory.
+# Invariant: This directory is read-only
+_PROJECT_PRISTINE_DIR = _ROOT_DIR + "input/"
+
+# Projects are compiled and tested in the workarea directory
+_PROJECT_DIR = _ROOT_DIR + "workarea/"
 _PROJECT_SRC_DIR = _PROJECT_DIR + "source/"
 _PROJECT_TEST_DIR = _PROJECT_DIR + "test/"
 _PROJECT_CLASS_DIR = _PROJECT_DIR + "class/"
-_PROJECT_BACKUP_DIR = _ROOT_DIR + "project_backup/"
+_SHARED_VARS_FILE = _PROJECT_DIR + "com_ibm_contest/sharedVars.txt"
+
+# A fixed project (if found) is placed in the output directory
 _PROJECT_OUTPUT_DIR = _ROOT_DIR + "output/"
-_PROJECT_PREFIX = "org.example.project,Account,Main,ManageAccount"  # Comma separated fully-qualifying class names or package prefixes
-_PROJECT_TESTSUITE = "AccountTest"
+
+_PROJECT_PREFIX = "org.example.project,BuggedProgram,BugThread,PingPong,ProgramRunner"  # Comma separated fully-qualifying class names or package prefixes
+_PROJECT_TESTSUITE = "PingPongTest"
 _PROJECT_COMPILE = "compile"
 _PROJECT_TEST = "test"
 _PROJECT_CLASSPATH = None  # Automatically acquired using ant test if None
 _PROJECT_TEST_MB = 2000
-_SHARED_VARS_FILE = _PROJECT_DIR + "com_ibm_contest/sharedVars.txt"
+
 
 # ConTest variables
 _CONTEST_DIR = _ROOT_DIR + "lib/ConTest/"
@@ -39,7 +48,7 @@ _CONTEST_KINGPROPERTY = _CONTEST_DIR + "KingProperties"
 _CONTEST_JAR = _CONTEST_DIR + "ConTest.jar"
 _CONTEST_RUNS = 3
 _CONTEST_TIMEOUT_SEC = 30 # Default timeout, it is adjusted dynamically
-_CONTEST_TIMEOUT_MULTIPLIER = 3  # The average execution time (with conTest) is multiplied by this
+_CONTEST_TIMEOUT_MULTIPLIER = 10  # The average execution time (with conTest) is multiplied by this
 _CONTEST_VALIDATION_MULTIPLIER = 2  # Allows for validation of functionality
 
 # Mutation operator variables
@@ -81,7 +90,7 @@ _ONLY_FUNCTIONAL = False
 # Evolution variables
 _EVOLUTION_GENERATIONS = 30
 _EVOLUTION_POPULATION = 5
-_EVOLUTION_REPLACE_LOWEST_PERCENT = 10
+_EVOLUTION_REPLACE_LOWEST_PERCENT = 20
 _EVOLUTION_REPLACE_INTERVAL = 5  # Consider replacement on this generational interval
 _EVOLUTION_REPLACE_WEAK_MIN_TURNS = 3  # Min number of turns of underperforming before replacement
 _EVOLUTION_REPLACE_WITH_BEST_PERCENT = 75
@@ -95,7 +104,7 @@ _TIMEOUT_WEIGHT = 50
 
 # Convergence criteria, considering the window size ensure there is at least
 # a fitness score movement of delta
-_GENERATIONAL_IMPROVEMENT_WINDOW = 30
+_GENERATIONAL_IMPROVEMENT_WINDOW = 5
 _AVG_FITNESS_MIN_DELTA = 0.01
 _BEST_FITNESS_MIN_DELTA = 1
 
