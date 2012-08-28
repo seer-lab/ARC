@@ -14,6 +14,7 @@ import config
 from _contest import tester
 from _txl import txl_operator
 import hashlist
+import static
 
 import logging
 logger = logging.getLogger('arc')
@@ -130,7 +131,9 @@ def start():
         logger.info("*****************************************************************")
         logger.info("Evolving population towards optimizing non-functional performance")
         logger.info("*****************************************************************")
+        logger.debug("BUG HUNT: BestFunctional generation: {}  Worst score: {}".format(bestFunctional.generation, worstScore))
         bestNonFunctional, bestNonFunctionalGeneration = evolve(bestFunctional.generation, worstScore)
+        logger.debug("BUG HUNT: BestNonFunctional: {}  Best NonFunctional generation: {}".format(bestNonFunctional, bestNonFunctionalGeneration))
 
         logger.info("******************************************************")
         logger.info("Best individual found during the non-functional phase:")
@@ -152,18 +155,15 @@ def start():
     else:
       logger.info("No individual was found that functions correctly")
 
-    logger.info("------------------------------")
-    logger.info("Here is the entire population:")
-    logger.info(_population)
-    logger.info("------------------------------")
-    logger.info("Note: Results of the run can be found before the listing of the population.")
-    logger.info("(Scroll up)")
+    #logger.info("------------------------------")
+    #logger.info("Here is the entire population:")
+    #logger.info(_population)
+    #logger.info("------------------------------")
+    #logger.info("Note: Results of the run can be found before the listing of the population.")
+    #logger.info("(Scroll up)")
 
   except:
     logger.error("Unexpected error:\n", traceback.print_exc(file=sys.stdout))
-    #txl_operator.restore_project()
-  #else:
-    #txl_operator.restore_project()
 
 
 def evolve(generation=0, worstScore=0):
@@ -226,6 +226,7 @@ def evolve(generation=0, worstScore=0):
 
     # Check the terminating conditions
     if not _functionalPhase:
+      logger.debug("BUG HUNT: Convergence {} {} {}".format(generation, bestFitness, averageFitness))
       if convergence(generation, bestFitness, averageFitness):
         return get_best_individual()
 
@@ -342,7 +343,7 @@ def mutation(individual, deadlockVotes, dataraceVotes, nonFunctionalVotes):
 
     # The continue here is for efficiency sake
     if len(individual.genome[operatorIndex]) == 0:
-      logger.debug("No mutations at operatorIndex {}".format(operatorIndex))
+      #logger.debug("No mutations at operatorIndex {}".format(operatorIndex))
       continue
 
     txl_operator.create_local_project(individual.generation,
@@ -579,13 +580,13 @@ def feedback_selection(individual, deadlockVotes, dataraceVotes, nonFunctionalVo
     # Acquire the operator chances based on what voting condition we have
     if _functionalPhase and opType is 'lock':
       operatorChances = get_operator_chances(candatateChoices, deadlockVotes)
-      logger.debug("Deadlock weighting: {}".format(operatorChances))
+      #logger.debug("Deadlock weighting: {}".format(operatorChances))
     elif _functionalPhase and opType is 'race':
       operatorChances = get_operator_chances(candatateChoices, dataraceVotes)
-      logger.debug("Datarace weighting: {}".format(operatorChances))
+      #logger.debug("Datarace weighting: {}".format(operatorChances))
     else:
       operatorChances = get_operator_chances(candatateChoices, nonFunctionalVotes)
-      logger.debug("Operator chance for non-functional phase: {}".format(operatorChances))
+      #logger.debug("Operator chance for non-functional phase: {}".format(operatorChances))
 
     # Make selection of operator based on the adjusted weighting
     randomChance = random.randint(0,sum(operatorChances))
@@ -596,7 +597,7 @@ def feedback_selection(individual, deadlockVotes, dataraceVotes, nonFunctionalVo
         selectedOperator = candatateChoices[i]
         break
 
-    logger.debug("Selected operator: {}".format(selectedOperator))
+    logger.debug("Selected operator: {}".format(selectedOperator[0]))
     return selectedOperator
 
 
@@ -815,6 +816,7 @@ def get_best_individual(beforeMutation=False):
 
     if _functionalPhase:
       # Consider all generations
+      logger.debug("BUG HUNT get_best_individual 1:  generation: {}".format(individual.generation))
       for i in xrange(0, individual.generation):
         if individual.score[i] > bestScore:
           individualId = individual.id
@@ -823,10 +825,17 @@ def get_best_individual(beforeMutation=False):
 
     else:
       # Consider generations over the switch
+      logger.debug("BUG HUNT get_best_individual 2:  {} {} {}".format(individual.switchGeneration, individual.generation, mod))
+      logger.debug(" BUG HUNT Individual: {}".format(individual))
+      logger.debug(" BUG HUNT Best score: {}".format(bestScore))
+
+      #print individual
       for i in xrange(individual.switchGeneration, individual.generation - mod):
+        logger.debug("BUG HUNT i = {}".format(i))
         if individual.score[i] > bestScore:
+          logger.debug("BUG HUNT individual.score[i]: {}".format(individual.score[i]))
           individualId = individual.id
-          generation = i + 1
+          generation = i + 1   # My guess is that the +1 isn't necessary
           bestScore = individual.score[i]
 
   for individual in _population:

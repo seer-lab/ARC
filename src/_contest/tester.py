@@ -12,6 +12,7 @@ import tempfile
 import re
 import os
 import shutil
+from _evolution import static
 
 sys.path.append("..")  # To allow importing parent directory module
 import config
@@ -48,8 +49,7 @@ class Tester():
   goodRuns = []  # True || False
 
 
-  def begin_testing(self, functional, nonFunctional=False,
-                    runs=config._CONTEST_RUNS):
+  def begin_testing(self, functional, nonFunctional=False, runs=config._CONTEST_RUNS):
     """Begins the testing phase by creating the test processes."""
 
     # Delete old ConTest longs.  Thousands can accumulate if this isn't done regularly
@@ -246,6 +246,14 @@ class Tester():
               self.realTime.append(float(userTime) + float(systemTime))
               self.voluntarySwitches.append(float(voluntarySwitches))
 
+    # If ConTest hasn't given us a list of (class.variable) involved in concurrency
+    # yet, we keep looking for it.
+    # Getting the ConTest information may allow us to fill the config.finalCMV list with
+    # (class, method, variable) information, so we should try to do so again.
+    if not static.do_we_have_contest_vars():
+      if static.load_contest_list():
+        static.create_merged_classVar_list()
+        static.create_final_triple()
 
   def clear_results(self):
     """Clears the results of the test runs thus far."""

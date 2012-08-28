@@ -11,9 +11,6 @@ import tempfile
 import logging
 logger = logging.getLogger('arc')
 
-# List of previously seen mutated projects that didn't contain a full fix
-#prevSeenMutantProj = []
-
 # A dictionary to hold the path of unique mutations by individual's and
 # generation. The mapping is:
 # hash => generation, member number
@@ -57,10 +54,12 @@ def find_hash(hash):
       return PrevSeenMutantProject[listHash]
   return (-1, -1)
 
+
 def add_hash(hash, generation, memberNum):
 
   if not find_hash(hash):
     uniqueMutants[hash] = (generation, membernum)
+
 
 # This bit of code comes from StackOverflow
 def zipdir(dirPath=None, zipFilePath=None, includeDirInZip=True):
@@ -89,11 +88,6 @@ def zipdir(dirPath=None, zipFilePath=None, includeDirInZip=True):
         #Make sure we get empty directories as well
         if not fileNames and not dirNames:
             zipInfo = zipfile.ZipInfo(trimPath(archiveDirPath) + "/")
-            #some web sites suggest doing
-            #zipInfo.external_attr = 16
-            #or
-            #zipInfo.external_attr = 48
-            #Here to allow for inserting an empty directory.  Still TBD/TODO.
             outFile.writestr(zipInfo, "")
     outFile.close()
 

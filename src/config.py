@@ -13,7 +13,7 @@ _MAX_CORES = 2
 _TMP_DIR = _ROOT_DIR + "tmp/"
 _TXL_DIR = _ROOT_DIR + "src/_txl/"
 _JUNIT_JAR = _ROOT_DIR + "lib/junit-4.8.1.jar"
-_LOG_LEVEL = "INFO"  # {OFF,ERROR,WARN,INFO,DEBUG}
+_LOG_LEVEL = "DEBUG"  # {OFF,ERROR,WARN,INFO,DEBUG}
 _LOG_FILE = "log.txt"  # If None then use stdout, otherwise specify a file
 _RANDOM_SEED = None  # None means use the system time, non-zero is fixed
 _OS = "MAC" # {MAC, LINUX}  Macintosh uses a different time command (BSD vs Linux) (see tester.py)
@@ -34,13 +34,20 @@ _SHARED_VARS_FILE = _PROJECT_DIR + "com_ibm_contest/sharedVars.txt"
 # A fixed project (if found) is placed in the output directory
 _PROJECT_OUTPUT_DIR = _ROOT_DIR + "output/"
 
-_PROJECT_PREFIX = "org.example.project,BuggedProgram,BugThread,PingPong,ProgramRunner"  # Comma separated fully-qualifying class names or package prefixes
-_PROJECT_TESTSUITE = "PingPongTest"
+_PROJECT_PREFIX = "org.example.project,Bank,Account"  # Comma separated fully-qualifying class names or package prefixes
+_PROJECT_TESTSUITE = "AccountsTest"
 _PROJECT_COMPILE = "compile"
 _PROJECT_TEST = "test"
 _PROJECT_CLASSPATH = None  # Automatically acquired using ant test if None
 _PROJECT_TEST_MB = 2000
 
+# Chord variables
+_CHORD_MAIN = "Bank"
+_CHORD_COMMAND_LINE_ARGS = "out.txt little"
+
+_CHORD_DIR = _ROOT_DIR + "lib/Chord/"
+_CHORD_PROPERTIES = _CHORD_DIR + "chord.properties"
+_CHORD_JAR = _CHORD_DIR + "chord.jar"
 
 # ConTest variables
 _CONTEST_DIR = _ROOT_DIR + "lib/ConTest/"

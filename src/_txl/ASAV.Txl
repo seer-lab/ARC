@@ -16,7 +16,7 @@
 % - Java files must be named _1.java, _2.java due to the fact that
 %   the second invocation of mutant generation will overwrite the first.
 % - Output directory must already exist.
-% - Class and variable name from ConTest are passed as arguments to TXL.
+% - Class and variable name are passed as arguments to TXL.
 %***********************************************************
 
 %***********************************************************

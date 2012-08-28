@@ -48,6 +48,9 @@ def _check_directories():
     bool: if the directories are present, True
   """
 
+  # TODO: Should this be removed now that we are using the new input-workarea-output
+  #       directory structure?
+  logger.info("Checking for project source and test directories")
   if(not os.path.isdir(config._PROJECT_SRC_DIR)):
     raise Exception('ERROR MISSING DIRECTORY', 'config._PROJECT_SRC_DIR')
 
@@ -63,19 +66,25 @@ def _check_tools():
     bool: if the tools are present, True
   """
 
-  logger.info("Checking if TXL is present")
+  logger.info("Checking for TXL")
   try:
     subprocess.check_call(["which", "txl"])
   except subprocess.CalledProcessError:
     raise Exception('ERROR MISSING TOOL', 'txl')
 
-  logger.info("Checking if ConTest is present")
-  if (not os.path.exists(config._CONTEST_JAR)):
-    raise Exception('ERROR MISSING TOOL', 'config._CONTEST_JAR')
+  logger.info("Checking for ANT")
+  try:
+    subprocess.check_call(["which", "ant"])
+  except subprocess.CalledProcessError:
+    raise Exception('ERROR MISSING TOOL', 'ant')
 
-  logger.info("Checking if ConTest's KingProperties is present")
+  logger.info("Checking for ConTest")
+  if (not os.path.exists(config._CONTEST_JAR)):
+    raise Exception('ERROR MISSING ConTest TOOL', 'config._CONTEST_JAR')
+
+  logger.info("Checking for ConTest's KingProperties config file")
   if (not os.path.exists(config._CONTEST_KINGPROPERTY)):
-    raise Exception('ERROR MISSING CONFIGURATION', 'config._CONTEST_KINGPROPERTY')
+    raise Exception('ERROR MISSING ConTest CONFIGURATION', 'config._CONTEST_KINGPROPERTY')
 
   logger.info("All Pass")
   return True
@@ -104,23 +113,23 @@ def test_execution(runs):
   try:
     testRunner.begin_testing(True,runs=runs)
 
-    logger.info("Testing Runs Results...")
-    logger.info("Successes: {}".format(testRunner.successes))
-    logger.info("Timeouts: {}".format(testRunner.timeouts))
-    logger.info("Dataraces: {}".format(testRunner.dataraces))
-    logger.info("Deadlock: {}".format(testRunner.deadlocks))
-    logger.info("Errors: {}".format(testRunner.errors))
+    #logger.info("Testing Runs Results...")
+    #logger.info("Successes: {}".format(testRunner.successes))
+    #logger.info("Timeouts: {}".format(testRunner.timeouts))
+    #logger.info("Dataraces: {}".format(testRunner.dataraces))
+    #logger.info("Deadlock: {}".format(testRunner.deadlocks))
+    #logger.info("Errors: {}".format(testRunner.errors))
 
     if (testRunner.errors >= 1):
       raise Exception('ERROR', 'testsuite')
     elif (testRunner.timeouts >= 1):
       raise Exception('ERROR', 'config._CONTEST_TIMEOUT_SEC is too low')
-    elif (testRunner.successes >= 1):
-      logger.info("Test suite execution successful")
     elif (testRunner.dataraces >= 1):
       logger.info("Data races were encountered")
     elif (testRunner.deadlocks >= 1):
       logger.info("Deadlocks were encountered")
+    elif (testRunner.successes >= 1):
+      logger.info("Test suite execution successful")
     else:
       logger.warn("The test suite wasn't executed successfully")
 
