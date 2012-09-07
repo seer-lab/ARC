@@ -68,8 +68,7 @@ def mutate_project(generation, memberNum, mutationOperators):
                              mutationOperators)
 
 
-def recursively_mutate_project(generation, memberNum, sourceDir, destDir,
-                               mutationOperators):
+def recursively_mutate_project(generation, memberNum, sourceDir, destDir, mutationOperators):
   """For a given member and generation, generate all of the mutants for a
   project.  The source project depends on the generation:
   Gen 1: The source project is the original project
@@ -106,8 +105,7 @@ def recursively_mutate_project(generation, memberNum, sourceDir, destDir,
                              mutationOperators)
 
 
-def generate_all_mutants(generation, memberNum, sourceFile, destDir,
-                         mutationOperators):
+def generate_all_mutants(generation, memberNum, sourceFile, destDir, mutationOperators):
   """See comment for recursively_mutate_project."""
 
   for operator in mutationOperators:
@@ -136,46 +134,6 @@ def generate_mutants(generation, memberNum, txlOperator, sourceFile, destDir):
   sourceNoFileName = os.path.split(sourceNoExt)[0] + os.sep
   sourceNameOnly = os.path.split(sourceNoExt)[1]
   sourceExtOnly = os.path.splitext(sourceFile)[1]
-
-  # In static.py we put together a list of (class, method, variable) tuples in finalCMV
-  # of the class.method.variable(s) involved in the bug.
-  # Now we use that list to reduce the number of mutants generated.
-
-  # 1. It is possible that either ConTest or the static analysis failed or didn't find anything.
-  #    So the first thing we do is check if there are any (class, method, variable) triples.  If
-  #    we have triples we can perform a more targeted search.  If not, we still do the search,
-  #    but it is less targeted.
-  if static.do_we_have_triples():
-    foundTripleMatch = False
-    for line in static.finalCMV:
-      variableName = line[-1]
-      methodName = line[-2]
-      className = line[-3]
-      # TODO: Is this a good idea? Assuming the class and file name are the same?
-      #       Is it common in java to declare additional classes in a file with
-      #       different names?
-      if className == sourceNameOnly:
-        foundTripleMatch = True
-
-    if not foundTripleMatch:
-      return
-  # 2. Another possibility is we have the (class, variable) doubles from ConTest when the
-  #    static analysis doesn't find anytjing (or fails.) In this case we can still do some
-  #    targeting of the classes and variables involved in concurrency
-  elif static.do_we_have_merged_classVar():
-    foundDoubleMatch = False
-    for line in static.mergedClassVar:
-      variableName = line[-1]
-      className = line[-2]
-      # TODO: Same concern as above about class and file names
-      if className == sourceNameOnly:
-        foundDoubleMatch = True
-
-    if not foundDoubleMatch:
-      return
-  # 3. If we have no targeting information we create all mutants for all files.
-  #    We allow this becase even though case A (below) reqires targeting information,
-  #    case B doesn't.
 
   # The relative path is computed from the directory structure of the project itself
   sourceRelPath = ''
@@ -216,35 +174,28 @@ def generate_mutants(generation, memberNum, txlOperator, sourceFile, destDir):
   outFile = tempfile.SpooledTemporaryFile()
   errFile = tempfile.SpooledTemporaryFile()
 
-  # We've finally reached the mutation step.
+  # In static.py we put together a list of (class, method, variable) tuples in finalCMV
+  # of the class.method.variable(s) involved in the bug.
+  # Ideally we use that list to reduce the number of mutants generated.  BUT, the static
+  # analysis may have failed and/or ConTest may have failed.  We have 3 cases to consider:
+  # 1. We have (class, method, variable) targeting information from ConTest and static
+  #    analysis
+  # 2. We have (class, variable) targeting information from ConTest
+  # 3. We have no targeting information. (In effect we're doing random search.)
 
 
-  # A.
-  if txlOperator is config._MUTATION_ASIM:
-
-    process = subprocess.Popen(['txl', sourceFile, txlOperator[4], '-',
-              '-outfile', sourceNameOnly + sourceExtOnly, '-outdir', txlDestDir],
-              stdout=outFile, stderr=errFile, cwd=config._PROJECT_DIR, shell=False)
-    process.wait()
-
-  # B. For the mutations that add synchronization like ASAS (Add synch. around synch),
+  # A. For the mutations that add synchronization like ASAS (Add synch. around synch),
   #    ASAV (Add synch. around a variable) and ASM (Add synch within a method) we
   #    need to know which variable to synchronizae on at a minimum.
   #    Thus to use these operators we have to have a list of doubles or triples containing
   #    the variables to target
-  elif txlOperator is config._MUTATION_ASAV or txlOperator is config._MUTATION_ASAS \
-      or txlOperator is config._MUTATION_ASM \
-      or txlOperator is config._MUTATION_CSO or txlOperator is config._MUTATION_EXSB \
-      or txlOperator is config._MUTATION_EXSA:
+  if txlOperator is config._MUTATION_ASAV or txlOperator is config._MUTATION_ASAS \
+      or txlOperator is config._MUTATION_ASM or txlOperator is config._MUTATION_ASIM:
 
     counter = 1
 
-    # TODO: TXL operators needs to be modified to take advantage of the class and
-    #       method names. Right now the operators are only using variableName even
-    #       though className is also passed in. (David needs to learn more TXL.)
-    #       IDEALLY the TXL operators use all three pieces of information.
-
-    if static.do_we_have_triples(): # We have triples
+    # 1. We have (class, method, variable) triples
+    if static.do_we_have_triples():
       for line in static.finalCMV:
         variableName = line[-1]
         methodName = line[-2]
@@ -266,10 +217,12 @@ def generate_mutants(generation, memberNum, txlOperator, sourceFile, destDir):
       # Use the mutation with the 'this' object: synchronize(this)
       process = subprocess.Popen(['txl', sourceFile, txlOperator[4], '-',
                 '-outfile', mutantSource + sourceExtOnly, '-outdir', txlDestDir,
-                '-class', '', '-var', 'this'],
+                '-class', mutantSource + sourceExtOnly, '-var', 'this'],
                   stdout=outFile, stderr=errFile, cwd=config._PROJECT_DIR, shell=False)
       process.wait()
-    elif static.do_we_have_merged_classVar(): # We have doubles
+
+    # 2. We have (class, variable) doubles
+    elif static.do_we_have_merged_classVar():
       for line in static.mergedClassVar:
         variableName = line[-1]
         methodName = ''
@@ -291,11 +244,11 @@ def generate_mutants(generation, memberNum, txlOperator, sourceFile, destDir):
       # Use the mutation with the 'this' object: synchronize(this)
       process = subprocess.Popen(['txl', sourceFile, txlOperator[4], '-',
                 '-outfile', mutantSource + sourceExtOnly, '-outdir', txlDestDir,
-                '-class', '', '-var', 'this'],
+                '-class', mutantSource + sourceExtOnly, '-var', 'this'],
                   stdout=outFile, stderr=errFile, cwd=config._PROJECT_DIR, shell=False)
       process.wait()
 
-  # C. For the operators that shrink or remove synchronization, we don't target files
+  # 3. For the operators that shrink or remove synchronization, we don't target files
   #    used in concurrency.  (The txl invocation doesn't use the -class and -var args)
   else:
 

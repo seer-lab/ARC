@@ -129,11 +129,12 @@ rule MutateSynchronizedInsert
 
 	% only proceed for methods that satisfy the requirements
 	% (i.e. methods that are not synchronized)
-	where
-		P 	[?doSynchronizedInsertMutation]
+	where all
+		P  [?matchClassName]
+       [?doSynchronizedInsertMutation]
 
 	by
-		P
+		P [matchClassName]
 			% Create the mutant version of the program
 			[doSynchronizedInsertMutation]
 			% [print]
@@ -210,6 +211,27 @@ function doSynchronizedInsertMutation
     NewMethodDecl
     /* 'MUTANT: MutantString */
 end function
+
+%------------------------------------------------------------
+% Match class name
+%------------------------------------------------------------
+function matchClassName
+
+  import className [id]
+
+  replace * [class_name]
+    clsName [class_name]
+
+  where
+    clsName [isSameClass className]
+  by
+    clsName
+end function
+
+rule isSameClass ClsName [id]
+  match * [id]
+    ClsName
+end rule
 
 %------------------------------------------------------------
 % Reinsert the orginal method declaration but leave the

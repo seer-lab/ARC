@@ -42,6 +42,29 @@ include "JavaCommentOverrides.Grm"
 
 % Local grammar overrides
 
+redefine statement
+    [synchronized_statement]
+  | [other_statements]
+  | [block]
+  | [comment_NL]
+end redefine
+
+define other_statements
+        [label_statement]
+    |   [empty_statement]
+    |   [expression_statement]
+    |   [if_statement]
+    |   [switch_statement]
+    |   [while_statement]
+    |   [do_statement]
+    |   [for_statement]
+    |   [break_statement]
+    |   [continue_statement]
+    |   [return_statement]
+    |   [throw_statement]
+    |   [try_statement]
+end define
+
 % Our choices of sync statements for ASAS
 
 redefine synchronized_statement
@@ -55,7 +78,7 @@ end redefine
 define single_sync
   'synchronized '( [expression] ')
   '{ [NL][IN]
-	  [repeat declaration_or_statement] [NL][EX]
+	  [other_statements] [NL][EX]
   '}   [NL]
 end define
 
@@ -67,7 +90,7 @@ define double_sync
   '{ [NL][IN]
 	  'synchronized '( [expression] ')
  	  '{ [NL][IN]
-		  [repeat declaration_or_statement] [NL][EX]
+		  [other_statements] [NL][EX]
 	  '}   [NL]
   '}   [NL]
   /* 'MUTANT: [stringlit] */ 	[NL]
@@ -129,12 +152,15 @@ rule MutateSynchronizedInsert
 		P 	[program]
 
 	% only proceed for methods that satisfy the requirements
-	where
-		P 	[?doSynchronizedInsertMutation]
+	where all
+		P
+      [?matchClassName]
+      [?doSynchronizedInsertMutation]
 
 	by
 		P
 			% Create the mutant version of the program
+      [matchClassName]
 			[doSynchronizedInsertMutation]
 			[writeToFile]
 			% Undo mutation and return to original program
@@ -147,7 +173,7 @@ end rule
 %------------------------------------------------------------
 function doSynchronizedInsertMutation
 
-  import className [id]
+  %import className [id]
   import varName [id]
 
 	replace * [synchronized_statement]
@@ -156,14 +182,15 @@ function doSynchronizedInsertMutation
 	  deconstruct SynchStatement
   		SynchStatement2 [single_sync]
 
+    % Check variable here
+    where
+      SynchStatement2 [isSameVariable varName]
+
   	deconstruct SynchStatement2
       'synchronized '( InnerExpr [expression] ')
       '{
-  			InnerBody [repeat declaration_or_statement]
+  			InnerBody [other_statements]
       '}
-
-	where not
-    InnerExpr [isThis]
 
 	  % export the old synchronized expression and reinsert it
 	  % once the mutant has been created and saved
@@ -187,6 +214,36 @@ function doSynchronizedInsertMutation
 end function
 
 %------------------------------------------------------------
+% Match class name
+%------------------------------------------------------------
+function matchClassName
+
+  import className [id]
+
+  replace * [class_name]
+    clsName [class_name]
+
+  where
+    clsName [isSameClass className]
+  by
+    clsName
+end function
+
+rule isSameClass ClsName [id]
+  match $ [id]
+    ClsName
+end rule
+
+%------------------------------------------------------------
+% Match variable name
+%------------------------------------------------------------
+
+rule isSameVariable VarName [id]
+  match * [id]
+    VarName
+end rule
+
+%------------------------------------------------------------
 % Remove the added synchronization block and add a
 % MUTATED attribute to indicate that the mutant has already
 % been created.
@@ -197,7 +254,7 @@ function undoSynchronizedInsertMutation
 
   	% Import the old expression
   	import InnerExpr [expression]
-  	import InnerBody [repeat declaration_or_statement]
+  	import InnerBody [other_statements]
 
   	% extract body
   	deconstruct SynchStatement
@@ -209,7 +266,7 @@ function undoSynchronizedInsertMutation
       '{
 	  		'synchronized '( IE [expression] ')
    		  '{
-		  		IB [repeat declaration_or_statement]
+		  		IB [other_statements]
 		  	'}
       '}
     /* 'MUTANT: MutantStr2 [stringlit] */

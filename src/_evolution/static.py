@@ -35,10 +35,12 @@ classMeth = []
 # 3. ConTest list of class.variable
 conTestClassVar = []
 
-# Once we have classVar and conTestClassVar we can merge them in to one list
+# Once we have classVar and conTestClassVar (#s 1 and 3) we can merge them in to one list
 
 # 4. Merged class.variable list from static analysis and ConTest
 mergedClassVar = []
+
+# Then we combine #4 and #2 to get the class-method-variable list
 
 # 5. Final class-method-variable list
 finalCMV = []
@@ -202,20 +204,23 @@ def find_tuple_in_list(inTuple, inList):
 
 def create_merged_classVar_list():
   # Merge class-variable from Chord and ConTest
-  if not did_contest_find_shared_variables() and not did_chord_find_dataraces():
-    logger.debug("Couldn't create the merged list of (class, variable) doubles")
+  #if not did_contest_find_shared_variables() and not did_chord_find_dataraces():
+  #  logger.debug("Couldn't create the merged list of (class, variable) doubles")
     #logger.debug("Both of the static analysis and ConTest shared variable detection didn't")
     #logger.debug("find anything (or failed.)")
     #logger.debug("config.mergedClassVar, the list of class-variable tuples will be empty.")
-    return False
+  #  return False
 
-  for aTuple in classVar:
-    if not find_tuple_in_list(aTuple, mergedClassVar):
-      mergedClassVar.append(aTuple)
+  # New: Build the merged class-variable list from whatever is available
+  if did_contest_find_shared_variables():
+    for aTuple in classVar:
+      if not find_tuple_in_list(aTuple, mergedClassVar):
+        mergedClassVar.append(aTuple)
 
-  for aTuple in conTestClassVar:
-    if not find_tuple_in_list(aTuple, mergedClassVar):
-      mergedClassVar.append(aTuple)
+  if did_chord_find_dataraces():
+    for aTuple in conTestClassVar:
+      if not find_tuple_in_list(aTuple, mergedClassVar):
+        mergedClassVar.append(aTuple)
 
   logger.info("Created merged class.variable list from Chord and ConTest data")
   return True
