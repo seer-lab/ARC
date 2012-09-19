@@ -131,9 +131,9 @@ def start():
         logger.info("*****************************************************************")
         logger.info("Evolving population towards optimizing non-functional performance")
         logger.info("*****************************************************************")
-        logger.debug("BUG HUNT: BestFunctional generation: {}  Worst score: {}".format(bestFunctional.generation, worstScore))
+        #logger.debug("BUG HUNT: BestFunctional generation: {}  Worst score: {}".format(bestFunctional.generation, worstScore))
         bestNonFunctional, bestNonFunctionalGeneration = evolve(bestFunctional.generation, worstScore)
-        logger.debug("BUG HUNT: BestNonFunctional: {}  Best NonFunctional generation: {}".format(bestNonFunctional, bestNonFunctionalGeneration))
+        #logger.debug("BUG HUNT: BestNonFunctional: {}  Best NonFunctional generation: {}".format(bestNonFunctional, bestNonFunctionalGeneration))
 
         logger.info("******************************************************")
         logger.info("Best individual found during the non-functional phase:")
@@ -226,7 +226,7 @@ def evolve(generation=0, worstScore=0):
 
     # Check the terminating conditions
     if not _functionalPhase:
-      logger.debug("BUG HUNT: Convergence {} {} {}".format(generation, bestFitness, averageFitness))
+      #logger.debug("BUG HUNT: Convergence {} {} {}".format(generation, bestFitness, averageFitness))
       if convergence(generation, bestFitness, averageFitness):
         return get_best_individual()
 
@@ -402,8 +402,7 @@ def mutation(individual, deadlockVotes, dataraceVotes, nonFunctionalVotes):
   if not successfulCompile:
     logger.debug("Couldn't create a compilable mutant project. Resetting to the pristine project/bestIndividual.")
     if _functionalPhase:
-      txl_operator.create_local_project(individual.generation, individual.id,
-                                    True)
+      txl_operator.create_local_project(individual.generation, individual.id, True)
     else:
       txl_operator.create_local_project(individual.generation, individual.id,
                                     True, individual.switchGeneration + 1)
@@ -414,8 +413,8 @@ def mutation(individual, deadlockVotes, dataraceVotes, nonFunctionalVotes):
 
     return False
   else:
-    logger.debug("Selected operator for Individual {} @ generation {}: {}".
-    format(individual.id, individual.generation, selectedOperator[0]))
+    logger.debug("Selected operator for Individual {} at generation {}: {}, number {}".
+    format(individual.id, individual.generation, selectedOperator[0], randomMutant + 1))
     return True
 
 
@@ -816,7 +815,7 @@ def get_best_individual(beforeMutation=False):
 
     if _functionalPhase:
       # Consider all generations
-      logger.debug("BUG HUNT get_best_individual 1:  generation: {}".format(individual.generation))
+      #logger.debug("BUG HUNT get_best_individual 1:  generation: {}".format(individual.generation))
       for i in xrange(0, individual.generation):
         if individual.score[i] > bestScore:
           individualId = individual.id
@@ -825,15 +824,15 @@ def get_best_individual(beforeMutation=False):
 
     else:
       # Consider generations over the switch
-      logger.debug("BUG HUNT get_best_individual 2:  {} {} {}".format(individual.switchGeneration, individual.generation, mod))
-      logger.debug(" BUG HUNT Individual: {}".format(individual))
-      logger.debug(" BUG HUNT Best score: {}".format(bestScore))
+      #logger.debug("BUG HUNT get_best_individual 2:  {} {} {}".format(individual.switchGeneration, individual.generation, mod))
+      #logger.debug(" BUG HUNT Individual: {}".format(individual))
+      #logger.debug(" BUG HUNT Best score: {}".format(bestScore))
 
       #print individual
       for i in xrange(individual.switchGeneration, individual.generation - mod):
-        logger.debug("BUG HUNT i = {}".format(i))
+        #logger.debug("BUG HUNT i = {}".format(i))
         if individual.score[i] > bestScore:
-          logger.debug("BUG HUNT individual.score[i]: {}".format(individual.score[i]))
+          #logger.debug("BUG HUNT individual.score[i]: {}".format(individual.score[i]))
           individualId = individual.id
           generation = i + 1   # My guess is that the +1 isn't necessary
           bestScore = individual.score[i]

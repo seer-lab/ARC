@@ -87,6 +87,7 @@ def configure_chord():
       line = "chord.print.results = true "
     print(line[0:-1])  # Remove extra newlines
 
+
 def run_chord_datarace():
   os.chdir(config._PROJECT_DIR)
 
@@ -194,9 +195,11 @@ def get_chord_targets():
   if len(classMeth) > 0:
     logger.debug("Populated class.method list with Chord data")
 
+
 def find_tuple_in_list(inTuple, inList):
 
   for aTuple in inList:
+    #logger.debug("Comparing {} to {}".format(inTuple, aTuple))
     if aTuple == inTuple:
       return True
   return False
@@ -212,21 +215,28 @@ def create_merged_classVar_list():
   #  return False
 
   # New: Build the merged class-variable list from whatever is available
-  if did_contest_find_shared_variables():
-    for aTuple in classVar:
-      if not find_tuple_in_list(aTuple, mergedClassVar):
-        mergedClassVar.append(aTuple)
+  logger.info("Created merged (class, variable) list from:")
 
-  if did_chord_find_dataraces():
+  if do_we_have_contest_vars():
+    logger.info("    - ConTest variables (class, variable)")
     for aTuple in conTestClassVar:
       if not find_tuple_in_list(aTuple, mergedClassVar):
+        #logger.debug("Adding ConTest tuple {} to mergedClassVar".format(aTuple))
         mergedClassVar.append(aTuple)
 
-  logger.info("Created merged class.variable list from Chord and ConTest data")
-  return True
+  if len(classVar) > 0:
+    logger.info("    - Chord variables (class, method, variable)")
+    for aTuple in classVar:
+      if not find_tuple_in_list(aTuple, mergedClassVar):
+        #logger.debug("Adding Chord tuple {} to mergedClassVar".format(aTuple))
+        mergedClassVar.append(aTuple)
+
+  #return True
+
 
 def do_we_have_merged_classVar():
   return len(mergedClassVar) > 0
+
 
 def create_final_triple():
   if len(classMeth) == 0 or not do_we_have_merged_classVar():
@@ -245,8 +255,9 @@ def create_final_triple():
           logger.debug("Adding triple {} to finalCMV".format(aTriple))
           finalCMV.append(aTriple)
 
-  logger.info("Populated class.method.variable list with Chord and ConTest data")
+  logger.info("Populated (class, method, variable) list with Chord and ConTest data")
   return True
+
 
 def do_we_have_triples():
   return len(classMeth) > 0

@@ -34,12 +34,13 @@ _SHARED_VARS_FILE = _PROJECT_DIR + "com_ibm_contest/sharedVars.txt"
 # A fixed project (if found) is placed in the output directory
 _PROJECT_OUTPUT_DIR = _ROOT_DIR + "output/"
 
-_PROJECT_PREFIX = "org.example.project,Bank,Account"  # Comma separated fully-qualifying class names or package prefixes
+_PROJECT_PREFIX = "Account,Bank"  # Comma separated fully-qualifying class names or package prefixes
 _PROJECT_TESTSUITE = "AccountsTest"
 _PROJECT_COMPILE = "compile"
 _PROJECT_TEST = "test"
 _PROJECT_CLASSPATH = None  # Automatically acquired using ant test if None
 _PROJECT_TEST_MB = 2000
+_SHARED_VARS_FILE = _PROJECT_DIR + "com_ibm_contest/sharedVars.txt"
 
 # Chord variables
 _CHORD_MAIN = "Bank"
@@ -54,8 +55,8 @@ _CONTEST_DIR = _ROOT_DIR + "lib/ConTest/"
 _CONTEST_KINGPROPERTY = _CONTEST_DIR + "KingProperties"
 _CONTEST_JAR = _CONTEST_DIR + "ConTest.jar"
 _CONTEST_RUNS = 3
-_CONTEST_TIMEOUT_SEC = 30 # Default timeout, it is adjusted dynamically
-_CONTEST_TIMEOUT_MULTIPLIER = 10  # The average execution time (with conTest) is multiplied by this
+_CONTEST_TIMEOUT_SEC = 300 # Default timeout, it is adjusted dynamically
+_CONTEST_TIMEOUT_MULTIPLIER = 15  # The average execution time (with conTest) is multiplied by this
 _CONTEST_VALIDATION_MULTIPLIER = 2  # Allows for validation of functionality
 
 # Mutation operator variables
@@ -97,9 +98,9 @@ _ONLY_FUNCTIONAL = False
 # Evolution variables
 _EVOLUTION_GENERATIONS = 30
 _EVOLUTION_POPULATION = 5
-_EVOLUTION_REPLACE_LOWEST_PERCENT = 20
+_EVOLUTION_REPLACE_LOWEST_PERCENT = 10
 _EVOLUTION_REPLACE_INTERVAL = 5  # Consider replacement on this generational interval
-_EVOLUTION_REPLACE_WEAK_MIN_TURNS = 3  # Min number of turns of underperforming before replacement
+_EVOLUTION_REPLACE_WEAK_MIN_TURNS = 5  # Min number of turns of underperforming before replacement
 _EVOLUTION_REPLACE_WITH_BEST_PERCENT = 75
 
 # Dynamic ranking window (number of generations to consider)
@@ -111,7 +112,7 @@ _TIMEOUT_WEIGHT = 50
 
 # Convergence criteria, considering the window size ensure there is at least
 # a fitness score movement of delta
-_GENERATIONAL_IMPROVEMENT_WINDOW = 5
+_GENERATIONAL_IMPROVEMENT_WINDOW = 10
 _AVG_FITNESS_MIN_DELTA = 0.01
 _BEST_FITNESS_MIN_DELTA = 1
 

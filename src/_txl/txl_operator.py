@@ -149,22 +149,28 @@ def generate_mutants(generation, memberNum, txlOperator, sourceFile, destDir):
   txlDestDir = "".join([destDir, sourceRelPath, sourceNameOnly, os.sep,
                        txlOperator[0], os.sep])
 
-  # print '---------------------------'
-  # print 'sourceFile:       ' + sourceFile
-  # print 'destDir:          ' + destDir
-  # print 'txlOperator:      ' + txlOperator[0]
-  # print 'sourceNoExt:      ' + sourceNoExt
-  # print 'sourceNoFileName: ' + sourceNoFileName
-  # print 'sourceRelPath:    ' + sourceRelPath
-  # print 'sourceNameOnly:   ' + sourceNameOnly
-  # print 'sourceExtOnly:    ' + sourceExtOnly
-  # print 'txlDestDir:       ' + txlDestDir
+  # sourceFile:       source/BuggedProgram.java
+  # destDir:          /Users/kelk/workspace/arc/tmp/1/1/
+  # txlOperator:      ASAS
+  # sourceNoExt:      source/BuggedProgram
+  # sourceNoFileName: source/
+  # sourceRelPath:    source/
+  # sourceNameOnly:   BuggedProgram
+  # sourceExtOnly:    .java
+  # txlDestDir:       /Users/kelk/workspace/arc/tmp/1/1/source/BuggedProgram/ASAS/
+  # txlOperator[4]:   /Users/kelk/workspace/arc/src/_txl/ASAS.Txl
 
-  # logger.debug("Generating mutant at: {}".format(txlDestDir))
-  # logger.debug("sourceFile: {}".format(sourceFile))
-  # logger.debug("txlOperator[4]: {}".format(txlOperator[4]))
-  # logger.debug("sourceNameOnly + sourceExtOnly: {}".format(sourceNameOnly + sourceExtOnly))
-  # logger.debug("txlDestDir: {}".format(txlDestDir))
+  # logger.debug("---------------------------")
+  # logger.debug("sourceFile:       {}".format(sourceFile))
+  # logger.debug("destDir:          {}".format(destDir))
+  # logger.debug("txlOperator:      {}".format(txlOperator[0]))
+  # logger.debug("sourceNoExt:      {}".format(sourceNoExt))
+  # logger.debug("sourceNoFileName: {}".format(sourceNoFileName))
+  # logger.debug("sourceRelPath:    {}".format(sourceRelPath))
+  # logger.debug("sourceNameOnly:   {}".format(sourceNameOnly))
+  # logger.debug("sourceExtOnly:    {}".format(sourceExtOnly))
+  # logger.debug("txlDestDir:       {}".format(txlDestDir))
+  # logger.debug("txlOperator[4]:   {}".format(txlOperator[4]))
 
   # If the output directory doesn't exist, create it, otherwise clean subdirectories
   if os.path.exists(txlDestDir):
@@ -192,10 +198,15 @@ def generate_mutants(generation, memberNum, txlOperator, sourceFile, destDir):
   if txlOperator is config._MUTATION_ASAV or txlOperator is config._MUTATION_ASAS \
       or txlOperator is config._MUTATION_ASM or txlOperator is config._MUTATION_ASIM:
 
+    #logger.debug("Case 1: Add sync operators")
+
     counter = 1
 
     # 1. We have (class, method, variable) triples
     if static.do_we_have_triples():
+
+      #logger.debug("Case 1-1: Add sync operators with triples")
+
       for line in static.finalCMV:
         variableName = line[-1]
         methodName = line[-2]
@@ -217,12 +228,15 @@ def generate_mutants(generation, memberNum, txlOperator, sourceFile, destDir):
       # Use the mutation with the 'this' object: synchronize(this)
       process = subprocess.Popen(['txl', sourceFile, txlOperator[4], '-',
                 '-outfile', mutantSource + sourceExtOnly, '-outdir', txlDestDir,
-                '-class', mutantSource + sourceExtOnly, '-var', 'this'],
+                '-class', className, '-var', 'this'],
                   stdout=outFile, stderr=errFile, cwd=config._PROJECT_DIR, shell=False)
       process.wait()
 
     # 2. We have (class, variable) doubles
     elif static.do_we_have_merged_classVar():
+
+      #logger.debug("Case 1-2: Add sync operators with doubles")
+
       for line in static.mergedClassVar:
         variableName = line[-1]
         methodName = ''
@@ -244,13 +258,31 @@ def generate_mutants(generation, memberNum, txlOperator, sourceFile, destDir):
       # Use the mutation with the 'this' object: synchronize(this)
       process = subprocess.Popen(['txl', sourceFile, txlOperator[4], '-',
                 '-outfile', mutantSource + sourceExtOnly, '-outdir', txlDestDir,
-                '-class', mutantSource + sourceExtOnly, '-var', 'this'],
+                '-class', className, '-var', 'this'],
                   stdout=outFile, stderr=errFile, cwd=config._PROJECT_DIR, shell=False)
       process.wait()
 
-  # 3. For the operators that shrink or remove synchronization, we don't target files
+    # 3. We have no targeting information. Notice the use of the '_RND' TXL operators
+    else:
+
+      #logger.debug("Case 1-3: Add sync operators with no targeting info (random)")
+
+      # Change: /Users/kelk/workspace/arc/src/_txl/SHSB.Txl
+      # To    : /Users/kelk/workspace/arc/src/_txl/SHSB_RND.Txl
+      txlOpRnd = txlOperator[4].replace(".Txl", "_RND.Txl")
+
+      mutantSource = sourceNameOnly + "_" + str(counter)
+
+      process = subprocess.Popen(['txl', sourceFile, txlOpRnd, '-',
+                '-outfile', mutantSource + sourceExtOnly, '-outdir', txlDestDir,],
+                  stdout=outFile, stderr=errFile, cwd=config._PROJECT_DIR, shell=False)
+      process.wait()
+
+  # 4. For the operators that shrink or remove synchronization, we don't target files
   #    used in concurrency.  (The txl invocation doesn't use the -class and -var args)
   else:
+
+    #logger.debug("Case 2: Non-add sync operator")
 
     process = subprocess.Popen(['txl', sourceFile, txlOperator[4], '-',
               '-outfile', sourceNameOnly + sourceExtOnly, '-outdir', txlDestDir],
@@ -341,8 +373,8 @@ def create_local_project(generation, memberNum, restart, switchGeneration=0):
 
   destDir = config._TMP_DIR + str(generation) + staticPart
 
-  # print 'clp srcDir:  ', srcDir, os.path.exists(srcDir)
-  # print 'clp destDir: ', destDir,  os.path.exists(destDir)
+  # logger.debug("clp srcDir:  ', srcDir, os.path.exists(srcDir)
+  # logger.debug("clp destDir: ', destDir,  os.path.exists(destDir)
 
   #logger.debug("Creating local project:")
   #logger.debug("\nSrc: {}\nDst: {}".format(srcDir, destDir))
@@ -421,12 +453,12 @@ def move_mutant_to_local_project(generation, memberNum, txlOperator, mutantNum):
   if txlOperator in ["ASAV", "ASM", "ASAS"]:
     dst = re.sub("_\d+.java", ".java", dst)
 
-  # print '---------------------------'
-  # print 'mmtlp txlOperator:    ' + txlOperator
-  # print 'mmtlp pathNoFileName: ' + pathNoFileName
-  # print 'mmtlp relPath:        ' + relPath
-  # print 'mmtlp src:            ' + sourceDir
-  # print 'mmtlp dst:            ' + dst
+  # logger.debug("---------------------------'
+  # logger.debug("mmtlp txlOperator:    ' + txlOperator
+  # logger.debug("mmtlp pathNoFileName: ' + pathNoFileName
+  # logger.debug("mmtlp relPath:        ' + relPath
+  # logger.debug("mmtlp src:            ' + sourceDir
+  # logger.debug("mmtlp dst:            ' + dst
 
   if not os.path.exists(dst):
     os.makedirs(dst)
