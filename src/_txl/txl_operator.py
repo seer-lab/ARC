@@ -120,7 +120,7 @@ def generate_mutants(generation, memberNum, txlOperator, sourceFile, destDir):
   Attributes:
   generation (int): Current generation of the evolutionary strategy
   memberNum (int): Which member of the population we are mutating
-  txlOperator (string): One of _MUTATION_ASAS, etc... from config.py
+  txlOperator (string): One of _MUTATION_ASAT, etc... from config.py
   sourceFile (string): The specific file from the source project we are mutating
   destDir (string): Where the project is being copied to
   """
@@ -160,17 +160,17 @@ def generate_mutants(generation, memberNum, txlOperator, sourceFile, destDir):
   # txlDestDir:       /Users/kelk/workspace/arc/tmp/1/1/source/BuggedProgram/ASAS/
   # txlOperator[4]:   /Users/kelk/workspace/arc/src/_txl/ASAS.Txl
 
-  # logger.debug("---------------------------")
-  # logger.debug("sourceFile:       {}".format(sourceFile))
-  # logger.debug("destDir:          {}".format(destDir))
-  # logger.debug("txlOperator:      {}".format(txlOperator[0]))
-  # logger.debug("sourceNoExt:      {}".format(sourceNoExt))
-  # logger.debug("sourceNoFileName: {}".format(sourceNoFileName))
-  # logger.debug("sourceRelPath:    {}".format(sourceRelPath))
-  # logger.debug("sourceNameOnly:   {}".format(sourceNameOnly))
-  # logger.debug("sourceExtOnly:    {}".format(sourceExtOnly))
-  # logger.debug("txlDestDir:       {}".format(txlDestDir))
-  # logger.debug("txlOperator[4]:   {}".format(txlOperator[4]))
+  #logger.debug("---------------------------")
+  #logger.debug("sourceFile:       {}".format(sourceFile))
+  #logger.debug("destDir:          {}".format(destDir))
+  #logger.debug("txlOperator:      {}".format(txlOperator[0]))
+  #logger.debug("sourceNoExt:      {}".format(sourceNoExt))
+  #logger.debug("sourceNoFileName: {}".format(sourceNoFileName))
+  #logger.debug("sourceRelPath:    {}".format(sourceRelPath))
+  #logger.debug("sourceNameOnly:   {}".format(sourceNameOnly))
+  #logger.debug("sourceExtOnly:    {}".format(sourceExtOnly))
+  #logger.debug("txlDestDir:       {}".format(txlDestDir))
+  #logger.debug("txlOperator[4]:   {}".format(txlOperator[4]))
 
   # If the output directory doesn't exist, create it, otherwise clean subdirectories
   if os.path.exists(txlDestDir):
@@ -183,20 +183,17 @@ def generate_mutants(generation, memberNum, txlOperator, sourceFile, destDir):
   # In static.py we put together a list of (class, method, variable) tuples in finalCMV
   # of the class.method.variable(s) involved in the bug.
   # Ideally we use that list to reduce the number of mutants generated.  BUT, the static
-  # analysis may have failed and/or ConTest may have failed.  We have 3 cases to consider:
+  # analysis may have failed and/or ConTest may have failed.  We have 3 + 1 cases to consider:
+  # The first 3 cases deal with targeting information for ASAT, ASM and ASIM:
   # 1. We have (class, method, variable) targeting information from ConTest and static
   #    analysis
-  # 2. We have (class, variable) targeting information from ConTest
+  # 2. We have (class, variable) targeting information from ConTest (or static analysis?)
   # 3. We have no targeting information. (In effect we're doing random search.)
+  # The fourth case deals with the other operators:
+  # 4. Generate mutants for all other operators
 
-
-  # A. For the mutations that add synchronization like ASAS (Add synch. around synch),
-  #    ASAV (Add synch. around a variable) and ASM (Add synch within a method) we
-  #    need to know which variable to synchronizae on at a minimum.
-  #    Thus to use these operators we have to have a list of doubles or triples containing
-  #    the variables to target
-  if txlOperator is config._MUTATION_ASAV or txlOperator is config._MUTATION_ASAS \
-      or txlOperator is config._MUTATION_ASM or txlOperator is config._MUTATION_ASIM:
+  if txlOperator is config._MUTATION_ASAT or txlOperator is config._MUTATION_ASM \
+    or txlOperator is config._MUTATION_ASIM:
 
     #logger.debug("Case 1: Add sync operators")
 
@@ -208,78 +205,147 @@ def generate_mutants(generation, memberNum, txlOperator, sourceFile, destDir):
       #logger.debug("Case 1-1: Add sync operators with triples")
 
       for line in static.finalCMV:
-        variableName = line[-1]
-        methodName = line[-2]
-        className = line[-3]
+        syncVar = line[-1]
 
-        mutantSource = sourceNameOnly + "_" + str(counter)
+        for line in static.finalCMV:
+          variableName = line[-1]
+          methodName = line[-2]
+          className = line[-3]
 
-        process = subprocess.Popen(['txl', sourceFile, txlOperator[4], '-',
-                  '-outfile', mutantSource + sourceExtOnly, '-outdir', txlDestDir,
-                  '-class', className, '-var', variableName],
-                  stdout=outFile, stderr=errFile, cwd=config._PROJECT_DIR, shell=False)
-        process.wait()
-        counter += 1
+          mutantSource = sourceNameOnly + "_" + str(counter)
+
+          #logger.debug("{} {} {} {} {}".format(txlOperator[4], variableName,
+          #  methodName, className, syncVar))
+
+          if txlOperator is config._MUTATION_ASAT:
+            process = subprocess.Popen(['txl', sourceFile, txlOperator[4], '-',
+                    '-outfile', mutantSource + sourceExtOnly, '-outdir', txlDestDir,
+                    '-class', className, '-method', methodName, '-var', variableName,
+                    '-syncvar', syncVar], stdout=outFile, stderr=errFile,
+                    cwd=config._PROJECT_DIR, shell=False)
+            process.wait()
+          elif txlOperator is config._MUTATION_ASM:
+            process = subprocess.Popen(['txl', sourceFile, txlOperator[4], '-',
+                    '-outfile', mutantSource + sourceExtOnly, '-outdir', txlDestDir,
+                    '-class', className, '-method', methodName,
+                    '-syncvar', syncVar], stdout=outFile, stderr=errFile,
+                    cwd=config._PROJECT_DIR, shell=False)
+            process.wait()
+          else: # ASIM
+            process = subprocess.Popen(['txl', sourceFile, txlOperator[4], '-',
+                    '-outfile', mutantSource + sourceExtOnly, '-outdir', txlDestDir,
+                    '-class', className, '-method', methodName], stdout=outFile,
+                    stderr=errFile, cwd=config._PROJECT_DIR, shell=False)
+            process.wait()
+
+          counter += 1
 
       # "this" (as in synchronize(this)) is another variable we can use to generate
       # mutants.  Note it's indentation: It is not in the for-loop
-      mutantSource = sourceNameOnly + "_" + str(counter)
+      #mutantSource = sourceNameOnly + "_" + str(counter)
 
       # Use the mutation with the 'this' object: synchronize(this)
-      process = subprocess.Popen(['txl', sourceFile, txlOperator[4], '-',
-                '-outfile', mutantSource + sourceExtOnly, '-outdir', txlDestDir,
-                '-class', className, '-var', 'this'],
-                  stdout=outFile, stderr=errFile, cwd=config._PROJECT_DIR, shell=False)
-      process.wait()
+      #process = subprocess.Popen(['txl', sourceFile, txlOperator[4], '-',
+      #          '-outfile', mutantSource + sourceExtOnly, '-outdir', txlDestDir,
+      #          '-class', className, '-var', 'this'],
+      #            stdout=outFile, stderr=errFile, cwd=config._PROJECT_DIR, shell=False)
+      #process.wait()
 
     # 2. We have (class, variable) doubles
     elif static.do_we_have_merged_classVar():
 
       #logger.debug("Case 1-2: Add sync operators with doubles")
 
-      for line in static.mergedClassVar:
-        variableName = line[-1]
-        methodName = ''
-        className = line[-2]
+      # ASAT and ASM use syncVar (ASIM Doesn't)
+      if txlOperator is config._MUTATION_ASAT or txlOperator is config._MUTATION_ASM:
+        for line in static.mergedClassVar:
+          variableName = line[-1]
+          className = line[-2]
 
-        mutantSource = sourceNameOnly + "_" + str(counter)
+          for line in static.mergedClassVar:
+            syncVar = line[-1]
 
-        process = subprocess.Popen(['txl', sourceFile, txlOperator[4], '-',
+            mutantSource = sourceNameOnly + "_" + str(counter)
+
+            # Different operator when 2 args are available
+            if txlOperator is config._MUTATION_ASAT:
+              txlOpTwo = txlOperator[4].replace(".Txl", "_CV.Txl")
+              process = subprocess.Popen(['txl', sourceFile, txlOpTwo, '-',
+                      '-outfile', mutantSource + sourceExtOnly, '-outdir', txlDestDir,
+                      '-class', className, '-var', variableName,
+                      '-syncvar', syncVar], stdout=outFile, stderr=errFile,
+                      cwd=config._PROJECT_DIR, shell=False)
+              process.wait()
+            elif txlOperator is config._MUTATION_ASM:
+              txlOpTwo = txlOperator[4].replace(".Txl", "_C.Txl")
+              process = subprocess.Popen(['txl', sourceFile, txlOpTwo, '-',
+                      '-outfile', mutantSource + sourceExtOnly, '-outdir', txlDestDir,
+                      '-class', className, '-syncvar', syncVar], stdout=outFile,
+                      stderr=errFile, cwd=config._PROJECT_DIR, shell=False)
+              process.wait()
+            counter += 1
+
+      else: # ASIM
+        for line in static.mergedClassVar:
+          className = line[-2]
+
+          txlOpTwo = txlOperator[4].replace(".Txl", "_C.Txl")
+          process = subprocess.Popen(['txl', sourceFile, txlOpTwo, '-',
                   '-outfile', mutantSource + sourceExtOnly, '-outdir', txlDestDir,
-                  '-class', className, '-var', variableName],
-                  stdout=outFile, stderr=errFile, cwd=config._PROJECT_DIR, shell=False)
-        process.wait()
-        counter += 1
+                  '-class', className], stdout=outFile,
+                  stderr=errFile, cwd=config._PROJECT_DIR, shell=False)
+          process.wait()
+
+          counter += 1
 
       # "this" (as in synchronize(this)) is another variable we can use to generate
       # mutants.  Note it's indentation: It is not in the for-loop
-      mutantSource = sourceNameOnly + "_" + str(counter)
+      #mutantSource = sourceNameOnly + "_" + str(counter)
 
       # Use the mutation with the 'this' object: synchronize(this)
-      process = subprocess.Popen(['txl', sourceFile, txlOperator[4], '-',
-                '-outfile', mutantSource + sourceExtOnly, '-outdir', txlDestDir,
-                '-class', className, '-var', 'this'],
-                  stdout=outFile, stderr=errFile, cwd=config._PROJECT_DIR, shell=False)
-      process.wait()
+      #process = subprocess.Popen(['txl', sourceFile, txlOperator[4], '-',
+      #          '-outfile', mutantSource + sourceExtOnly, '-outdir', txlDestDir,
+      #          '-class', className, '-var', 'this'],
+      #            stdout=outFile, stderr=errFile, cwd=config._PROJECT_DIR, shell=False)
+      #process.wait()
 
     # 3. We have no targeting information. Notice the use of the '_RND' TXL operators
     else:
 
       #logger.debug("Case 1-3: Add sync operators with no targeting info (random)")
 
+      # Random operator when no args are available
       # Change: /Users/kelk/workspace/arc/src/_txl/SHSB.Txl
       # To    : /Users/kelk/workspace/arc/src/_txl/SHSB_RND.Txl
-      txlOpRnd = txlOperator[4].replace(".Txl", "_RND.Txl")
-
       mutantSource = sourceNameOnly + "_" + str(counter)
 
-      process = subprocess.Popen(['txl', sourceFile, txlOpRnd, '-',
-                '-outfile', mutantSource + sourceExtOnly, '-outdir', txlDestDir,],
-                  stdout=outFile, stderr=errFile, cwd=config._PROJECT_DIR, shell=False)
-      process.wait()
+      # Different operator when 2 args are available
+      if txlOperator is config._MUTATION_ASAT:
+        txlOpRnd = txlOperator[4].replace(".Txl", "_RND.Txl")
+        process = subprocess.Popen(['txl', sourceFile, txlOpRnd, '-',
+                '-outfile', mutantSource + sourceExtOnly, '-outdir', txlDestDir,
+                '-syncvar', variableName], stdout=outFile, stderr=errFile,
+                cwd=config._PROJECT_DIR, shell=False)
+        process.wait()
+      elif txlOperator is config._MUTATION_ASM:
+        txlOpRnd = txlOperator[4].replace(".Txl", "_RND.Txl")
+        process = subprocess.Popen(['txl', sourceFile, txlOpRnd, '-',
+                '-outfile', mutantSource + sourceExtOnly, '-outdir', txlDestDir,
+                '-syncvar', variableName], stdout=outFile,
+                stderr=errFile, cwd=config._PROJECT_DIR, shell=False)
+        process.wait()
+      else: # ASIM
+        txlOpRnd = txlOperator[4].replace(".Txl", "_RND.Txl")
+        process = subprocess.Popen(['txl', sourceFile, txlOpRnd, '-',
+                '-outfile', mutantSource + sourceExtOnly, '-outdir', txlDestDir],
+                stdout=outFile,
+                stderr=errFile, cwd=config._PROJECT_DIR, shell=False)
+        process.wait()
+
+      counter += 1
 
   # 4. For the operators that shrink or remove synchronization, we don't target files
-  #    used in concurrency.  (The txl invocation doesn't use the -class and -var args)
+  #    used in concurrency.  (The txl invocation doesn't use the -class, etc.. args)
   else:
 
     #logger.debug("Case 2: Non-add sync operator")
@@ -298,7 +364,7 @@ def generate_representation(generation, memberNum, mutationOperators):
   """Generate the representation for a member.
   Generate the dictionary for use here.
   Returns a list ints where each int corresponds to the number of mutations
-  of one type.  eg: {5, 7, 3, ...} = 5 of type ASAS, 7 of type ASAV
+  of one type.  eg: {5, 7, 3, ...} = 5 of type ASAT, 7 of type ...
   The order of the mutation types is the same as that in the two
   config.**_MUTATIONS.
 
@@ -421,7 +487,7 @@ def move_mutant_to_local_project(generation, memberNum, txlOperator, mutantNum):
   Attributes:
   generation (int): Current generation of the evolutionary strategy
   memberNum (int): Which member of the population we are dealing with
-  txlOperator (string): Selected TXL operator (eg: ASAS)
+  txlOperator (string): Selected TXL operator (eg: ASAT)
   mutantNum (int): Mutant number selected from the mutant dir
   """
 
@@ -450,15 +516,15 @@ def move_mutant_to_local_project(generation, memberNum, txlOperator, mutantNum):
         break
 
   # Special handle for mutation operators that append _# to the filename
-  if txlOperator in ["ASAV", "ASM", "ASAS"]:
+  if txlOperator in ["ASAT", "ASM", "ASIM"]:
     dst = re.sub("_\d+.java", ".java", dst)
 
-  # logger.debug("---------------------------'
-  # logger.debug("mmtlp txlOperator:    ' + txlOperator
-  # logger.debug("mmtlp pathNoFileName: ' + pathNoFileName
-  # logger.debug("mmtlp relPath:        ' + relPath
-  # logger.debug("mmtlp src:            ' + sourceDir
-  # logger.debug("mmtlp dst:            ' + dst
+  #logger.debug("---------------------------")
+  #logger.debug("mmtlp txlOperator:    {}".format(txlOperator))
+  #logger.debug("mmtlp pathNoFileName: {}".format(pathNoFileName))
+  #logger.debug("mmtlp relPath:        {}".format(relPath))
+  #logger.debug("mmtlp src:            {}".format(sourceDir))
+  #logger.debug("mmtlp dst:            {}".format(dst))
 
   if not os.path.exists(dst):
     os.makedirs(dst)

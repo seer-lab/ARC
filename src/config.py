@@ -63,8 +63,7 @@ _CONTEST_VALIDATION_MULTIPLIER = 2  # Allows for validation of functionality
 # [0]Name  [1]Enable  [2]Enable for DataRace  [3]Enable for Deadlock  [4]File
 # [5] Functional phase: Use to fix DataRaces
 # [6] Functional phase: Use to fix Deadlocks
-_MUTATION_ASAS = ['ASAS', True, True, True, _TXL_DIR + "ASAS.Txl", True, True]
-_MUTATION_ASAV = ['ASAV', True, True, True, _TXL_DIR + "ASAV.Txl", True, True]
+_MUTATION_ASAT = ['ASAT', True, True, True, _TXL_DIR + "ASAT.Txl", True, True]
 _MUTATION_ASIM = ['ASIM', True, True, True, _TXL_DIR + "ASIM.Txl", True, True]
 _MUTATION_ASM  = ['ASM', True, True, True, _TXL_DIR + "ASM.Txl", True, True]
 _MUTATION_CSO  = ['CSO', True, True, True, _TXL_DIR + "CSO.Txl", False, True]
@@ -76,14 +75,14 @@ _MUTATION_RSIM = ['RSIM', True, True, True, _TXL_DIR + "RSIM.Txl", False, True]
 _MUTATION_RSM  = ['RSM', True, True, True, _TXL_DIR + "RSM.Txl", False, True]
 _MUTATION_SHSA = ['SHSA', True, True, True, _TXL_DIR + "SHSA.Txl", False, True]
 _MUTATION_SHSB = ['SHSB', True, True, True, _TXL_DIR + "SHSB.Txl", False, True]
-_FUNCTIONAL_MUTATIONS = [_MUTATION_ASAS, _MUTATION_ASAV, _MUTATION_ASIM,
+_FUNCTIONAL_MUTATIONS = [_MUTATION_ASAT, _MUTATION_ASIM,
                          _MUTATION_ASM, _MUTATION_CSO, _MUTATION_EXSB,
                          _MUTATION_EXSA, _MUTATION_RSAS, _MUTATION_RSAV,
                          _MUTATION_RSIM, _MUTATION_RSM, _MUTATION_SHSA,
                          _MUTATION_SHSB]
 _NONFUNCTIONAL_MUTATIONS = [_MUTATION_RSAS, _MUTATION_RSAV, _MUTATION_RSIM,
                             _MUTATION_RSM, _MUTATION_SHSA, _MUTATION_SHSB]
-_ALL_MUTATIONS = [_MUTATION_ASAS, _MUTATION_ASAV, _MUTATION_ASIM,
+_ALL_MUTATIONS = [_MUTATION_ASAT, _MUTATION_ASIM,
                          _MUTATION_ASM, _MUTATION_CSO, _MUTATION_EXSB,
                          _MUTATION_EXSA, _MUTATION_RSAS, _MUTATION_RSAV,
                          _MUTATION_RSIM, _MUTATION_RSM, _MUTATION_SHSA,
@@ -112,7 +111,7 @@ _TIMEOUT_WEIGHT = 50
 
 # Convergence criteria, considering the window size ensure there is at least
 # a fitness score movement of delta
-_GENERATIONAL_IMPROVEMENT_WINDOW = 10
+_GENERATIONAL_IMPROVEMENT_WINDOW = 5
 _AVG_FITNESS_MIN_DELTA = 0.01
 _BEST_FITNESS_MIN_DELTA = 1
 

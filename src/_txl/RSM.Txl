@@ -2,8 +2,7 @@
 % RSM (Remove Sync around a Method Body from ConTest) Mutator for ARC
 % (Automatic Repair of Concurrency Bugs)
 %
-% Kevin Jalbert, David Kelk and Jeremy Bradbury, Mar. 2012
-% SBSE Reading Course Project
+% David Kelk, Kevin Jalbert and Jeremy Bradbury
 %
 % Based on ASK by J.S. Bradbury
 %
@@ -14,7 +13,6 @@
 % - Java files must be named _1.java, _2.java due to the fact that
 %   the second invocation of mutant generation will overwrite the first.
 % - Output directory must already exist.
-% - Class and variable name from ConTest are passed as arguments to TXL.
 %***********************************************************
 
 %***********************************************************

@@ -2,8 +2,7 @@
 % RSAV (Remove Sync Around Variable) Mutator for ARC
 % (Automatic Repair of Concurrency Bugs)
 %
-% Kevin Jalbert, David Kelk and Jeremy Bradbury, Mar. 2012
-% SBSE Reading Course Project
+% David Kelk, Kevin Jalbert and Jeremy Bradbury
 %
 % Based on RSB by J.S. Bradbury
 %
@@ -12,7 +11,6 @@
 %
 % Notes:
 % - Output directory must already exist.
-% - Only removes synchronization block from around A := B statements
 %***********************************************************
 
 %***********************************************************
@@ -149,7 +147,7 @@ end rule
 
 %------------------------------------------------------------
 % Create an RSAV mutant by removing a synchronized block
-% around an assignment statement, A := B
+% around an assignment statement
 %------------------------------------------------------------
 function doSynchronizedDelMutation
 	replace * [synchronized_statement]

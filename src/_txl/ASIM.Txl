@@ -1,11 +1,20 @@
 %***********************************************************
-% ASIM (Add Sync In Method Header) Mutator for ARC
+% ASIM (Add Sync in Method Header) Mutator for ARC
 % (Automatic Repair of Concurrency Bugs)
 %
-% Kevin Jalbert and David Kelk, Sept. 2011
-% SBSE Reading Course Project
+% David Kelk, Kevin Jalbert and Jeremy Bradbury, Mar. 2012
 %
 % Based on ASK by J.S. Bradbury
+%
+% Typical invocation:
+% txl ManageAccount.java ASIM.Txl - -outfile ManageAccount_1.java
+% -outdir ASIM/ -class ManageAccount -method run
+%
+% Notes:
+% - Java files must be named _1.java, _2.java due to the fact
+%   that the second invocation of mutant generation will
+%   overwrite the first.
+% - Output directory must already exist.
 %***********************************************************
 
 %***********************************************************
@@ -32,14 +41,10 @@ include "JavaCommentOverrides.Grm"
 
 % Local grammar overrides
 redefine method_or_constructor_declaration
-	[attr labelM] [method_declaration]
+	  [attr labelM] [method_declaration]
 	| [attr labelM] /* 'MUTANT: [stringlit] */ [method_declaration] /* 'MUTANT: [stringlit] */
 	| [attr labelM] [constructor_declaration]
 end redefine
-
-define labelM
-	'MUTATED
-end define
 
 redefine method_declaration
   [NL] [repeat modifier] [rest_of_method_declaration]
@@ -47,6 +52,10 @@ end redefine
 
 define rest_of_method_declaration
 	[type_specifier] [method_declarator] [opt throws] [method_body]
+end define
+
+define labelM
+  'MUTATED
 end define
 
 %------------------------------------------------------------
@@ -68,58 +77,129 @@ function main
   % Read in name of class and variable from ConTest
   import TXLargs [repeat stringlit]
     deconstruct * TXLargs
-      "-class" clsNm [stringlit] "-var" varNm [stringlit] MoreOptions [repeat stringlit]
+      "-class" clsNm [stringlit] "-method" mthNm [stringlit]  MoreOptions [repeat stringlit]
 
   construct className [id]
     _ [unquote clsNm]
-
-  construct variableName [id]
-    _ [unquote varNm]
-
   export className
-  export variableName
 
-	replace [program]
-        		P [program]
+  construct methodName [id]
+    _ [unquote mthNm]
+  export methodName
 
-    	by
-		% Add synchronized modifier to all non-synchronized
-		% methods one at a time
-        		P [MutateSynchronizedInsert]
+
+  replace [program]
+    P [program]
+  by
+    P [ProcessSynchronizeStatementMutations]
 end function
 
 %------------------------------------------------------------
-% Match all methods that do not have a synchronized modifier
-% and then perform the following 3 steps for each:
-%	1. Create mutant of program with synchronized modifier added
-%	2. Write mutant to a file
-%	3. Remove synchronized modifier that was inserted
+% Start the mutation process at the global level.
+% - IdentifyMutationClass limits the scope to the required
+%   class (className)
+% - The other classes are skipped over
+% - Print/WriteToFile has to be at this level so that ALL
+%   classes appear in the mutated file
 %------------------------------------------------------------
-rule MutateSynchronizedInsert
-	replace [program]
-		P 	[program]
-
-	% only proceed for methods that satisfy the requirements
-	% (i.e. methods that are not synchronized)
-	where all
-		P 	[?matchClassName]
-		    [?doSynchronizedInsertMutation]
-
-	by
-		P [matchClassName]
-			% Create the mutant version of the program
-			[doSynchronizedInsertMutation]
-			% [print]
-			[writeToFile]
-			% Undo mutation and return to original program
-			[undoSynchronizedInsertMutation]
+rule ProcessSynchronizeStatementMutations
+  replace [program]
+    P [program]
+  where
+    P [?IdentifyMutationClass]
+  by
+    P [IdentifyMutationClass]
+      %[print]
+      [writeToFile]
+      % Undo mutation and return to original program
+      [undoSynchronizeStatementMutation]
 end rule
 
 %------------------------------------------------------------
-% Create an ASK mutant by adding synchronized to the method
-% modifier list of a method that is not synchronized
+% Start by matching the class name
+% - Deconstruct a class declaration to get the [class_name]
+% - Efficiency: Don't import a variable [className] until it
+%   is needed
+% - Efficiency: Don't call [?IdentifyMutationMethod]
+%   until the proper class has been identified
 %------------------------------------------------------------
-function doSynchronizedInsertMutation
+function IdentifyMutationClass
+  replace * [class_declaration]
+    AClass [class_declaration]
+
+  deconstruct AClass
+    AClassHead [class_header] AClassBody [class_body]
+
+  deconstruct AClassHead
+      Mod [repeat modifier] 'class AClassName [class_name]
+      EC [opt extends_clause] IM [opt implements_clause]
+
+  import className [id]
+
+  where
+    AClassName [isSameClass className]
+
+  where
+    AClass [?IdentifyMutationMethod]
+
+  by
+    AClass [IdentifyMutationMethod]
+end function
+
+%---------------------
+% Match the class name
+%---------------------
+
+rule isSameClass ClsName [id]
+  match * [id]
+    ClsName
+end rule
+
+%------------------------------------------------------------
+% Next, match the method name
+% - Deconstruct a method declaration to get the [class_name]
+% - Efficiency: Don't import a variable [methodName] until it
+%   is needed
+% - Efficiency: Don't call [?DoSynchronizestatementMutation]
+%   until the proper class has been identified
+%------------------------------------------------------------
+function IdentifyMutationMethod
+  replace * [method_or_constructor_declaration]
+    AMethod [method_or_constructor_declaration]
+
+  deconstruct AMethod
+    MethMods [repeat modifier] MethType [type_specifier]
+    MethDecl [method_declarator] MethThr [opt throws]
+    MethBody [method_body]
+
+  deconstruct MethDecl
+    MethName [method_name] '( MethList [list formal_parameter]') MethDim [repeat dimension]
+
+  import methodName [id]
+
+  where
+    MethName [isSameMethod methodName]
+
+  where
+    AMethod [?doSynchronizeStatementMutation]
+
+  by
+    AMethod [doSynchronizeStatementMutation]
+end function
+
+%---------------------
+% Match the method name
+%---------------------
+
+rule isSameMethod MthName [id]
+  match * [id]
+    MthName
+end rule
+
+%------------------------------------------------------------
+%
+%------------------------------------------------------------
+function doSynchronizeStatementMutation
 	replace * [method_or_constructor_declaration]
 		GenDecl [method_or_constructor_declaration]
 
@@ -159,32 +239,9 @@ function doSynchronizedInsertMutation
 end function
 
 %------------------------------------------------------------
-% Match class name
+%
 %------------------------------------------------------------
-function matchClassName
-
-  import className [id]
-
-  replace * [class_name]
-    clsName [class_name]
-
-  where
-    clsName [isSameClass className]
-  by
-    clsName
-end function
-
-rule isSameClass ClsName [id]
-  match * [id]
-    ClsName
-end rule
-
-%------------------------------------------------------------
-% Reinsert the orginal method declaration but leave the
-% MUTATED attribute to indicate that the mutant has already
-% been created.
-%------------------------------------------------------------
-function undoSynchronizedInsertMutation
+function undoSynchronizeStatementMutation
 	replace * [method_or_constructor_declaration]
 		CurrGenDecl [method_or_constructor_declaration]
 

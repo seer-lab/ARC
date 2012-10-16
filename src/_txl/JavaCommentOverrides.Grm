@@ -1,7 +1,7 @@
 % Overrides to preserve comments in Java
 % Jim Cordy, March 2001 (Rev Feb 2003)
 
-#pragma -comment
+%#pragma -comment
 
 % Can have comments as statements
 redefine statement

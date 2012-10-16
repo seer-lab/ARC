@@ -45,6 +45,7 @@ mergedClassVar = []
 # 5. Final class-method-variable list
 finalCMV = []
 
+# 6.
 
 def setup():
   """Check if the directories and tools are present for the testing process."""
@@ -138,6 +139,7 @@ def get_chord_targets():
   page = urllib2.urlopen(URL)
   data = page.read()
 
+  # Use BeautifulSoup to analyze the web page produced by Chord
   soup = BeautifulSoup(data)
 
   for (i, row) in enumerate(soup("tr")):
@@ -207,12 +209,6 @@ def find_tuple_in_list(inTuple, inList):
 
 def create_merged_classVar_list():
   # Merge class-variable from Chord and ConTest
-  #if not did_contest_find_shared_variables() and not did_chord_find_dataraces():
-  #  logger.debug("Couldn't create the merged list of (class, variable) doubles")
-    #logger.debug("Both of the static analysis and ConTest shared variable detection didn't")
-    #logger.debug("find anything (or failed.)")
-    #logger.debug("config.mergedClassVar, the list of class-variable tuples will be empty.")
-  #  return False
 
   # New: Build the merged class-variable list from whatever is available
   logger.info("Created merged (class, variable) list from:")

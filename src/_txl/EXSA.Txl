@@ -2,8 +2,7 @@
 % EXSA (EXpand Sync region After) Mutator for ARC
 % (Automatic Repair of Concurrency Bugs)
 %
-% Kevin Jalbert, David Kelk and Jeremy Bradbury, Mar. 2012
-% SBSE Reading Course Project
+% David Kelk, Kevin Jalbert and Jeremy Bradbury
 %
 % Based on EXCR by J.S. Bradbury
 %
@@ -11,7 +10,6 @@
 % txl ManageAccount.java EXSA.Txl - -outfile ManageAccount.java -outdir EXSA/
 %
 % Notes:
-% - Only removes synchronization block around A := B
 % - Output directory must already exist.
 %***********************************************************
 

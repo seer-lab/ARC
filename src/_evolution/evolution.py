@@ -75,9 +75,6 @@ def start():
   global _population
   global _functionalPhase
 
-  # Backup project
-  #txl_operator.backup_project()
-
   try:
     # Initialize the population
     logger.info("Creating and initializing the population")
@@ -131,9 +128,12 @@ def start():
         logger.info("*****************************************************************")
         logger.info("Evolving population towards optimizing non-functional performance")
         logger.info("*****************************************************************")
-        #logger.debug("BUG HUNT: BestFunctional generation: {}  Worst score: {}".format(bestFunctional.generation, worstScore))
-        bestNonFunctional, bestNonFunctionalGeneration = evolve(bestFunctional.generation, worstScore)
-        #logger.debug("BUG HUNT: BestNonFunctional: {}  Best NonFunctional generation: {}".format(bestNonFunctional, bestNonFunctionalGeneration))
+        logger.debug("BUG HUNT: BestFunctional generation: {}  Worst score: {}"
+          .format(bestFunctional.generation, worstScore))
+        bestNonFunctional, bestNonFunctionalGeneration \
+          = evolve(bestFunctional.generation, worstScore)
+        logger.debug("BUG HUNT: BestNonFunctional: {}  Best NonFunctional generation: {}"
+          .format(bestNonFunctional, bestNonFunctionalGeneration))
 
         logger.info("******************************************************")
         logger.info("Best individual found during the non-functional phase:")
@@ -146,7 +146,9 @@ def start():
         bestNonFunctionalGeneration = bestFunctionalGeneration
 
       logger.info("******************************************************")
-      logger.info("Copying fixed project Individual:{} Generation:{} to {}".format(bestNonFunctional.id, bestNonFunctionalGeneration, config._PROJECT_OUTPUT_DIR))
+      logger.info("Copying fixed project Individual:{} Generation:{} to {}"
+        .format(bestNonFunctional.id, bestNonFunctionalGeneration,
+        config._PROJECT_OUTPUT_DIR))
       logger.info("******************************************************")
       txl_operator.move_best_project_to_output(bestNonFunctionalGeneration,
         bestNonFunctional.id)
@@ -226,7 +228,8 @@ def evolve(generation=0, worstScore=0):
 
     # Check the terminating conditions
     if not _functionalPhase:
-      #logger.debug("BUG HUNT: Convergence {} {} {}".format(generation, bestFitness, averageFitness))
+      logger.debug("BUG HUNT: Convergence check: Generation {} bestFitness {} averageFitness {}"
+        .format(generation, bestFitness, averageFitness))
       if convergence(generation, bestFitness, averageFitness):
         return get_best_individual()
 
@@ -328,12 +331,12 @@ def mutation(individual, deadlockVotes, dataraceVotes, nonFunctionalVotes):
 
   # Keep trying to find a successful mutant within the retry limits
   while limit is not 0 and not successfulCompile:
-    # Acquire operator, one of config._MUTATIONS (ASAV, ...)
+    # Acquire operator, one of config._MUTATIONS (ASAT, ...)
     selectedOperator = feedback_selection(individual,
       deadlockVotes, dataraceVotes, nonFunctionalVotes)
 
     # Find the integer index of the selectedOperator
-    # That is, the index of ASAV, ASM, ...
+    # That is, the index of ASAT, ASM, ...
     operatorIndex = -1
     for mutationOp in mutationOperators:
       if mutationOp[1]:
@@ -506,13 +509,13 @@ def feedback_selection(individual, deadlockVotes, dataraceVotes, nonFunctionalVo
   test execution as feedback. The feedback is used to heuristically guide what
   mutation operator to apply next.
 
-  Returns one of ASAV, ...
+  Returns one of ASAT, ...
   """
 
   global _functionalPhase
 
   # candidateChoices is a list of config._MUTATIONS
-  # {ASAS, ASAV, ...}
+  # {ASAT, ASIM, ...}
   candatateChoices = []
 
   # Acquire set of operators to use
@@ -802,7 +805,7 @@ def get_best_individual(beforeMutation=False):
   global _population
   global _functionalPhase
 
-  bestScore = -1
+  bestScore = -2
   individualId = -1
   generation = -1
   mod = 0
@@ -815,7 +818,8 @@ def get_best_individual(beforeMutation=False):
 
     if _functionalPhase:
       # Consider all generations
-      #logger.debug("BUG HUNT get_best_individual 1:  generation: {}".format(individual.generation))
+      logger.debug("BUG HUNT get_best_individual functional:  generation: {}"
+        .format(individual.generation))
       for i in xrange(0, individual.generation):
         if individual.score[i] > bestScore:
           individualId = individual.id
@@ -824,24 +828,44 @@ def get_best_individual(beforeMutation=False):
 
     else:
       # Consider generations over the switch
-      #logger.debug("BUG HUNT get_best_individual 2:  {} {} {}".format(individual.switchGeneration, individual.generation, mod))
-      #logger.debug(" BUG HUNT Individual: {}".format(individual))
-      #logger.debug(" BUG HUNT Best score: {}".format(bestScore))
+      logger.debug("BUG HUNT get_best_individual non-functional:  switchGen {} individual.gen {} mod {}"
+        .format(individual.switchGeneration, individual.generation, mod))
+      logger.debug(" BUG HUNT Individual: {}".format(individual))
+      logger.debug(" BUG HUNT Best score: {}".format(bestScore))
 
       #print individual
       for i in xrange(individual.switchGeneration, individual.generation - mod):
-        #logger.debug("BUG HUNT i = {}".format(i))
+        #logger.debug("BUG HUNT (Non-functional) i = {}".format(i))
         if individual.score[i] > bestScore:
-          #logger.debug("BUG HUNT individual.score[i]: {}".format(individual.score[i]))
+          logger.debug("BUG HUNT individual.score[{}]: {}".format(i, individual.score[i]))
           individualId = individual.id
           generation = i + 1   # My guess is that the +1 isn't necessary
           bestScore = individual.score[i]
 
+  # Find and return the individual
   for individual in _population:
-    if individual.id == individualId:
+    if individual.id == individualId and bestScore == individual.score[i]:
       logger.info("Found bestIndividual {} @ generation {}".format(individual.id, generation))
       return individual, generation
 
+  # It is possible to reach this point with individualID still equal to -1
+  # This can occur if the functional phase finds a fix, but the non-functional phase
+  # can't improve it. The non-functional phase will record scores of -1 throughout.
+  # If this happens, go back and look in the functional phase for a solution.
+  logger.debug("BUG HUNT: Non-functional phase couldn't improve on functional phase.")
+  logger.debug("BUG HUNT: Looking in functional phase for best individual.")
+  # TODO: Refactor this function
+  for individual in _population:
+    for i in xrange(0, individual.generation):
+      if individual.score[i] > bestScore:
+        individualId = individual.id
+        generation = i + 1
+        bestScore = individual.score[i]
+  # Try againFind and return the individual
+  for individual in _population:
+    if individual.id == individualId and bestScore == individual.score[i]:
+      logger.info("Found bestIndividual {} @ generation {}".format(individual.id, generation))
+      return individual, generation
 
 def replace_lowest(generation):
   """Attempt to replace underperforming members with high-performing members or

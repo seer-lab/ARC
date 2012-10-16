@@ -2,8 +2,7 @@
 % SHSB (SHrink Sync region Before) Mutator for ARC
 % (Automatic Repair of Concurrency Bugs)
 %
-% Kevin Jalbert, David Kelk and Jeremy Bradbury, Mar. 2012
-% SBSE Reading Course Project
+% David Kelk, Kevin Jalbert and Jeremy Bradbury, Mar. 2012
 %
 % Based on SKCR by J.S. Bradbury
 %
