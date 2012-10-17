@@ -287,6 +287,7 @@ def generate_mutants(generation, memberNum, txlOperator, sourceFile, destDir):
 
       else: # ASIM
         for line in static.mergedClassVar:
+          variableName = line[-1]
           className = line[-2]
 
           txlOpTwo = txlOperator[4].replace(".Txl", "_C.Txl")
