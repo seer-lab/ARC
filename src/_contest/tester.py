@@ -231,13 +231,7 @@ class Tester():
               if config._OS is 'MAC':
                 userTime = re.search("user \s+ (\d+\.\d+)", error).groups()[0]
                 systemTime = re.search("sys \s+ (\d+\.\d+)", error).groups()[0]
-                # TODO: Investigate why 'voluntary context switches' is 0 on MAC
-                #       All 0 causes a division by zero error in
-                #       function evolution.py.get_average_non_functional_score
-                #       Is involuntary context switches valid? Think about this!
-                # Note: The MAC is used for development only.
-                #       Using involuntary switches on the MAC for now
-                voluntarySwitches = re.search("(\d+)\s+ involuntary context switches", error).groups()[0]
+                voluntarySwitches = re.search("(\d+)\s+ voluntary context switches", error).groups()[0]
               else: # Linux
                 userTime = re.search("User time \(seconds\): (\d+\.\d+)", error).groups()[0]
                 systemTime = re.search("System time \(seconds\): (\d+\.\d+)", error).groups()[0]

@@ -24,12 +24,33 @@ logger = logging.getLogger('arc')
 def main():
   """The entry point to ARC, to start the evolutionary approach."""
 
+  # time commands are different on Mac and Linux (See tester.py)
+  outFile = tempfile.SpooledTemporaryFile()
+  errFile = tempfile.SpooledTemporaryFile()
+  timeProcess = subprocess.Popen(['/usr/bin/time', '-v'], stdout=outFile,
+                  stderr=errFile, cwd=config._PROJECT_DIR, shell=False)
+  timeProcess.wait()
+  errFile.seek(0)
+  errText = errFile.read()
+  errFile.close()
+  ourOS = 0   # 10 is Mac, 20 is Linux
+  if re.search("illegal option", errText):
+    ourOS = 10
+  else:
+    ourOS = 20
+
+
   # Configure config.py
   # We start in the .../arc/src/ directory.  We want to put .../arc/ in config.py
   logger.info("Configuring config.py")
   for line in fileinput.FileInput(files=('config.py'), inplace=1):
     if line.find("_ROOT_DIR =") is 0:
       line = "_ROOT_DIR = \"{}\" ".format(os.path.split(os.getcwd())[0] + os.sep)
+    if line.find("_OS =") is 0:
+      if ourOS == 10: # Mac
+        line = "_OS = \"MAC\" " # Note the extra space at the end
+      else:  # Linux
+        line = "_OS = \"LINUX\" "
     print(line[0:-1])  # Remove extra newlines (a trailing-space must exists in modified lines)
 
   # Compiling initial project
