@@ -26,10 +26,12 @@ def main():
 
   # 1. Set config._ROOT_DIR - as it is needed by everything!
   logger.info("Configuring _ROOT_DIR in config.py")
-  for line in fileinput.FileInput(files=('config.py'), inplace=1):
+  configRoot = fileinput.FileInput(files=('config.py'), inplace=1)
+  for line in configRoot:
     if line.find("_ROOT_DIR =") is 0:
       line = "_ROOT_DIR = \"{}\" ".format(os.path.split(os.getcwd())[0] + os.sep)
     print(line[0:-1])  # Remove extra newlines (a trailing-space must exists in modified lines)
+  configRoot.close()
 
   # 2. With _ROOT_DIR configured, we can determine the operating system,
   #    config._OS we are running on.
@@ -50,13 +52,15 @@ def main():
 
   # 3. Set config._OS
   logger.info("Configuring _OS in config.py")
-  for line in fileinput.FileInput(files=('config.py'), inplace=1):
+  configOS = fileinput.FileInput(files=('config.py'), inplace=1)
+  for line in configOS:
     if line.find("_OS =") is 0:
       if ourOS == 10: # Mac
         line = "_OS = \"MAC\" " # Note the extra space at the end
       else:  # Linux
         line = "_OS = \"LINUX\" "
     print(line[0:-1])  # Remove extra newlines (a trailing-space must exists in modified lines)
+  configOS.close()
 
   # 4. Compile the project
   if os.path.exists(config._PROJECT_DIR):
