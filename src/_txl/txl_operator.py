@@ -320,19 +320,21 @@ def generate_mutants(generation, memberNum, txlOperator, sourceFile, destDir):
       # To    : /Users/kelk/workspace/arc/src/_txl/SHSB_RND.Txl
       mutantSource = sourceNameOnly + "_" + str(counter)
 
+      # TODO: Can we generalize '-syncvar', '-this'
+
       # Different operator when 2 args are available
       if txlOperator is config._MUTATION_ASAT:
         txlOpRnd = txlOperator[4].replace(".Txl", "_RND.Txl")
         process = subprocess.Popen(['txl', sourceFile, txlOpRnd, '-',
                 '-outfile', mutantSource + sourceExtOnly, '-outdir', txlDestDir,
-                '-syncvar', variableName], stdout=outFile, stderr=errFile,
+                '-syncvar', 'this'], stdout=outFile, stderr=errFile,
                 cwd=config._PROJECT_DIR, shell=False)
         process.wait()
       elif txlOperator is config._MUTATION_ASM:
         txlOpRnd = txlOperator[4].replace(".Txl", "_RND.Txl")
         process = subprocess.Popen(['txl', sourceFile, txlOpRnd, '-',
                 '-outfile', mutantSource + sourceExtOnly, '-outdir', txlDestDir,
-                '-syncvar', variableName], stdout=outFile,
+                '-syncvar', 'this'], stdout=outFile,
                 stderr=errFile, cwd=config._PROJECT_DIR, shell=False)
         process.wait()
       else: # ASIM
