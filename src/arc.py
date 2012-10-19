@@ -24,6 +24,15 @@ logger = logging.getLogger('arc')
 def main():
   """The entry point to ARC, to start the evolutionary approach."""
 
+  # 1. Set config._ROOT_DIR - as it is needed by everything!
+  logger.info("Configuring _ROOT_DIR in config.py")
+  for line in fileinput.FileInput(files=('config.py'), inplace=1):
+    if line.find("_ROOT_DIR =") is 0:
+      line = "_ROOT_DIR = \"{}\" ".format(os.path.split(os.getcwd())[0] + os.sep)
+    print(line[0:-1])  # Remove extra newlines (a trailing-space must exists in modified lines)
+
+  # 2. With _ROOT_DIR configured, we can determine the operating system,
+  #    config._OS we are running on.
   # time commands are different on Mac and Linux (See tester.py)
   outFile = tempfile.SpooledTemporaryFile()
   errFile = tempfile.SpooledTemporaryFile()
@@ -39,13 +48,9 @@ def main():
   else:
     ourOS = 20
 
-
-  # Configure config.py
-  # We start in the .../arc/src/ directory.  We want to put .../arc/ in config.py
-  logger.info("Configuring config.py")
+  # 3. Set config._OS
+  logger.info("Configuring _OS in config.py")
   for line in fileinput.FileInput(files=('config.py'), inplace=1):
-    if line.find("_ROOT_DIR =") is 0:
-      line = "_ROOT_DIR = \"{}\" ".format(os.path.split(os.getcwd())[0] + os.sep)
     if line.find("_OS =") is 0:
       if ourOS == 10: # Mac
         line = "_OS = \"MAC\" " # Note the extra space at the end
@@ -53,19 +58,19 @@ def main():
         line = "_OS = \"LINUX\" "
     print(line[0:-1])  # Remove extra newlines (a trailing-space must exists in modified lines)
 
-  # Compiling initial project
+  # 4. Compile the project
   if os.path.exists(config._PROJECT_DIR):
     shutil.rmtree(config._PROJECT_DIR)
   shutil.copytree(config._PROJECT_PRISTINE_DIR, config._PROJECT_DIR)
 
   txl_operator.compile_project()
 
-  # Setup ConTest
+  # 5. Set up ConTest (Thread noising tool)
   contester.setup()
-  # Set up Chord (static analysis)
+  # 6. Set up Chord (A static analysis tool)
   static.setup()
 
-  # Acquire classpath dynamically using 'ant test'
+  # 7. Acquire classpath dynamically using 'ant test'
   if config._PROJECT_CLASSPATH is None:
     outFile = tempfile.SpooledTemporaryFile()
     errFile = tempfile.SpooledTemporaryFile()
@@ -77,12 +82,12 @@ def main():
     outFile.close()
     config._PROJECT_CLASSPATH = re.search("-classpath'\s*\[junit\]\s*'(.*)'", outText).groups()[0]
 
-  # Initial run for ConTest (Acquire dynamic timeout value)
+  # 8. Acquire dynamic timeout value from ConTest
   contestTime = contester.run_test_execution(config._CONTEST_RUNS * config._CONTEST_VALIDATION_MULTIPLIER)
   config._CONTEST_TIMEOUT_SEC = contestTime * config._CONTEST_TIMEOUT_MULTIPLIER
   logger.info("Using a timeout value of {}s".format(config._CONTEST_TIMEOUT_SEC))
 
-  # Run the static analysis
+  # 9. Run the static analysis
   static.configure_chord()
   static.run_chord_datarace()
   static.get_chord_targets()
@@ -90,14 +95,15 @@ def main():
   static.create_merged_classVar_list()
   static.create_final_triple()
 
-  # logger.info("Cleaning TMP directory")
+  # 10. Clean up the temporary directory (Probably has subdirs from previous runs)
+  #logger.info("Cleaning TMP directory")
   if not os.path.exists(config._TMP_DIR):
     os.makedirs(config._TMP_DIR)
   else:
     shutil.rmtree(config._TMP_DIR)
     os.makedirs(config._TMP_DIR)
 
-  # Run evolution
+  # 11. Start the main bug-fixing procedure
   evolution.start()
 
 # If this module is ran as main
