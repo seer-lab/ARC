@@ -175,9 +175,9 @@ class Tester():
         errFile.close()
 
         # Acquire the number of faults (accoring to ant test)
-        #logger.debug("Test, Output text:\n")
+        #logger.debug("==== Tester, Output text:\n")
         #logger.debug(output)
-        #logger.debug("Test, Error text:\n")
+        #logger.debug("==== Tester, Error text:\n")
         #logger.debug(error)
 
         numTests = 0
@@ -191,7 +191,7 @@ class Tester():
 
         stmtTwo = re.search("OK \((\d+) test", output)
         if stmtTwo is not None:
-            numSuccesses = stmtTwo.group(1)
+          numSuccesses = stmtTwo.group(1)
 
         # Some tests have failed
         if numTests > 0 and numFailures > 0:
@@ -227,11 +227,14 @@ class Tester():
             self.goodRuns.append(True)
 
             if not functional:
-              # Take the performance measures of exection
               if config._OS is 'MAC':
                 userTime = re.search("user \s+ (\d+\.\d+)", error).groups()[0]
                 systemTime = re.search("sys \s+ (\d+\.\d+)", error).groups()[0]
-                voluntarySwitches = re.search("(\d+)\s+ voluntary context switches", error).groups()[0]
+                # For some reason, when the process is invoked from within ARC, the
+                # voluntary context switches is always zero.  Is it something to do with
+                # the processes being sub-processes? Using involuntary in the meantime
+                # TODO: Investigate this
+                voluntarySwitches = re.search("(\d+)\s+ involuntary context switches", error).groups()[0]
               else: # Linux
                 userTime = re.search("User time \(seconds\): (\d+\.\d+)", error).groups()[0]
                 systemTime = re.search("System time \(seconds\): (\d+\.\d+)", error).groups()[0]

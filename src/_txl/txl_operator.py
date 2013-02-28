@@ -290,6 +290,8 @@ def generate_mutants(generation, memberNum, txlOperator, sourceFile, destDir):
           variableName = line[-1]
           className = line[-2]
 
+          mutantSource = sourceNameOnly + "_" + str(counter)
+
           txlOpTwo = txlOperator[4].replace(".Txl", "_C.Txl")
           process = subprocess.Popen(['txl', sourceFile, txlOpTwo, '-',
                   '-outfile', mutantSource + sourceExtOnly, '-outdir', txlDestDir,

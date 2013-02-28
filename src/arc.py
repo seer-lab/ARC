@@ -24,14 +24,17 @@ logger = logging.getLogger('arc')
 def main():
   """The entry point to ARC, to start the evolutionary approach."""
 
+  restart = False
   # 1. Set config._ROOT_DIR - as it is needed by everything!
-  logger.info("Configuring _ROOT_DIR in config.py")
-  configRoot = fileinput.FileInput(files=('config.py'), inplace=1)
-  for line in configRoot:
-    if line.find("_ROOT_DIR =") is 0:
-      line = "_ROOT_DIR = \"{}\" ".format(os.path.split(os.getcwd())[0] + os.sep)
-    print(line[0:-1])  # Remove extra newlines (a trailing-space must exists in modified lines)
-  configRoot.close()
+  if config._ROOT_DIR != os.path.split(os.getcwd())[0] + os.sep:
+    logger.info("Configuring _ROOT_DIR in config.py")
+    configRoot = fileinput.FileInput(files=('config.py'), inplace=1)
+    for line in configRoot:
+      if line.find("_ROOT_DIR =") is 0:
+        line = "_ROOT_DIR = \"{}\" ".format(os.path.split(os.getcwd())[0] + os.sep)
+      print(line[0:-1])  # Remove extra newlines (a trailing-space must exists in modified lines)
+    configRoot.close()
+    restart = True
 
   # 2. With _ROOT_DIR configured, we can determine the operating system,
   #    config._OS we are running on.
@@ -52,15 +55,21 @@ def main():
 
   # 3. Set config._OS
   logger.info("Configuring _OS in config.py")
-  configOS = fileinput.FileInput(files=('config.py'), inplace=1)
-  for line in configOS:
-    if line.find("_OS =") is 0:
-      if ourOS == 10: # Mac
-        line = "_OS = \"MAC\" " # Note the extra space at the end
-      else:  # Linux
-        line = "_OS = \"LINUX\" "
-    print(line[0:-1])  # Remove extra newlines (a trailing-space must exists in modified lines)
-  configOS.close()
+  if (config._OS == "MAC" and ourOS == 20) or (config._OS == "LINUX" and ourOS == 10):
+    configOS = fileinput.FileInput(files=('config.py'), inplace=1)
+    for line in configOS:
+      if line.find("_OS =") is 0:
+        if ourOS == 10: # Mac
+          line = "_OS = \"MAC\" " # Note the extra space at the end
+        else:  # Linux
+          line = "_OS = \"LINUX\" "
+      print(line[0:-1])  # Remove extra newlines (a trailing-space must exists in modified lines)
+    configOS.close()
+    restart = True
+
+  if restart:
+    print("Configuration changed.  Restart ARC.")
+    exit(0)
 
   # 4. Compile the project
   if os.path.exists(config._PROJECT_DIR):

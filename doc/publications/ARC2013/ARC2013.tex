@@ -1,0 +1,70 @@
+\documentclass{llncs}
+
+\usepackage{color}
+\usepackage{colortbl}
+\usepackage{epsfig}
+\usepackage{listings}
+\usepackage{array}
+\usepackage{longtable}
+\usepackage{hhline}
+\usepackage{cite}
+\usepackage{boxedminipage}
+\usepackage{graphicx}
+
+\newcommand{\notesbox}[1]{
+  \noindent\begin{center}\begin{boxedminipage}[h]{0.4\textwidth}{#1}\end{boxedminipage}\end{center}
+}
+
+\definecolor{lightgray}{gray}{.95}
+\definecolor{darkgray}{gray}{.80}
+
+\lstset{
+  lineskip=0.5pt,
+  basicstyle=\scriptsize,             % the size of the fonts that are used for the code
+  %numbers=left,                      % where to put the line-numbers
+  numberstyle=\scriptsize,            % the size of the fonts that are used for the line-numbers
+  stepnumber=1,                       % the step between two line-numbers. If it is 1 each line will be numbered
+  numbersep=3pt,                      % how far the line-numbers are from the code
+  backgroundcolor=\color{lightgray},  % choose the background color. You must add \usepackage{color}
+  showspaces=false,                   % show spaces adding particular underscores
+  showstringspaces=false,             % underline spaces within strings
+  showtabs=false,                     % show tabs within strings adding particular underscores
+  frame=none,                         % adds a frame around the code
+  tabsize=2,                          % sets default tabsize to 2 spaces
+  captionpos=b,                       % sets the caption-position to bottom
+  breaklines=true,                    % sets automatic line breaking
+  breakatwhitespace=false,            % sets if automatic breaks should only happen at whitespace
+  escapeinside={\%}{)}                % if you want to add a comment within your code
+}
+
+\hyphenation{op-tical net-works semi-conduc-tor}
+
+\begin{document}
+
+\title{ARC: Automatic Repair of Concurrency Bugs}
+
+\author{Kevin Jalbert, David Kelk, Jeremy S. Bradbury}
+
+\institute{Software Quality Research Group\\
+%Faculty of Science (Computer Science)\\
+University of Ontario Institute of Technology\\
+Oshawa, Ontario, Canada\\
+\email{\{kevin.jalbert, david.kelk, jeremy.bradbury\}@uoit.ca}}
+
+\maketitle
+
+\input{abstract.tex}
+\input{introduction.tex}
+\input{background.tex}
+\input{motivation.tex}
+\input{approach.tex}
+\input{experiments.tex}
+\input{threats.tex}
+\input{ongoing.tex}
+\input{related_works.tex}
+\input{conclusion.tex}
+
+\bibliographystyle{splncs03}
+\bibliography{ARC2013}
+
+\end{document}

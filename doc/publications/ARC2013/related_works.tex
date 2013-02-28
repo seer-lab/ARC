@@ -1,0 +1,22 @@
+\section{Related Works}
+\label{sec:related_works}
+
+%There are a number of approaches to automatically hide or fix bugs in programs.
+
+With respect to sequential programs, several approaches to program repair have been proposed in the literature. For example, co-evolutionary competition between programs with bugs and between test cases is used
+in~\cite{AY08, Arc08, WT10}. Both approaches require formal specifications and
+both use genetic programming to evolve fixes. Alternatively the work in~\cite{FNWG09, WNLF09, NWLF09, WFGN10, GNFW11,
+LDFW12} requires no formal specifications. Instead, test cases are used
+to demonstrate the bug and describe the desired functionality that must be
+preserved. To address the limitations of the previous approach they introduce
+two innovations: First, they assume the bug is written correctly in another
+part of the program. Second, they determine the error path on which the bug
+occurs and target those statements specifically for repair. Together these
+additions constrain the state space enough that the framework can fix real bugs
+in real programs.
+
+With respect to concurrent programs there are several examples of related work. Similar to the work done here,~\cite{KLT+07, LVK08} uses ConTest to heal data
+races. Healing a program is not the same as repairing a program -- \textit{``The healing techniques based on influencing the scheduling do not guarantee that a detected problem will really be completely removed, but they can decrease the probability of its manifestation.''}~\cite{LVK08}. SAT solving is used in~\cite{AY07}  to repair shared memory concurrent programs
+``w.r.t. CTL specifications'' where processes atomically read, write one shared
+variable at a time. This work requires the concurrent program and a formal temporal logic
+specification. Single variable atomicity violations are repaired in~\cite{JSZL+11}. This approach combines dynamic bug analysis, patch creation and merging and dynamic testing but is more limited than our approach with respect to the kinds of bugs that can be repaired.
