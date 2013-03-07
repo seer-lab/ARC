@@ -409,3 +409,15 @@ pages={29}
  pages = {389--400},
 }
 
+% Chord
+
+@inproceedings{NA07,
+  title={Conditional must not aliasing for static race detection},
+  author={Naik, Mayur and Aiken, Alex},
+  booktitle={ACM SIGPLAN Notices},
+  volume={42},
+  number={1},
+  pages={327--338},
+  year={2007},
+  organization={ACM}
+}

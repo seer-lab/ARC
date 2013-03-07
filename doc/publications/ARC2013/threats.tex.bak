@@ -1,4 +1,0 @@
-\section{Threats to Validity}
-\label{sec:threats}
-
-The main threat to validity with respect to our experimental evaluation of ARC is related to external validity -- our ability to generalize our results. Although we have used third-party programs in our experiment, all of the programs are relatively small in size and are not representative of large-scale concurrent software. Furthermore, the test sets for this programs were created by us and are not as comprehensive as those maintained with mature software systems. In the future, we plan to address this threat by conducting further experiments with larger open source concurrent software systems.
