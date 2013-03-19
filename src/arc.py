@@ -41,8 +41,7 @@ def main():
   # time commands are different on Mac and Linux (See tester.py)
   outFile = tempfile.SpooledTemporaryFile()
   errFile = tempfile.SpooledTemporaryFile()
-  timeProcess = subprocess.Popen(['/usr/bin/time', '-v'], stdout=outFile,
-                  stderr=errFile, cwd=config._PROJECT_DIR, shell=False)
+  timeProcess = subprocess.Popen(['/usr/bin/time', '-v'], stdout=outFile, stderr=errFile, cwd=config._PROJECT_DIR, shell=False)
   timeProcess.wait()
   errFile.seek(0)
   errText = errFile.read()
@@ -92,8 +91,12 @@ def main():
     antProcess.wait()
     outFile.seek(0)
     outText = outFile.read()
+    #logger.debug("Classpath text:\n")
+    #logger.debug(outText)
     outFile.close()
     config._PROJECT_CLASSPATH = re.search("-classpath'\s*\[junit\]\s*'(.*)'", outText).groups()[0]
+    #logger.debug("Classpath:\n")
+    #logger.debug(config._PROJECT_CLASSPATH)
 
   # 8. Acquire dynamic timeout value from ConTest
   contestTime = contester.run_test_execution(config._CONTEST_RUNS * config._CONTEST_VALIDATION_MULTIPLIER)

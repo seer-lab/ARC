@@ -45,8 +45,6 @@ mergedClassVar = []
 # 5. Final class-method-variable list
 finalCMV = []
 
-# 6.
-
 def setup():
   """Check if the directories and tools are present for the testing process."""
 
@@ -118,6 +116,9 @@ def did_chord_find_dataraces():
   if not os.path.isfile(URL):
     logger.error("Chord output file, {}, not found".format(URL))
     return False
+
+  # Back up the file
+  shutil.copy2(URL, config._TMP_DIR)
 
   # A HTML page with 0 data races in it is 1,174 bytes in size. (For Chord 2.1)
   # (Attempts to find deadlocks resulted in 500MB files which were unuseable.)

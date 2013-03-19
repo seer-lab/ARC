@@ -18,6 +18,7 @@ import time
 import shutil
 import re
 from _evolution import static
+from shutil import ignore_patterns
 
 sys.path.append("..")  # To allow importing parent directory module
 import config
@@ -59,11 +60,19 @@ def mutate_project(generation, memberNum, mutationOperators):
   destDir = config._TMP_DIR + str(generation) + os.sep + str(memberNum) + os.sep
 
   if generation == 1:
-    sourceDir = config._PROJECT_PRISTINE_DIR
+    sourceDir = config._PROJECT_PRISTINE_SRC_DIR
   else:
     sourceDir = (config._TMP_DIR + str(generation - 1) + os.sep + str(memberNum) \
                 + os.sep + 'project' + os.sep)
 
+  logger.debug("---------------------------")
+  logger.debug("generation:      {}".format(generation))
+  logger.debug("member num:      {}".format(memberNum))
+  #logger.debug("operators:       {}".format(mutationOperators))  
+  logger.debug("sourceDir:       {}".format(sourceDir))
+  logger.debug("destDir:         {}".format(destDir))
+
+  
   recursively_mutate_project(generation, memberNum, sourceDir, destDir,
                              mutationOperators)
 
@@ -86,21 +95,24 @@ def recursively_mutate_project(generation, memberNum, sourceDir, destDir, mutati
   """
 
   for root, dirs, files in os.walk(sourceDir):
+    # Here we are interested in subdirectories only
     for sourceSubDir in dirs:
 
       # Check to ensure the root is still within the dest dir
-      # Weird error that occurs only on 1+ generations (root sometimes lies
+      # Weird error that occurs only on > 1 generations (root sometimes lies
       # outside of the actual sourceDir)
-      if destDir in str(sourceDir) and generation is not 1:
-        recursively_mutate_project(generation, memberNum, sourceSubDir,
-                                   destDir, mutationOperators)
-      elif generation is 1:
-        recursively_mutate_project(generation, memberNum, sourceSubDir,
-                                   destDir, mutationOperators)
+      #if destDir in str(sourceDir) and generation is not 1:
+      recursively_mutate_project(generation, memberNum, sourceSubDir, destDir, mutationOperators)
+      #elif generation is 1:
+      #  recursively_mutate_project(generation, memberNum, sourceSubDir,
+      #                             destDir, mutationOperators)
 
     for aFile in files:
       if ("." in aFile and aFile.split(".")[1] == "java"):
         sourceFile = os.path.join(root, aFile)
+
+
+
         generate_all_mutants(generation, memberNum, sourceFile, destDir,
                              mutationOperators)
 
@@ -108,8 +120,17 @@ def recursively_mutate_project(generation, memberNum, sourceDir, destDir, mutati
 def generate_all_mutants(generation, memberNum, sourceFile, destDir, mutationOperators):
   """See comment for recursively_mutate_project."""
 
+  #logger.debug("---------------------------")
+  #logger.debug("generation:      {}".format(generation))
+  #logger.debug("member num:      {}".format(memberNum))
+  #logger.debug("sourceFile:      {}".format(sourceFile))
+  #logger.debug("destDir:         {}".format(destDir))
+
   for operator in mutationOperators:
     if operator[1]:  # If enabled
+
+      #logger.debug("operator:        {}".format(operator))
+
       generate_mutants(generation, memberNum, operator, sourceFile, destDir)
 
 
@@ -128,6 +149,7 @@ def generate_mutants(generation, memberNum, txlOperator, sourceFile, destDir):
   #sourceFile:       /Users/kelk/workspace/arc/tmp/2/1/project/source/Bank.java
   #sourceNoExt:      /Users/kelk/workspace/arc/tmp/2/1/project/source/Bank
   #sourceNoFileName: /Users/kelk/workspace/arc/tmp/2/1/project/source/
+  #sourceRelPath     source/
   #sourceNameOnly:   Bank
   #sourceExtOnly:    .java
   sourceNoExt = os.path.splitext(sourceFile)[0]
@@ -138,16 +160,16 @@ def generate_mutants(generation, memberNum, txlOperator, sourceFile, destDir):
   # The relative path is computed from the directory structure of the project itself
   sourceRelPath = ''
   if (generation == 1):
-    sourceRelPath = sourceNoFileName.replace(config._PROJECT_PRISTINE_DIR, '')
+    sourceRelPath = sourceNoFileName.replace(config._PROJECT_SRC_DIR, '')
   else:
     sourceRelPath = sourceNoFileName.replace(config._TMP_DIR + str(generation - 1) + os.sep
-                    + str(memberNum) + os.sep + 'project' + os.sep, '')
+                    + str(memberNum) + os.sep, '')
 
-  if sourceRelPath == '':
-    sourceRelPath = os.sep
-
-  txlDestDir = "".join([destDir, sourceRelPath, sourceNameOnly, os.sep,
-                       txlOperator[0], os.sep])
+  #if sourceRelPath == '':
+  txlDestDir = "".join([destDir, sourceNameOnly, os.sep, txlOperator[0], os.sep])  
+  #else:
+  #  txlDestDir = "".join([destDir, sourceRelPath, sourceNameOnly, os.sep,
+  #                     txlOperator[0], os.sep])
 
   # sourceFile:       source/BuggedProgram.java
   # destDir:          /Users/kelk/workspace/arc/tmp/1/1/
@@ -177,9 +199,6 @@ def generate_mutants(generation, memberNum, txlOperator, sourceFile, destDir):
     shutil.rmtree(txlDestDir)
   os.makedirs(txlDestDir)
 
-  outFile = tempfile.SpooledTemporaryFile()
-  errFile = tempfile.SpooledTemporaryFile()
-
   # In static.py we put together a list of (class, method, variable) tuples in finalCMV
   # of the class.method.variable(s) involved in the bug.
   # Ideally we use that list to reduce the number of mutants generated.  BUT, the static
@@ -195,14 +214,14 @@ def generate_mutants(generation, memberNum, txlOperator, sourceFile, destDir):
   if txlOperator is config._MUTATION_ASAT or txlOperator is config._MUTATION_ASM \
     or txlOperator is config._MUTATION_ASIM:
 
-    #logger.debug("Case 1: Add sync operators")
+    logger.debug("Case 1: Add sync operators")
 
     counter = 1
 
     # 1. We have (class, method, variable) triples
     if static.do_we_have_triples():
 
-      #logger.debug("Case 1-1: Add sync operators with triples")
+      logger.debug("Case 1-1: Add sync operators with triples")
 
       for line in static.finalCMV:
         syncVar = line[-1]
@@ -214,8 +233,14 @@ def generate_mutants(generation, memberNum, txlOperator, sourceFile, destDir):
 
           mutantSource = sourceNameOnly + "_" + str(counter)
 
-          #logger.debug("{} {} {} {} {}".format(txlOperator[4], variableName,
-          #  methodName, className, syncVar))
+          logger.debug("  '{}' '{}' '{}' '{}' '{}'".format(sourceFile, 
+            txlOperator[4], mutantSource + sourceExtOnly, txlDestDir, 
+            config._PROJECT_DIR))
+          logger.debug("  '{}' '{}' '{}' '{}'".format(syncVar,
+            variableName, methodName, className))
+
+          outFile = tempfile.SpooledTemporaryFile()
+          errFile = tempfile.SpooledTemporaryFile()
 
           if txlOperator is config._MUTATION_ASAT:
             process = subprocess.Popen(['txl', sourceFile, txlOperator[4], '-',
@@ -238,6 +263,17 @@ def generate_mutants(generation, memberNum, txlOperator, sourceFile, destDir):
                     stderr=errFile, cwd=config._PROJECT_DIR, shell=False)
             process.wait()
 
+          #outFile.seek(0)
+          #errFile.seek(0)
+          #output = outFile.read()
+          #error = errFile.read()
+          #outFile.close()
+          #errFile.close()
+          #logger.debug("Mutant generation, Output text:\n")
+          #logger.debug(output)
+          #logger.debug("Mutant generation, Error text:\n")
+          #logger.debug(error)
+
           counter += 1
 
       # "this" (as in synchronize(this)) is another variable we can use to generate
@@ -254,7 +290,7 @@ def generate_mutants(generation, memberNum, txlOperator, sourceFile, destDir):
     # 2. We have (class, variable) doubles
     elif static.do_we_have_merged_classVar():
 
-      #logger.debug("Case 1-2: Add sync operators with doubles")
+      logger.debug("Case 1-2: Add sync operators with doubles")
 
       # ASAT and ASM use syncVar (ASIM Doesn't)
       if txlOperator is config._MUTATION_ASAT or txlOperator is config._MUTATION_ASM:
@@ -266,6 +302,15 @@ def generate_mutants(generation, memberNum, txlOperator, sourceFile, destDir):
             syncVar = line[-1]
 
             mutantSource = sourceNameOnly + "_" + str(counter)
+
+            logger.debug("  '{}' '{}' '{}' '{}' '{}'".format(sourceFile, 
+              txlOperator[4], mutantSource + sourceExtOnly, txlDestDir, 
+              config._PROJECT_DIR))
+            logger.debug("  '{}' '{}' 'No method' '{}'".format(syncVar,
+              variableName, className))
+
+            outFile = tempfile.SpooledTemporaryFile()
+            errFile = tempfile.SpooledTemporaryFile()
 
             # Different operator when 2 args are available
             if txlOperator is config._MUTATION_ASAT:
@@ -290,7 +335,14 @@ def generate_mutants(generation, memberNum, txlOperator, sourceFile, destDir):
           variableName = line[-1]
           className = line[-2]
 
-          mutantSource = sourceNameOnly + "_" + str(counter)
+          outFile = tempfile.SpooledTemporaryFile()
+          errFile = tempfile.SpooledTemporaryFile()
+
+          logger.debug("  '{}' '{}' '{}' '{}' '{}'".format(sourceFile, 
+            txlOperator[4], sourceExtOnly, txlDestDir, 
+            config._PROJECT_DIR))
+          logger.debug("  {}' 'No method' '{}'".format(variableName, 
+            className))
 
           txlOpTwo = txlOperator[4].replace(".Txl", "_C.Txl")
           process = subprocess.Popen(['txl', sourceFile, txlOpTwo, '-',
@@ -315,36 +367,44 @@ def generate_mutants(generation, memberNum, txlOperator, sourceFile, destDir):
     # 3. We have no targeting information. Notice the use of the '_RND' TXL operators
     else:
 
-      #logger.debug("Case 1-3: Add sync operators with no targeting info (random)")
+      logger.debug("Case 1-3: Add sync operators with no targeting info (random)")
 
       # Random operator when no args are available
       # Change: /Users/kelk/workspace/arc/src/_txl/SHSB.Txl
       # To    : /Users/kelk/workspace/arc/src/_txl/SHSB_RND.Txl
       mutantSource = sourceNameOnly + "_" + str(counter)
 
+      logger.debug("  '{}' '{}' '{}' '{}' '{}'".format(sourceFile, 
+        txlOperator[4], mutantSource + sourceExtOnly, txlDestDir, 
+        config._PROJECT_DIR))
+
+      outFile = tempfile.SpooledTemporaryFile()
+      errFile = tempfile.SpooledTemporaryFile()
+
       # TODO: Can we generalize '-syncvar', '-this'
 
       # Different operator when 2 args are available
       if txlOperator is config._MUTATION_ASAT:
-        txlOpRnd = txlOperator[4].replace(".Txl", "_RND.Txl")
+        txlOpRnd = txlOperator[4].replace("ASAT.Txl", "ASAT_RND.Txl")
+        logger.debug("{} {} {} {} '{}'".format(txlOperator[4], sourceFile, txlOpRnd,
+          mutantSource+sourceExtOnly, txlDestDir, config._PROJECT_DIR))
         process = subprocess.Popen(['txl', sourceFile, txlOpRnd, '-',
-                '-outfile', mutantSource + sourceExtOnly, '-outdir', txlDestDir,
-                '-syncvar', 'this'], stdout=outFile, stderr=errFile,
-                cwd=config._PROJECT_DIR, shell=False)
+          '-outfile', mutantSource + sourceExtOnly, '-outdir', txlDestDir,
+          '-syncvar', 'this'], stdout=outFile, stderr=errFile, cwd=config._PROJECT_DIR, shell=False)
         process.wait()
       elif txlOperator is config._MUTATION_ASM:
         txlOpRnd = txlOperator[4].replace(".Txl", "_RND.Txl")
         process = subprocess.Popen(['txl', sourceFile, txlOpRnd, '-',
-                '-outfile', mutantSource + sourceExtOnly, '-outdir', txlDestDir,
-                '-syncvar', 'this'], stdout=outFile,
-                stderr=errFile, cwd=config._PROJECT_DIR, shell=False)
+          '-outfile', mutantSource + sourceExtOnly, '-outdir', txlDestDir,
+          '-syncvar', 'this'], stdout=outFile,
+          stderr=errFile, cwd=config._PROJECT_DIR, shell=False)
         process.wait()
       else: # ASIM
         txlOpRnd = txlOperator[4].replace(".Txl", "_RND.Txl")
         process = subprocess.Popen(['txl', sourceFile, txlOpRnd, '-',
-                '-outfile', mutantSource + sourceExtOnly, '-outdir', txlDestDir],
-                stdout=outFile,
-                stderr=errFile, cwd=config._PROJECT_DIR, shell=False)
+          '-outfile', mutantSource + sourceExtOnly, '-outdir', txlDestDir],
+          stdout=outFile,
+          stderr=errFile, cwd=config._PROJECT_DIR, shell=False)
         process.wait()
 
       counter += 1
@@ -353,7 +413,14 @@ def generate_mutants(generation, memberNum, txlOperator, sourceFile, destDir):
   #    used in concurrency.  (The txl invocation doesn't use the -class, etc.. args)
   else:
 
-    #logger.debug("Case 2: Non-add sync operator")
+    logger.debug("Case 2: Non-add sync operator")
+
+    logger.debug("  '{}' '{}' '{}' '{}' '{}'".format(sourceFile, 
+      txlOperator[4], sourceExtOnly, txlDestDir, 
+      config._PROJECT_DIR))
+
+    outFile = tempfile.SpooledTemporaryFile()
+    errFile = tempfile.SpooledTemporaryFile()
 
     process = subprocess.Popen(['txl', sourceFile, txlOperator[4], '-',
               '-outfile', sourceNameOnly + sourceExtOnly, '-outdir', txlDestDir],
@@ -428,10 +495,11 @@ def create_local_project(generation, memberNum, restart, switchGeneration=0):
   memberNum (int): Which member of the population we are dealing with
   restart (boolean): Do we want to reset the member project back to the pristine one?
   """
-
+  
   #logger.debug("Input arguments:  Gen: {}, Mem: {} and Restart: {}".format(generation, memberNum, restart))
 
   staticPart = os.sep + str(memberNum) + os.sep + 'project' + os.sep
+
   # If the indivudal is on the first or restarted, use the original (or switch gen for non-functional)
   if generation is 1 or restart:
     if switchGeneration > 0:
@@ -444,15 +512,14 @@ def create_local_project(generation, memberNum, restart, switchGeneration=0):
 
   destDir = config._TMP_DIR + str(generation) + staticPart
 
-  # logger.debug("clp srcDir:  ', srcDir, os.path.exists(srcDir)
-  # logger.debug("clp destDir: ', destDir,  os.path.exists(destDir)
-
-  #logger.debug("Creating local project:")
-  #logger.debug("\nSrc: {}\nDst: {}".format(srcDir, destDir))
+  #logger.debug("---------------------------")
+  #logger.debug("staticPart: {} {}".format(staticPart,  os.path.exists(destDir)))
+  #logger.debug("srcDir:     {} {}".format(srcDir, os.path.exists(srcDir)))
+  #logger.debug("destDir:    {} {}".format(destDir,  os.path.exists(destDir)))
 
   if os.path.exists(destDir):
     shutil.rmtree(destDir)
-  shutil.copytree(srcDir, destDir)
+  shutil.copytree(srcDir, destDir, ignore=ignore_patterns('java.*'))
 
 
 def copy_local_project_a_to_b(generationSrc, memberNumSrc, generationDst, memberNumDst):
@@ -463,8 +530,7 @@ def copy_local_project_a_to_b(generationSrc, memberNumSrc, generationDst, member
   generationSrc (int): Source generation
   memberNumSrc (int): Source member
   generationDst (int): Destination generation
-  memberNumDst (int): Destination member
-  """
+  memberNumDst (int): Destination member"""
 
   #logger.debug("Gen: {} Mem: {}  ->  Gen: {} Mem: {} ".format(generationSrc,
   #                              memberNumSrc, generationDst, memberNumDst))
@@ -496,48 +562,57 @@ def move_mutant_to_local_project(generation, memberNum, txlOperator, mutantNum):
   mutantNum (int): Mutant number selected from the mutant dir
   """
 
-  #logger.debug("Op: {} -> Gen: {} Mem: {} ".format(txlOperator, generation, memberNum))
+  logger.debug("Op: {} -> Gen: {} Mem: {} ".format(txlOperator, generation, memberNum))
 
   # Use the dictionary defined at the top of the file
+  # to find the DIRECTORY containing the mutant
   sourceDir = uniqueMutants[(generation, memberNum, txlOperator, mutantNum)]
+  
+  fileName = ''
+  # Find the FILE NAME of the mutant
+  for files in os.listdir(sourceDir):
+    if files.endswith(".java"):
+      fileName = files
+      break
 
-  pathNoFileName = os.path.split(os.path.split(sourceDir)[0])[0]
+  # Put together the full path of the source of the mutant    
+  sourceFile = sourceDir + os.sep + fileName
 
-  basePath = config._TMP_DIR + str(generation) + os.sep + str(memberNum)
+  # Put together the destination DIRECTORY of the mutant
+  baseDstPath = config._TMP_DIR + str(generation) + os.sep + str(memberNum)
+  relDstPath = config._PROJECT_SRC_DIR.replace(config._PROJECT_DIR, '')
+  dstPath = baseDstPath + os.sep + 'project' + os.sep + relDstPath
 
-  relPath = None
-
-  if (pathNoFileName != basePath):
-    relPath = pathNoFileName.replace(basePath, '')
-    relPath = os.path.split(relPath)[0] + os.sep
-
-  if relPath is None:
-    relPath = os.sep
-
-  for root, dirs, files in os.walk(sourceDir):
-      for aFile in files:
-        dst = basePath + os.sep + 'project' + relPath + aFile
-        sourceDir += os.sep + aFile
-        break
-
-  # Special handle for mutation operators that append _# to the filename
+  # For the destination file name, remove any ASAT_ prefix or
+  # _NN suffix
+  cleanFileName = fileName
   if txlOperator in ["ASAT", "ASM", "ASIM"]:
-    dst = re.sub("_\d+.java", ".java", dst)
+    cleanFileName = re.sub("_\d+.java", ".java", cleanFileName)
+    cleanFileName = cleanFileName.replace("ASAT_", "")
+    cleanFileName = cleanFileName.replace("ASM_", "")
+    cleanFileName = cleanFileName.replace("ASIM_", "")
+
+  # Full path of the destination of the mutant
+  dstFile = dstPath + cleanFileName
 
   #logger.debug("---------------------------")
-  #logger.debug("mmtlp txlOperator:    {}".format(txlOperator))
-  #logger.debug("mmtlp pathNoFileName: {}".format(pathNoFileName))
-  #logger.debug("mmtlp relPath:        {}".format(relPath))
-  #logger.debug("mmtlp src:            {}".format(sourceDir))
-  #logger.debug("mmtlp dst:            {}".format(dst))
+  #logger.debug("txlOperator:    {}".format(txlOperator))  
+  #logger.debug("sourceDir:     {}".format(sourceDir))
+  #logger.debug("fileName:       {}".format(fileName))
+  #logger.debug("sourceFile:     {}".format(sourceFile))  
+  #logger.debug("basePath:       {}".format(baseDstPath))
+  #logger.debug("relPath:        {}".format(relDstPath))
+  #logger.debug("dstPath:        {}".format(dstPath))
+  #logger.debug("cleanFileName:  {}".format(cleanFileName))  
+  #logger.debug("dstFile         {}".format(dstFile))
 
-  if not os.path.exists(dst):
-    os.makedirs(dst)
+  if not os.path.exists(dstPath):
+    os.makedirs(dstPath)
 
-  # logger.debug("Moving mutant to local project:")
+  #logger.debug("Moving mutant to local project:")
   #logger.debug("\nSrc: {} \nDst: {}".format(sourceDir, dst))
 
-  shutil.copy(sourceDir, dst)
+  shutil.copy(sourceFile, dstFile)
 
 
 def move_local_project_to_workarea(generation, memberNum):
@@ -559,27 +634,6 @@ def move_local_project_to_workarea(generation, memberNum):
   if os.path.exists(config._PROJECT_DIR):
     shutil.rmtree(config._PROJECT_DIR)
   shutil.copytree(srcDir, config._PROJECT_DIR)
-
-
-def move_best_project_to_output(generation, memberNum):
-  """At the end of the process, copy the correct mutant program to the output
-  directory
-
-  Attributes:
-  generation (int): Generation of the best solution
-  memberNum (int): Which member of the population
-  """
-
-  srcDir = (config._TMP_DIR + str(generation) + os.sep + str(memberNum) + os.sep \
-            + 'project' + os.sep)
-
-  logger.debug("Moving local project to output:")
-  logger.debug("\nSrc: {}\nDst: {}".format(srcDir, config._PROJECT_OUTPUT_DIR))
-
-  if os.path.exists(config._PROJECT_OUTPUT_DIR):
-    shutil.rmtree(config._PROJECT_OUTPUT_DIR)
-  shutil.copytree(srcDir, config._PROJECT_OUTPUT_DIR)
-
 
 def compile_project():
   """After the local project is copied to the work area, compile it."""
@@ -620,6 +674,28 @@ def compile_project():
     return False
   else:
     return True
+
+def move_best_project_to_output(generation, memberNum):
+  """At the end of the process, copy the correct mutant program to the output
+  directory
+
+  Attributes:
+  generation (int): Generation of the best solution
+  memberNum (int): Which member of the population
+  """
+
+  srcDir = (config._TMP_DIR + str(generation) + os.sep + str(memberNum) + os.sep \
+            + 'project' + os.sep)
+
+  logger.debug("Moving local project to output:")
+  logger.debug("\nSrc: {}\nDst: {}".format(srcDir, config._PROJECT_OUTPUT_DIR))
+
+  if os.path.exists(config._PROJECT_OUTPUT_DIR):
+    shutil.rmtree(config._PROJECT_OUTPUT_DIR)
+  shutil.copytree(srcDir, config._PROJECT_OUTPUT_DIR)
+
+
+
 
 # -----------------------------------------------------------------------------
 #

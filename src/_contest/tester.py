@@ -68,10 +68,12 @@ class Tester():
       # Start a test process
       if functional:
         process = subprocess.Popen(['java', '-Xmx{}m'.format(config._PROJECT_TEST_MB),
-          '-cp', config._PROJECT_CLASSPATH + ":" + config._JUNIT_JAR , '-javaagent:' + config._CONTEST_JAR,
-                    '-Dcontest.verbose=0',  'org.junit.runner.JUnitCore',
-                    config._PROJECT_TESTSUITE], stdout=outFile,
-                    stderr=errFile, cwd=config._PROJECT_DIR, shell=False)
+          '-XX:-UseSplitVerifier',
+          '-cp', config._PROJECT_CLASSPATH + ":" + config._JUNIT_JAR , 
+          '-javaagent:' + config._CONTEST_JAR,
+          '-Dcontest.verbose=0',  'org.junit.runner.JUnitCore',
+          config._PROJECT_TESTSUITE], stdout=outFile,
+          stderr=errFile, cwd=config._PROJECT_DIR, shell=False)
       else:
         # MAC uses a different time argument then Linux
         # http://developer.apple.com/library/mac/#documentation/Darwin/Reference/ManPages/man1/time.1.html
@@ -81,6 +83,7 @@ class Tester():
           timeArg = '-v'  # Linux-style
 
         process = subprocess.Popen(['/usr/bin/time', timeArg, 'java',
+                    '-XX:-UseSplitVerifier',
                     '-Xmx{}m'.format(config._PROJECT_TEST_MB), '-cp',
                     config._PROJECT_CLASSPATH + ":" + config._JUNIT_JAR, 'org.junit.runner.JUnitCore',
                     config._PROJECT_TESTSUITE],
@@ -230,11 +233,7 @@ class Tester():
               if config._OS is 'MAC':
                 userTime = re.search("user \s+ (\d+\.\d+)", error).groups()[0]
                 systemTime = re.search("sys \s+ (\d+\.\d+)", error).groups()[0]
-                # For some reason, when the process is invoked from within ARC, the
-                # voluntary context switches is always zero.  Is it something to do with
-                # the processes being sub-processes? Using involuntary in the meantime
-                # TODO: Investigate this
-                voluntarySwitches = re.search("(\d+)\s+ involuntary context switches", error).groups()[0]
+                voluntarySwitches = re.search("(\d+)\s+ voluntary context switches", error).groups()[0]
               else: # Linux
                 userTime = re.search("User time \(seconds\): (\d+\.\d+)", error).groups()[0]
                 systemTime = re.search("System time \(seconds\): (\d+\.\d+)", error).groups()[0]

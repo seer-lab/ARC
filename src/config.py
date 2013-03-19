@@ -7,7 +7,7 @@ variables that are set in this file and are used all throughout ARC.
 import logging
 
 # System variables
-_ROOT_DIR = "/Users/kelk/workspace/arc/"
+_ROOT_DIR = "/home/davidkelk/workspace/arc/"
 _MAX_MEMORY_MB = 2000
 _MAX_CORES = 2
 _TMP_DIR = _ROOT_DIR + "tmp/"
@@ -16,13 +16,14 @@ _JUNIT_JAR = _ROOT_DIR + "lib/junit-4.8.1.jar"
 _LOG_LEVEL = "DEBUG"  # {OFF,ERROR,WARN,INFO,DEBUG}
 _LOG_FILE = "log.txt"  # If None then use stdout, otherwise specify a file
 _RANDOM_SEED = None  # None means use the system time, non-zero is fixed
-_OS = "MAC"
+_OS = "LINUX"
 
 # Target project variables
 
 # Original project is placed in the input directory.
 # Invariant: This directory is read-only
 _PROJECT_PRISTINE_DIR = _ROOT_DIR + "input/"
+_PROJECT_PRISTINE_SRC_DIR = _PROJECT_PRISTINE_DIR + "source/"
 
 # Projects are compiled and tested in the workarea directory
 _PROJECT_DIR = _ROOT_DIR + "workarea/"
@@ -41,7 +42,7 @@ _PROJECT_CLASSPATH = None  # Automatically acquired using ant test if None
 _PROJECT_TEST_MB = 2000
 
 # Chord variables
-_CHORD_MAIN = "Bank"
+_CHORD_MAIN = "Main"
 _CHORD_COMMAND_LINE_ARGS = "out.txt little"
 
 _CHORD_DIR = _ROOT_DIR + "lib/Chord/"
@@ -95,7 +96,7 @@ _ONLY_FUNCTIONAL = True
 # Evolution variables
 _EVOLUTION_GENERATIONS = 30
 _EVOLUTION_POPULATION = 5
-_EVOLUTION_REPLACE_LOWEST_PERCENT = 20
+_EVOLUTION_REPLACE_LOWEST_PERCENT = 10
 _EVOLUTION_REPLACE_INTERVAL = 5  # Consider replacement on this generational interval
 _EVOLUTION_REPLACE_WEAK_MIN_TURNS = 3  # Min number of turns of underperforming before replacement
 _EVOLUTION_REPLACE_WITH_BEST_PERCENT = 75
