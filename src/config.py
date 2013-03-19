@@ -90,7 +90,7 @@ _ALL_MUTATIONS = [_MUTATION_ASAT, _MUTATION_ASIM,
 _RANDOM_MUTATION = False
 
 # Only perform functional phase
-_ONLY_FUNCTIONAL = False
+_ONLY_FUNCTIONAL = True
 
 # Evolution variables
 _EVOLUTION_GENERATIONS = 30

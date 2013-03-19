@@ -170,6 +170,8 @@ pages={29}
 }
 
 
+% Chord
+
 @inproceedings{NA07,
   author = {Naik, Mayur and Aiken, Alex},
   booktitle = {POPL '07 Proc. of the 34th annual ACM SIGPLAN-SIGACT symposium on Principles of programming languages},
@@ -409,15 +411,11 @@ pages={29}
  pages = {389--400},
 }
 
-% Chord
-
-@inproceedings{NA07,
-  title={Conditional must not aliasing for static race detection},
-  author={Naik, Mayur and Aiken, Alex},
-  booktitle={ACM SIGPLAN Notices},
-  volume={42},
-  number={1},
-  pages={327--338},
-  year={2007},
-  organization={ACM}
+@inproceedings{LZ12,
+  title={Axis: automatically fixing atomicity violations through solving control constraints},
+  author={Liu, Peng and Zhang, Charles},
+  booktitle={Proceedings of the 2012 International Conference on Software Engineering},
+  pages={299--309},
+  year={2012},
+  organization={IEEE Press}
 }
