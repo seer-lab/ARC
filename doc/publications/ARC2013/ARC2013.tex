@@ -269,7 +269,7 @@ A mutation may be beneficial, destructive or benign. We must evaluate it to dete
 ARC uses IBM's ConTest tool~\cite{EFN+02} to instrument the software under repair by injecting noise into the selection of interleavings. This causes threads to randomly delay at different times during execution, increasing the chance that different interleavings are explored. By running the instrumented version of the program multiple times we gain more confidence that a larger set of the interleavings are explored. Choosing the number of times ConTest run to test each proposed fix is the most crucial parameter in ARC.  Confidence in any proposed fix must be carefully balanced against the time required to find the fix.
 
 The number of successful ConTest executions are used to determine fitness:
-
+\newline
 \begin{footnotesize}
 \begin{center}
 $functional\ fitness(P) = (s \times sw) + (t \times tw)$
@@ -369,7 +369,7 @@ buffer & 319 & 5 & Data Race & No\\
 \end{center}
 \end{table}
 
-ARC is designed to be flexible. Table~\ref{tbl:used_parameters} describes the configuration options and values used in our evaluation. Parameter values are influenced by standards developed by the community (e.g., Evolution population, evolution gen.) and through experience gained using ARC (e.g., ConTest Runs, Validation Mult.). Of importance, the GA$\neg$C population size and generation size are both 30.  Every member at every generation is evaluated by being run through ConTest 10 times.  Any potential fix is evaluated 150 more times.
+ARC is designed to be flexible. Table~\ref{tbl:used_parameters} describes the configuration options and values used in our evaluation. Parameter values are influenced by standards developed by the community (e.g., Evolution population, evolution gen.) and through experience gained using ARC (e.g., ConTest Runs, Validation Mult.). Of importance, the GA$\neg$C population size and generation size are both 30.  Every member at every generation is evaluated by being run through ConTest 10 times.  Any potential fix is evaluated 150 more times. Testing was conducted on a Linux PC with a 2.33 GHz processor, 4 gigabytes of RAM running Linux Mint 13.
 
 % TODO Maybe reduce this to the commonGA parameters?
 \begin{table}[t!]
@@ -450,13 +450,12 @@ pingpong & 1 & 12m 32s
 
 Each program in Table~\ref{tbl:used_programs} was run through ARC 5 times using the parameters described in Table~\ref{tbl:used_parameters}. Results are summarized in Table~\ref{tbl:summary_results}. ARC was able to fix the 6 fixable programs and wasn't able to fix the 2 non-fixable. For the 6 repairable programs the time taken to find a fix ranged from about 2 minutes to 100 minutes. The most time consuming aspect of ARC is the numerous ConTest executions. Second is the waiting necessary to determine the difference between a successful execution and a timeout caused by a deadlock. The \textit{Timeout Multiplier} in Table~\ref{tbl:used_parameters} allows ARC to wait up to 20 times the instrumented execution time for the program to complete.
 
-%Almost all fixes are found in the first generation.  As none of the machinery of weighting operators is invoked, the search effectively degenerates to a random search.  Simply put, the synchronization bugs are too simple.  By targeting the specific classes, methods and variables used in concurrency the number of mutations is small and the solution are easily found.
-
+Almost all fixes are found in the first or second generation.  The static analysis by Chord and the dynamic analysis by ConTest significantly shrink the state space.  For example, the account program contains 3 classes, approx. 9 methods and 6 variables.  After the analysis, this is reduced to 2 classes, 3 methods and 3 variables.  A population of 30 may exceed the number of mutations available, leading to the search space probably being exhaustively covered.  If the correct program is 1 or 2 mutation steps from the incorrect one, it should be found quickly.  ARC works as a proof of concept and must be further evaluated -- more runs and on larger programs.
 
 \section{Threats to Validity}
 \label{sec:threats}
 
-The main threat to validity for our experimental evaluation of ARC is related to external validity -- our ability to generalize our results. Although we have used third-party programs in our experiment, all of them are small and are not representative of large-scale concurrent software. In the future, we plan to address this threat by conducting further experiments with larger open source concurrent software systems.
+The main threat to validity for our experimental evaluation of ARC is external validity -- our ability to generalize results. Although we have used third-party programs in our evaluation, all of them are small and are not representative of large-scale concurrent software. In the future, we plan to address this threat by conducting further experiments with larger concurrent software systems.
 
 \section{Related Works}
 \label{sec:related_works}
