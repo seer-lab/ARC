@@ -72,7 +72,6 @@ def mutate_project(generation, memberNum, mutationOperators):
   logger.debug("sourceDir:       {}".format(sourceDir))
   logger.debug("destDir:         {}".format(destDir))
 
-  
   recursively_mutate_project(generation, memberNum, sourceDir, destDir,
                              mutationOperators)
 
@@ -97,21 +96,12 @@ def recursively_mutate_project(generation, memberNum, sourceDir, destDir, mutati
   for root, dirs, files in os.walk(sourceDir):
     # Here we are interested in subdirectories only
     for sourceSubDir in dirs:
-
-      # Check to ensure the root is still within the dest dir
-      # Weird error that occurs only on > 1 generations (root sometimes lies
-      # outside of the actual sourceDir)
-      #if destDir in str(sourceDir) and generation is not 1:
       recursively_mutate_project(generation, memberNum, sourceSubDir, destDir, mutationOperators)
-      #elif generation is 1:
-      #  recursively_mutate_project(generation, memberNum, sourceSubDir,
-      #                             destDir, mutationOperators)
+
 
     for aFile in files:
       if ("." in aFile and aFile.split(".")[1] == "java"):
         sourceFile = os.path.join(root, aFile)
-
-
 
         generate_all_mutants(generation, memberNum, sourceFile, destDir,
                              mutationOperators)
@@ -223,56 +213,85 @@ def generate_mutants(generation, memberNum, txlOperator, sourceFile, destDir):
 
       logger.debug("Case 1-1: Add sync operators with triples")
 
-      for line in static.finalCMV:
-        syncVar = line[-1]
+      if txlOperator is config._MUTATION_ASAT or txlOperator is config._MUTATION_ASM:
 
         for line in static.finalCMV:
           variableName = line[-1]
           methodName = line[-2]
           className = line[-3]
 
+          for line in static.finalCMV:
+            syncVar = line[-1]
+            mutantSource = sourceNameOnly + "_" + str(counter)
+
+            logger.debug("  '{}' '{}' '{}' '{}' '{}'".format(sourceFile, 
+              txlOperator[4], mutantSource + sourceExtOnly, txlDestDir, 
+              config._PROJECT_DIR))
+            logger.debug("  '{}' {}' '{}' '{}'".format(syncVar, variableName, methodName, className))
+
+            outFile = tempfile.SpooledTemporaryFile()
+            errFile = tempfile.SpooledTemporaryFile()
+
+            if txlOperator is config._MUTATION_ASAT:
+              process = subprocess.Popen(['txl', sourceFile, txlOperator[4], '-',
+                      '-outfile', mutantSource + sourceExtOnly, '-outdir', txlDestDir,
+                      '-class', className, '-method', methodName, '-var', variableName,
+                      '-syncvar', syncVar], stdout=outFile, stderr=errFile,
+                      cwd=config._PROJECT_DIR, shell=False)
+              process.wait()
+
+            if txlOperator is config._MUTATION_ASM:
+              process = subprocess.Popen(['txl', sourceFile, txlOperator[4], '-',
+                      '-outfile', mutantSource + sourceExtOnly, '-outdir', txlDestDir,
+                      '-class', className, '-method', methodName,
+                      '-syncvar', syncVar], stdout=outFile, stderr=errFile,
+                      cwd=config._PROJECT_DIR, shell=False)
+              process.wait()
+
+              outFile.seek(0)
+              errFile.seek(0)
+              output = outFile.read()
+              error = errFile.read()
+              outFile.close()
+              errFile.close()
+              logger.debug("Mutant generation, Output text:\n")
+              logger.debug(output)
+              logger.debug("Mutant generation, Error text:\n")
+              logger.debug(error)
+
+              counter += 1
+ 
+      else: # txlOperator is config._MUTATION_ASIM:
+        for line in static.finalCMV:
+          variableName = line[-1]
+          methodName = line[-2]
+          className = line[-3] 
           mutantSource = sourceNameOnly + "_" + str(counter)
 
           logger.debug("  '{}' '{}' '{}' '{}' '{}'".format(sourceFile, 
             txlOperator[4], mutantSource + sourceExtOnly, txlDestDir, 
             config._PROJECT_DIR))
-          logger.debug("  '{}' '{}' '{}' '{}'".format(syncVar,
-            variableName, methodName, className))
+          logger.debug("   '{}' '{}' '{}'".format(variableName, methodName, className))
 
           outFile = tempfile.SpooledTemporaryFile()
           errFile = tempfile.SpooledTemporaryFile()
 
-          if txlOperator is config._MUTATION_ASAT:
-            process = subprocess.Popen(['txl', sourceFile, txlOperator[4], '-',
-                    '-outfile', mutantSource + sourceExtOnly, '-outdir', txlDestDir,
-                    '-class', className, '-method', methodName, '-var', variableName,
-                    '-syncvar', syncVar], stdout=outFile, stderr=errFile,
-                    cwd=config._PROJECT_DIR, shell=False)
-            process.wait()
-          elif txlOperator is config._MUTATION_ASM:
-            process = subprocess.Popen(['txl', sourceFile, txlOperator[4], '-',
-                    '-outfile', mutantSource + sourceExtOnly, '-outdir', txlDestDir,
-                    '-class', className, '-method', methodName,
-                    '-syncvar', syncVar], stdout=outFile, stderr=errFile,
-                    cwd=config._PROJECT_DIR, shell=False)
-            process.wait()
-          else: # ASIM
-            process = subprocess.Popen(['txl', sourceFile, txlOperator[4], '-',
-                    '-outfile', mutantSource + sourceExtOnly, '-outdir', txlDestDir,
-                    '-class', className, '-method', methodName], stdout=outFile,
-                    stderr=errFile, cwd=config._PROJECT_DIR, shell=False)
-            process.wait()
+          process = subprocess.Popen(['txl', sourceFile, txlOperator[4], '-',
+                  '-outfile', mutantSource + sourceExtOnly, '-outdir', txlDestDir,
+                  '-class', className, '-method', methodName], stdout=outFile,
+                  stderr=errFile, cwd=config._PROJECT_DIR, shell=False)
+          process.wait()
 
-          #outFile.seek(0)
-          #errFile.seek(0)
-          #output = outFile.read()
-          #error = errFile.read()
-          #outFile.close()
-          #errFile.close()
-          #logger.debug("Mutant generation, Output text:\n")
-          #logger.debug(output)
-          #logger.debug("Mutant generation, Error text:\n")
-          #logger.debug(error)
+          outFile.seek(0)
+          errFile.seek(0)
+          output = outFile.read()
+          error = errFile.read()
+          outFile.close()
+          errFile.close()
+          logger.debug("Mutant generation, Output text:\n")
+          logger.debug(output)
+          logger.debug("Mutant generation, Error text:\n")
+          logger.debug(error)
 
           counter += 1
 
@@ -335,14 +354,16 @@ def generate_mutants(generation, memberNum, txlOperator, sourceFile, destDir):
           variableName = line[-1]
           className = line[-2]
 
-          outFile = tempfile.SpooledTemporaryFile()
-          errFile = tempfile.SpooledTemporaryFile()
-
+          mutantSource = sourceNameOnly + "_" + str(counter)
+          
           logger.debug("  '{}' '{}' '{}' '{}' '{}'".format(sourceFile, 
             txlOperator[4], sourceExtOnly, txlDestDir, 
             config._PROJECT_DIR))
           logger.debug("  {}' 'No method' '{}'".format(variableName, 
             className))
+
+          outFile = tempfile.SpooledTemporaryFile()
+          errFile = tempfile.SpooledTemporaryFile()
 
           txlOpTwo = txlOperator[4].replace(".Txl", "_C.Txl")
           process = subprocess.Popen(['txl', sourceFile, txlOpTwo, '-',

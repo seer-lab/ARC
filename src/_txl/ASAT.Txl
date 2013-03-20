@@ -1,6 +1,8 @@
 %***********************************************************
 % ASAT (Add Sync Around Statement) Mutator for ARC
 % (Automatic Repair of Concurrency Bugs)
+% -var: A statement must contain var for it to be synchronized
+% -syncvar: Synchronization variable synchronized(syncvar)
 %
 % David Kelk, Kevin Jalbert and Jeremy Bradbury
 %
