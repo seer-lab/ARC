@@ -65,12 +65,12 @@ def mutate_project(generation, memberNum, mutationOperators):
     sourceDir = (config._TMP_DIR + str(generation - 1) + os.sep + str(memberNum) \
                 + os.sep + 'project' + os.sep)
 
-  logger.debug("---------------------------")
-  logger.debug("generation:      {}".format(generation))
-  logger.debug("member num:      {}".format(memberNum))
+  #logger.debug("---------------------------")
+  #logger.debug("generation:      {}".format(generation))
+  #logger.debug("member num:      {}".format(memberNum))
   #logger.debug("operators:       {}".format(mutationOperators))  
-  logger.debug("sourceDir:       {}".format(sourceDir))
-  logger.debug("destDir:         {}".format(destDir))
+  #logger.debug("sourceDir:       {}".format(sourceDir))
+  #logger.debug("destDir:         {}".format(destDir))
 
   recursively_mutate_project(generation, memberNum, sourceDir, destDir,
                              mutationOperators)
@@ -204,14 +204,14 @@ def generate_mutants(generation, memberNum, txlOperator, sourceFile, destDir):
   if txlOperator is config._MUTATION_ASAT or txlOperator is config._MUTATION_ASM \
     or txlOperator is config._MUTATION_ASIM:
 
-    logger.debug("Case 1: Add sync operators")
+    #logger.debug("Case 1: Add sync operators")
 
     counter = 1
 
     # 1. We have (class, method, variable) triples
     if static.do_we_have_triples():
 
-      logger.debug("Case 1-1: Add sync operators with triples")
+      #logger.debug("Case 1-1: Add sync operators with triples")
 
       if txlOperator is config._MUTATION_ASAT or txlOperator is config._MUTATION_ASM:
 
@@ -224,10 +224,10 @@ def generate_mutants(generation, memberNum, txlOperator, sourceFile, destDir):
             syncVar = line[-1]
             mutantSource = sourceNameOnly + "_" + str(counter)
 
-            logger.debug("  '{}' '{}' '{}' '{}' '{}'".format(sourceFile, 
-              txlOperator[4], mutantSource + sourceExtOnly, txlDestDir, 
-              config._PROJECT_DIR))
-            logger.debug("  '{}' {}' '{}' '{}'".format(syncVar, variableName, methodName, className))
+            #logger.debug("  '{}' '{}' '{}' '{}' '{}'".format(sourceFile, 
+            #  txlOperator[4], mutantSource + sourceExtOnly, txlDestDir, 
+            #  config._PROJECT_DIR))
+            #logger.debug("  '{}' {}' '{}' '{}'".format(syncVar, variableName, methodName, className))
 
             outFile = tempfile.SpooledTemporaryFile()
             errFile = tempfile.SpooledTemporaryFile()
@@ -248,16 +248,16 @@ def generate_mutants(generation, memberNum, txlOperator, sourceFile, destDir):
                       cwd=config._PROJECT_DIR, shell=False)
               process.wait()
 
-              outFile.seek(0)
-              errFile.seek(0)
-              output = outFile.read()
-              error = errFile.read()
-              outFile.close()
-              errFile.close()
-              logger.debug("Mutant generation, Output text:\n")
-              logger.debug(output)
-              logger.debug("Mutant generation, Error text:\n")
-              logger.debug(error)
+              #outFile.seek(0)
+              #errFile.seek(0)
+              #output = outFile.read()
+              #error = errFile.read()
+              #outFile.close()
+              #errFile.close()
+              #logger.debug("Mutant generation, Output text:\n")
+              #logger.debug(output)
+              #logger.debug("Mutant generation, Error text:\n")
+              #logger.debug(error)
 
               counter += 1
  
@@ -282,34 +282,23 @@ def generate_mutants(generation, memberNum, txlOperator, sourceFile, destDir):
                   stderr=errFile, cwd=config._PROJECT_DIR, shell=False)
           process.wait()
 
-          outFile.seek(0)
-          errFile.seek(0)
-          output = outFile.read()
-          error = errFile.read()
-          outFile.close()
-          errFile.close()
-          logger.debug("Mutant generation, Output text:\n")
-          logger.debug(output)
-          logger.debug("Mutant generation, Error text:\n")
-          logger.debug(error)
+          #outFile.seek(0)
+          #errFile.seek(0)
+          #output = outFile.read()
+          #error = errFile.read()
+          #outFile.close()
+          #errFile.close()
+          #logger.debug("Mutant generation, Output text:\n")
+          #logger.debug(output)
+          #logger.debug("Mutant generation, Error text:\n")
+          #logger.debug(error)
 
           counter += 1
-
-      # "this" (as in synchronize(this)) is another variable we can use to generate
-      # mutants.  Note it's indentation: It is not in the for-loop
-      #mutantSource = sourceNameOnly + "_" + str(counter)
-
-      # Use the mutation with the 'this' object: synchronize(this)
-      #process = subprocess.Popen(['txl', sourceFile, txlOperator[4], '-',
-      #          '-outfile', mutantSource + sourceExtOnly, '-outdir', txlDestDir,
-      #          '-class', className, '-var', 'this'],
-      #            stdout=outFile, stderr=errFile, cwd=config._PROJECT_DIR, shell=False)
-      #process.wait()
 
     # 2. We have (class, variable) doubles
     elif static.do_we_have_merged_classVar():
 
-      logger.debug("Case 1-2: Add sync operators with doubles")
+      #logger.debug("Case 1-2: Add sync operators with doubles")
 
       # ASAT and ASM use syncVar (ASIM Doesn't)
       if txlOperator is config._MUTATION_ASAT or txlOperator is config._MUTATION_ASM:
@@ -356,11 +345,11 @@ def generate_mutants(generation, memberNum, txlOperator, sourceFile, destDir):
 
           mutantSource = sourceNameOnly + "_" + str(counter)
           
-          logger.debug("  '{}' '{}' '{}' '{}' '{}'".format(sourceFile, 
-            txlOperator[4], sourceExtOnly, txlDestDir, 
-            config._PROJECT_DIR))
-          logger.debug("  {}' 'No method' '{}'".format(variableName, 
-            className))
+          #logger.debug("  '{}' '{}' '{}' '{}' '{}'".format(sourceFile, 
+          #  txlOperator[4], sourceExtOnly, txlDestDir, 
+          #  config._PROJECT_DIR))
+          #logger.debug("  {}' 'No method' '{}'".format(variableName, 
+          #  className))
 
           outFile = tempfile.SpooledTemporaryFile()
           errFile = tempfile.SpooledTemporaryFile()
@@ -374,30 +363,19 @@ def generate_mutants(generation, memberNum, txlOperator, sourceFile, destDir):
 
           counter += 1
 
-      # "this" (as in synchronize(this)) is another variable we can use to generate
-      # mutants.  Note it's indentation: It is not in the for-loop
-      #mutantSource = sourceNameOnly + "_" + str(counter)
-
-      # Use the mutation with the 'this' object: synchronize(this)
-      #process = subprocess.Popen(['txl', sourceFile, txlOperator[4], '-',
-      #          '-outfile', mutantSource + sourceExtOnly, '-outdir', txlDestDir,
-      #          '-class', className, '-var', 'this'],
-      #            stdout=outFile, stderr=errFile, cwd=config._PROJECT_DIR, shell=False)
-      #process.wait()
-
     # 3. We have no targeting information. Notice the use of the '_RND' TXL operators
     else:
 
-      logger.debug("Case 1-3: Add sync operators with no targeting info (random)")
+      #logger.debug("Case 1-3: Add sync operators with no targeting info (random)")
 
       # Random operator when no args are available
       # Change: /Users/kelk/workspace/arc/src/_txl/SHSB.Txl
       # To    : /Users/kelk/workspace/arc/src/_txl/SHSB_RND.Txl
       mutantSource = sourceNameOnly + "_" + str(counter)
 
-      logger.debug("  '{}' '{}' '{}' '{}' '{}'".format(sourceFile, 
-        txlOperator[4], mutantSource + sourceExtOnly, txlDestDir, 
-        config._PROJECT_DIR))
+      #logger.debug("  '{}' '{}' '{}' '{}' '{}'".format(sourceFile, 
+      #  txlOperator[4], mutantSource + sourceExtOnly, txlDestDir, 
+      #  config._PROJECT_DIR))
 
       outFile = tempfile.SpooledTemporaryFile()
       errFile = tempfile.SpooledTemporaryFile()
@@ -434,11 +412,11 @@ def generate_mutants(generation, memberNum, txlOperator, sourceFile, destDir):
   #    used in concurrency.  (The txl invocation doesn't use the -class, etc.. args)
   else:
 
-    logger.debug("Case 2: Non-add sync operator")
+    #logger.debug("Case 2: Non-add sync operator")
 
-    logger.debug("  '{}' '{}' '{}' '{}' '{}'".format(sourceFile, 
-      txlOperator[4], sourceExtOnly, txlDestDir, 
-      config._PROJECT_DIR))
+    #logger.debug("  '{}' '{}' '{}' '{}' '{}'".format(sourceFile, 
+    #  txlOperator[4], sourceExtOnly, txlDestDir, 
+    #  config._PROJECT_DIR))
 
     outFile = tempfile.SpooledTemporaryFile()
     errFile = tempfile.SpooledTemporaryFile()

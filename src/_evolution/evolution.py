@@ -264,6 +264,18 @@ def evolve(generation=0, worstScore=0):
       deadlockVotes, dataraceVotes, nonFunctionalVotes = adjust_operator_weighting(generation)
 
 
+def check_has_mutations():
+  checkInd = -1
+  mutantsExist = False
+  for mutationOp in mutationOperators:
+    if mutationOp[1]:
+      checkInd += 1
+      if len(individual.genome[checkInd]) != 0:
+        mutantsExist = True  
+  
+  return mutantsExist
+
+
 def mutation(individual, deadlockVotes, dataraceVotes, nonFunctionalVotes):
   """A mutator for the individual using single mutation with feedback."""
 
@@ -283,47 +295,29 @@ def mutation(individual, deadlockVotes, dataraceVotes, nonFunctionalVotes):
   # (Generates all mutations for the individual)
   individual.repopulateGenome(_functionalPhase)
 
-  # Definite check to see if ANY mutants exists for an individual
-  checkInd = -1
-  mutantsExist = False
-  for mutationOp in mutationOperators:
-    if mutationOp[1]:
-      checkInd += 1
-      if len(individual.genome[checkInd]) != 0:
-        mutantsExist = True
-
+  # Check if individual has mutations
   # If no mutants exist, reset and re-attempt mutation
-
-  if not mutantsExist:
+  if not check_has_mutations:
     logger.debug("No possible mutations for individual")
 
     # If in non-functional phase then this individual is done
     if not _functionalPhase:
       return False
 
-    # Repopulate the individual's genome with new possible mutation locations
-    # (Reset this member back to the pristine project)
-    txl_operator.create_local_project(individual.generation, individual.id,
-                                    True)
+    # Reset to pristine
+    txl_operator.create_local_project(individual.generation, individual.id, True)
     # Generates all mutations for the pristine individual
     individual.repopulateGenome(_functionalPhase)
 
-    # Definite check to see if ANY mutants exists for an individual
-    checkInd = -1
-    mutantsExist = False
-    for mutationOp in mutationOperators:
-      if mutationOp[1]:
-        checkInd += 1
-        if len(individual.genome[checkInd]) != 0:
-          mutantsExist = True
-
-    # If mutants don't exist still then pristine project has a problem
-    if not mutantsExist:
+    # Check again for mutations
+    # If mutants still don't exist, the pristine project has a problem
+    if not check_has_mutations:
       logger.error("A restarted individual has no mutations... terminating")
       raise Exception("No mutations in Functional Phase on pristine project")
 
   # Pick a mutation operator to apply
-  limit = 100  # Number of attempts to find a valid mutation
+  limit = 50  # Number of attempts to find a valid mutation
+              # Counts down from 20 to 0            
   successfulCompile = False
 
   # Hold attempted mutations (operatorIndex[mut#]), so we do not retry them
@@ -337,8 +331,9 @@ def mutation(individual, deadlockVotes, dataraceVotes, nonFunctionalVotes):
       attemptedMutations[operatorIndex] = set()
 
   # Keep trying to find a successful mutant within the retry limits
-  while limit is not 0 and not successfulCompile:
-    # Acquire operator, one of config._MUTATIONS (ASAT, ...)
+  while limit > 0 and not successfulCompile:
+    logger.debug("Compilation limit (decreasing): {}".format(limit))
+    # Acquire operator type, one of config._MUTATIONS (ASAT, ...)
     selectedOperator = feedback_selection(individual,
       deadlockVotes, dataraceVotes, nonFunctionalVotes)
 
@@ -354,10 +349,11 @@ def mutation(individual, deadlockVotes, dataraceVotes, nonFunctionalVotes):
     # The continue here is for efficiency sake
     if len(individual.genome[operatorIndex]) == 0:
       #logger.debug("No mutations at operatorIndex {}".format(operatorIndex))
+      limit -= 1
+      logger.debug("Limit: No mutants for selected operator")
       continue
 
-    txl_operator.create_local_project(individual.generation,
-                                      individual.id, False)
+    #txl_operator.create_local_project(individual.generation, individual.id, False)
 
     # Make it so we do not try the same mutation over and over
     # TODO Could refactor this to work backwards from a set of mutants instead
@@ -381,18 +377,18 @@ def mutation(individual, deadlockVotes, dataraceVotes, nonFunctionalVotes):
 
     # Move to another operator as this one has nothing left to mutate
     if randomMutant is None:
+      limit -= 1
+      logger.debug("Limit: Ran out of mutants of the operator type")
       continue
 
-    txl_operator.create_local_project(individual.generation,
-                                      individual.id, False)
+    # Create the project, add the mutant
+    txl_operator.create_local_project(individual.generation, individual.id, False)
 
-    txl_operator.move_mutant_to_local_project(individual.generation,
-                                              individual.id,
+    txl_operator.move_mutant_to_local_project(individual.generation, individual.id,
                                               selectedOperator[0], randomMutant + 1)
 
     # Move the local project to the target's source
-    txl_operator.move_local_project_to_workarea(individual.generation,
-                                                individual.id)
+    txl_operator.move_local_project_to_workarea(individual.generation, individual.id)
 
     logger.debug("Attempting to compile...")
 
@@ -409,10 +405,16 @@ def mutation(individual, deadlockVotes, dataraceVotes, nonFunctionalVotes):
       individual.genome[operatorIndex][randomMutant] = 1
     else:
       limit -= 1
-      logger.debug("Compiling failed, retrying another mutation")
+      logger.debug("Limit: Compiling failed, retrying another mutation")
 
   # Return true if successful, otherwise false (returned to pristine state)
-  if not successfulCompile:
+  if successfulCompile:
+    logger.debug("Selected operator for Individual {} at generation {}: {}, number {}".
+    format(individual.id, individual.generation, selectedOperator[0], randomMutant + 1))
+    return True  
+  else:    
+    # If we weren't able to compile a mutant project, reset it to the pristine and leave
+    # it for this generation. We'll try again next generation to do something with it.
     logger.debug("Couldn't create a compilable mutant project. Resetting to the pristine project/bestIndividual.")
     if _functionalPhase:
       txl_operator.create_local_project(individual.generation, individual.id, True)
@@ -425,10 +427,6 @@ def mutation(individual, deadlockVotes, dataraceVotes, nonFunctionalVotes):
     individual.appliedOperators.append(None)
 
     return False
-  else:
-    logger.debug("Selected operator for Individual {} at generation {}: {}, number {}".
-    format(individual.id, individual.generation, selectedOperator[0], randomMutant + 1))
-    return True
 
 
 def evaluate(individual, worstScore):

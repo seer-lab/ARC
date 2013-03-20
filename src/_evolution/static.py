@@ -118,7 +118,7 @@ def did_chord_find_dataraces():
     return False
 
   # Back up the file
-  shutil.copy2(URL, config._TMP_DIR)
+  shutil.copy2(URL, os.path.join(config._TMP_DIR, 'dataraces_by_fld.html'))
 
   # A HTML page with 0 data races in it is 1,174 bytes in size. (For Chord 2.1)
   # (Attempts to find deadlocks resulted in 500MB files which were unuseable.)
