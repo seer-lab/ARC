@@ -80,18 +80,22 @@ A common problem for automatic bug repair techniques is the size of the search s
 
 %  Note that the framework is general enough to fix additional kinds of concurrency bugs and work on other programming languages. This evaluation is limited to fixing deadlocks and data races in Java programs.
 
-Next in Section~\ref{sec:background} we cover background material related to concurrency and genetic algorithms. The motivation for ARC along with an example problem are presented in Section~\ref{sec:motivation}. In Section~\ref{sec:Phase1Functional} we describes how ARC evolves fixes for data races and deadlocks (Phase 1). Improving nonfunctioal properties of the program, such as its execution time (Phase 2), is described in Section~\ref{sec:Phase2Nonfunctional}. We evaluate ARC in Section~\ref{sec:experiments} on a set of programs from the IBM concurrency benchmark~\cite{HSU03, EU04, ETU08}. Threats to validity are discussed in Section~\ref{sec:threats}. In Section~\ref{sec:related_works} we discuss related works in the field of automatic program repair and explain how ARC is novel when compared to previous approaches. Finally, we conclude and present future work in Section~\ref{sec:conclusion}.
+Next in Section~\ref{sec:background} we cover background material related to concurrency bugs and genetic algorithms. The motivation for ARC along with an example problem are presented in Section~\ref{sec:motivation}. In Section~\ref{sec:Phase1Functional} we describes how ARC evolves fixes for data races and deadlocks (Phase 1). Improving nonfunctioal properties of the program, such as its execution time (Phase 2), is described in Section~\ref{sec:Phase2Nonfunctional}. We evaluate ARC in Section~\ref{sec:experiments} on a set of programs from the IBM concurrency benchmark~\cite{HSU03, EU04, ETU08}. Threats to validity are discussed in Section~\ref{sec:threats}. In Section~\ref{sec:related_works} we discuss related works in the field of automatic program repair and explain how ARC is novel when compared to previous approaches. Finally, we conclude and present future work in Section~\ref{sec:conclusion}.
 
 \section{Background}
 \label{sec:background}
 
 % TODO Possibly trim this sub-section?
-%\subsection{Concurrency Bugs}
-%\label{sec:concurrency}
+\subsection{Concurrency Bugs}
+\label{sec:concurrency}
 
-%Data races and deadlocks are two of the most common concurrency bugs. A \textbf{data race} can be defined as: \textit{``\ldots two or more concurrent threads access a shared variable and when at least one access is a write, and the threads use no explicit mechanism to prevent the access from being simultaneous.''}~\cite{LSW07}. A \textbf{deadlock} can be defined as: \textit{``\ldots a situation where two or more processes are unable to proceed because each is waiting for one of the others to do something in a deadlock cycle \ldots} For example, a deadlock can occur when one thread in a program holds a lock that another thread desires and vice-versa''~\cite{LSW07}.
+Data races and deadlocks are two of the most common concurrency bugs. A \textbf{data race} can be defined as: \textit{``\ldots two or more concurrent threads access a shared variable and when at least one access is a write, and the threads use no explicit mechanism to prevent the access from being simultaneous.''}~\cite{LSW07}. A \textbf{deadlock} can be defined as: \textit{``\ldots a situation where two or more processes are unable to proceed because each is waiting for one of the others to do something in a deadlock cycle \ldots} For example, a deadlock can occur when one thread in a program holds a lock that another thread desires and vice-versa''~\cite{LSW07}. 
 
-%Improper synchronization in concurrent Java programs allows data races and deadlocks to occur.  These bugs are extremely difficult to detect due to the non-deterministic nature of how threads are interleaved (i.e., the way the system schedules threads). Various techniques are available to detect concurrency bugs such as static analysis~\cite{NA07,NPSG09,HP04}, stress testing~\cite{HSU03}, dynamic analysis~\cite{JNPS09,EFN+02}, and model checking~\cite{BHPV00,RDH03,OM03,MQB07,Holz97,JM04,HP00}.
+Both data races and deadlocks are difficult to detect due to the non-deterministic nature of how threads are interleaved (i.e., the way the system schedules threads). Various techniques are available to detect concurrency bugs such as static analysis~\cite{NA07,NPSG09,HP04}, testing and dynamic analysis~\cite{EFN+02, HSU03, JNPS09}, and model checking~\cite{BHPV00,RDH03,OM03,MQB07,JM04,HP00}.
+
+
+%Improper synchronization in concurrent Java programs allows data races and deadlocks to occur.  
+
 
 
 \subsection{Genetic Algorithms}
@@ -104,7 +108,7 @@ ARC uses a genetic algorithm without crossover (GA$\neg$C) and selection. A popu
 %Initially we rejected the use of crossover because of fears it would create mismatching synchronization blocks.  Upon reflection we believe this was a mistake.  We are looking at adding crossover to a future version of ARC.
 
 
-\section{Motivation}
+\section{Motivating Example}
 \label{sec:motivation}
 
 \begin{figure}[t!]
