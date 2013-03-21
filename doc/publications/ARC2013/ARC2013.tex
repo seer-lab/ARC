@@ -467,24 +467,47 @@ Almost all fixes are found in the first or second generation.  The static analys
 
 The main threat to validity for our experimental evaluation of ARC is external validity -- our ability to generalize results. Although we have used third-party programs in our evaluation, all of them are small and are not representative of large-scale concurrent software. In the future, we plan to address this threat by conducting further experiments with larger concurrent software systems.
 
-\section{Related Works}
+\section{Related Work}
 \label{sec:related_works}
 
-Several approaches to sequential program repair have been proposed in the literature. For example, co-evolutionary competition between programs with bugs and between test cases~\cite{AY08, Arc08, WT10}. These approaches require formal specifications and use genetic programming to evolve fixes. Alternatively the work in requires no formal specifications. Instead, test cases are used to demonstrate the bug and describe the desired functionality that must be preserved. To address the limitations of the previous approach they introduce two innovations: First, they assume the bug is written correctly in another part of the program. Second, they determine the error path on which the bug occurs and target those statements specifically for repair. Together these additions constrain the state space enough that the framework can fix real bugs in real programs~\cite{FNWG09, WNLF09, NWLF09, WFGN10, GNFW11, LDFW12}.
+With respect to related work we will now discuss two areas of research: the use of SBSE to repair sequential bugs and the existing work on healing and fixing concurrency bugs.
 
-For concurrent programs, there are several examples of related work. Similar to the work done here, ConTest is used to heal data races~\cite{KLT+07, LVK08}. Healing a program is not the same as repairing a program -- \textit{``The healing techniques based on influencing the scheduling do not guarantee that a detected problem will really be completely removed, but they can decrease the probability of its manifestation.''}~\cite{LVK08}. SAT solving~\cite{AY07}  is used to repair shared memory concurrent programs where processes atomically read and write one shared variable at a time. This work requires the concurrent program and a formal temporal logic specification. 
+\subsection{Sequential Bug Repair}
 
-AFix~\cite{JSZL+11} is a framework for fixing single-variable atomicity violations. This approach combines dynamic bug analysis, patch creation and merging and dynamic testing. It is limited to manipulates mutex locks, works only with CTrigger and offers no guarantees of correctness.  They must use noising and dynamic analysis to determine if any deadlocks remain.  
-Others have reported, \begin{quote}``Our evaluation of AFix on large real systems also shows that the AFix sometimes incurs the degraded performance and, worse, frequent deadlocks.~\cite{LZ12}''\end{quote}. Axis~\cite{LZ12} uses a branch discrete control theory called supervision based on place invariants to fix any number of correlated atomicity violations with minimal harm to concurrency. Their approach doesn't appear to be able to fix deadlocks though, as they state,  \begin{quote}``... guarantee that, if the original program is deadlock-free, our solution does not cause the patched program to deadlock~\cite{LZ12}.''\end{quote}
+Several approaches to sequential program repair have been proposed in the literature. For example, Arcuri and Yao as well as Wilkerson and Tauritz use co-evolutionary competition between programs with bugs (or between test cases)~\cite{AY08, Arc08, WT10}.  Both of these approaches require formal specifications and use genetic programming to evolve fixes. 
+
+Alternatively GenProg is another approach to sequential program repair but requires no formal specifications~\cite{FNWG09}. Instead, GenProg uses test cases to demonstrate a bug and describe the desired functionality that must be preserved. To address the limitations of the previous approach GenProg introduces two innovative features:
+
+\begin{enumerate}
+\item It assumes the bug is written correctly in another part of the program.
+\item It determines the error path on which the bug occurs and target only those statements  for repair. 
+\end{enumerate}
+
+Together these additions constrain the state space enough that the framework can fix real bugs in real programs~\cite{FNWG09, WNLF09, NWLF09, WFGN10, GNFW11, LDFW12}.
+
+\subsection{Concurrency Bug Repair}
+
+For concurrent programs, there are several examples of related work. One example is the use of ConTest to heal data races~\cite{KLT+07, LVK08}. Healing a program is not the same as repairing a program -- \textit{``The healing techniques based on influencing the scheduling do not guarantee that a detected problem will really be completely removed, but they can decrease the probability of its manifestation''}~\cite{LVK08}. 
+
+Another example is the use of SAT solving to repair shared memory concurrent programs where processes atomically read and write one shared variable at a time~\cite{AY07}. This work requires the concurrent program and a formal temporal logic specification. 
+
+AFix~\cite{JSZL+11} is a framework for fixing single-variable atomicity violations in C++ programs. This approach combines dynamic bug analysis, patch creation and merging and dynamic testing. One limitation of AFix is that it only considers bug ides that involve manipulating mutex locks. We can not compare AFix with ARC because AFix work only on C++ programs which ARC works only on Java programs. Our analysis of the bugs capable of being fixed by AFix and ARC indicates that ARC can be applied to a wider variety of bugs and bug combinations (i.e., programs with different kinds of concurrency bugs present) and ARC offers a wider variety of possible bug fixes. Others have evaluated AFix and reported that, \textit{``Our evaluation of AFix on large real systems also shows that the AFix sometimes incurs the degraded performance and, worse, frequent deadlocks"}~\cite{LZ12}. 
+
+Finally, Axis~\cite{LZ12} is another concurrency bug repair tool that uses a branch discrete control theory called supervision based on place invariants to fix any number of correlated atomicity violations with minimal harm to concurrency. The Axis approach does not appear to be able to fix deadlocks, as the authors state, \textit{``... guarantee that, if the original program is deadlock-free, our solution does not cause the patched program to deadlock"}~\cite{LZ12}.
 
 \section{Conclusions and Future Work}
 \label{sec:conclusion}
 
-We've introduced ARC, a framework to automatically repair deadlocks and data races in concurrent Java programs. Experiments were conducted to evaluate ARC using a set of 8 programs drawn from the IBM concurrency benchmark. ARC was able to fix the data races and deadlocks in all 6 of the fixable programs.
+In this paper we have introduced ARC, a framework to automatically repair deadlocks and data races in concurrent Java programs. The goal of ARC is not only to ensure that a concurrency bug is repair but also to maximize the performance of the program once the bug has been fixed. To achieve this goal ARC consists of two phases: 
 
-Although ARC was successful with the set of small programs from the IBM concurrency benchmark we still need to evaluate ARC's scalability on larger open source projects. In addition to scalability. To maximize the efficient use of ConTest we plan to explore different heuristics for seeding noise and different optimizations supported by ConTest~\cite{KLVU10}.
+\begin{enumerate}
+\item \emph{Phase 1:} a bug repair phase that employs a genetic algorithm without crossover to mutate an incorrect program, searching for a variant of the original program that fixes the deadlocks and data races.
+\item \emph{Phase 2:} an optimization phase attempts to optimize the concurrent source code by removing any excess synchronization without sacrificing program correctness. Excess and unneeded synchronization may be introduced in Phase 1 and can negatively affect performance.
+\end{enumerate}
 
-Finally, we plan to experiment with new mutation operators. Potential additions include splitting or merging synchronization blocks and adding new locks. Through experimentation we plan to optimize the existing set of mutation operators to maximize their capabilities.  Furthermore, we would like to expand ARC's operators to deal with new anti-patterns~\cite{BJ09, FKLV12, BCD06} and give ARC the ability to fix additional types of bugs.
+To evaluate ARC, we conducted experiments  using a set of 8 programs from the IBM concurrency benchmark. ARC was able to fix the data races and deadlocks in all 6 of the fixable programs. Although ARC was successful with the set of programs from the IBM concurrency benchmark we still need to evaluate ARC's scalability on larger open source projects. To assist with scalability we plan to leverage some of the different heuristics for seeding noise and different optimizations supported by ConTest~\cite{KLVU10}. These optimizations will hopefully reduce the testing time required to evaluate variants of the original program that are produced during both of ARC's phases.
+
+Finally, we plan to further investigate the mutation operators used to repair concurrency bugs in ARC. Through experimentation we plan to optimize the existing set of mutation operators to maximize their capabilities while removing unnecessary operators.  We also plan to experiment with new mutation operators that will increase the set of possible bug fixes. Potential additions to our current set of mutation operators include splitting or merging synchronization blocks and adding synchronize blocks with locks not used elsewhere in the program. Furthermore, we would like to expand ARC's operators to deal with new anti-patterns~\cite{BJ09, FKLV12, BCD06} and give ARC the ability to fix additional types of bugs. 
 
 % use section* for acknowledgement
 \section*{Acknowledgment}
