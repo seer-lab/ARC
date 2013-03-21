@@ -1,4 +1,5 @@
-\documentclass{llncs}
+%\documentclass{llncs}
+\documentclass[runningheads,a4paper]{llncs}
 
 \usepackage{color}
 \usepackage{colortbl}
@@ -44,7 +45,11 @@
 
 \title{Automatically Repairing Concurrency Bugs\\ with ARC}
 
+% a short form should be given in case it is too long for the running head
+\titlerunning{Automatically Repairing Concurrency Bugs with ARC}
+
 \author{David Kelk, Kevin Jalbert, Jeremy S. Bradbury}
+\authorrunning{D. Mwebesa, K. Jalbert and J.S. Bradbury}
 
 \institute{Software Quality Research Laboratory\\
 %Faculty of Science (Computer Science)\\
@@ -476,8 +481,13 @@ We've introduced ARC, a framework to automatically repair deadlocks and data rac
 
 Although ARC was successful with the set of small programs from the IBM concurrency benchmark we still need to evaluate ARC's scalability on larger open source projects. In addition to scalability. To maximize the efficient use of ConTest we plan to explore different heuristics for seeding noise and different optimizations supported by ConTest~\cite{KLVU10}.
 
-
 Finally, we plan to experiment with new mutation operators. Potential additions include splitting or merging synchronization blocks and adding new locks. Through experimentation we plan to optimize the existing set of mutation operators to maximize their capabilities.  Furthermore, we would like to expand ARC's operators to deal with new anti-patterns~\cite{BJ09, FKLV12, BCD06} and give ARC the ability to fix additional types of bugs.
+
+% use section* for acknowledgement
+\section*{Acknowledgment}
+
+
+This work was supported in part by the Natural Sciences and Engineering Research Council of Canada (NSERC). 
 
 \bibliographystyle{splncs03}
 \bibliography{ARC2013}
