@@ -42,22 +42,24 @@
 
 \begin{document}
 
-\title{ARC: Automatic Repair of Concurrency Bugs}
+\title{Automatically Repairing Concurrency Bugs\\ with ARC}
 
-\author{David Kelk, Jeremy S. Bradbury}
+\author{David Kelk, Kevin Jalbert, Jeremy S. Bradbury}
 
-\institute{Software Quality Research Group\\
+\institute{Software Quality Research Laboratory\\
 %Faculty of Science (Computer Science)\\
 University of Ontario Institute of Technology\\
 Oshawa, Ontario, Canada\\
-\email{\{david.kelk, jeremy.bradbury\}@uoit.ca}}
+\email{\{david.kelk, kevin.jalbert, jeremy.bradbury\}@uoit.ca}\\
+\url{http://www.sqrlab.ca}}
 
 \maketitle
 
 \begin{abstract}
 
 %Automatic program repair using search-based algorithms has been successfully applied to single-threaded programs. Similar progress has not been made on the automatic repair of concurrent programs. Several challenges exist in concurrent program repair  that are not found in sequential source code. Concurrent programs have many possible thread interleavings that make bugs harder to detect and concurrent programs have to contend with complex interaction bugs that do not appear in single-threaded source code.
-We introduce ARC, a fully automated system for repairing deadlocks and data races in concurrent Java programs. ARC uses a genetic algorithm without crossover to mutate an incorrect program, searching for a variant of the original program that fixes the deadlocks and data races. As the first phase may introduce unneeded synchronization, a second phase attempts to optimize performance by removing the excess synchronization without sacrificing program correctness. We describe the approach and report on early results.
+In this paper we introduce ARC -- a fully automated system for repairing deadlocks and data races in concurrent Java programs. ARC consists of two phases: (1) a bug repair phase and (2) an optimization phase. In the first phase, ARC uses a genetic algorithm without crossover to mutate an incorrect program, searching for a variant of the original program that fixes the deadlocks and data races. As this first phase may introduce unneeded synchronization that can negatively affect performance, a second phase attempts to optimize the concurrent source code by removing any excess synchronization without sacrificing program correctness. We describe both phases of our approach and report on our results.
+\keywords{concurrency, bug repair, evolutionary algorithm, SBSE, concurrency testing.}
 
 \end{abstract}
 
