@@ -36,21 +36,29 @@ def main():
     configRoot.close()
     restart = True
 
+  # Check for the workarea directory
+  if not os.path.exists(config._PROJECT_DIR):
+    os.makedirs(config._PROJECT_DIR)
+
   # 2. With _ROOT_DIR configured, we can determine the operating system,
   #    config._OS we are running on.
-  # time commands are different on Mac and Linux (See tester.py)
+  # One way to do this is to use the 'uname' command:
+  #   - On Linux, 'uname -o' returns 'GNU/Linux'
+  #   - On Mac, 'uname -o' isn't recognized. 'uname' returns 'Darwin'
+
   outFile = tempfile.SpooledTemporaryFile()
   errFile = tempfile.SpooledTemporaryFile()
-  timeProcess = subprocess.Popen(['/usr/bin/time'], stdout=outFile, stderr=errFile, cwd=config._PROJECT_DIR, shell=False)
-  timeProcess.wait()
-  errFile.seek(0)
-  errText = errFile.read()
-  errFile.close()
+  helpProcess = subprocess.Popen(['uname', '-o'], stdout=outFile, stderr=errFile, 
+    cwd=config._PROJECT_DIR, shell=False)
+  helpProcess.wait()
+  outFile.seek(0)
+  outText = outFile.read()
+  outFile.close()
   ourOS = 0   # 10 is Mac, 20 is Linux
-  if re.search("illegal option", errText):
-    ourOS = 10
+  if re.search("Linux", outText):
+    ourOS = 20 # Linux
   else:
-    ourOS = 20
+    ourOS = 10 # Mac
 
   # 3. Set config._OS
   logger.info("Configuring _OS in config.py")
@@ -94,12 +102,14 @@ def main():
     #logger.debug("Classpath text:\n")
     #logger.debug(outText)
     outFile.close()
-    config._PROJECT_CLASSPATH = re.search("-classpath'\s*\[junit\]\s*'(.*)'", outText).groups()[0]
+    config._PROJECT_CLASSPATH = re.search("-classpath'\s*\[junit\]\s*'(.*)'", 
+      outText).groups()[0]
     #logger.debug("Classpath:\n")
     #logger.debug(config._PROJECT_CLASSPATH)
 
   # 8. Acquire dynamic timeout value from ConTest
-  contestTime = contester.run_test_execution(config._CONTEST_RUNS * config._CONTEST_VALIDATION_MULTIPLIER)
+  contestTime = contester.run_test_execution(config._CONTEST_RUNS * 
+    config._CONTEST_VALIDATION_MULTIPLIER)
   config._CONTEST_TIMEOUT_SEC = contestTime * config._CONTEST_TIMEOUT_MULTIPLIER
   logger.info("Using a timeout value of {}s".format(config._CONTEST_TIMEOUT_SEC))
 
