@@ -192,7 +192,8 @@ def generate_mutants(generation, memberNum, txlOperator, sourceFile, destDir):
   # In static.py we put together a list of (class, method, variable) tuples in finalCMV
   # of the class.method.variable(s) involved in the bug.
   # Ideally we use that list to reduce the number of mutants generated.  BUT, the static
-  # analysis may have failed and/or ConTest may have failed.  We have 3 + 1 cases to consider:
+  # analysis may have failed and/or ConTest may have failed.  We have 3 + 1 cases to
+  # consider:
   # The first 3 cases deal with targeting information for ASAT, ASM and ASIM:
   # 1. We have (class, method, variable) targeting information from ConTest and static
   #    analysis
@@ -268,10 +269,10 @@ def generate_mutants(generation, memberNum, txlOperator, sourceFile, destDir):
           className = line[-3] 
           mutantSource = sourceNameOnly + "_" + str(counter)
 
-          logger.debug("  '{}' '{}' '{}' '{}' '{}'".format(sourceFile, 
-            txlOperator[4], mutantSource + sourceExtOnly, txlDestDir, 
-            config._PROJECT_DIR))
-          logger.debug("   '{}' '{}' '{}'".format(variableName, methodName, className))
+          #logger.debug("  '{}' '{}' '{}' '{}' '{}'".format(sourceFile, 
+          #  txlOperator[4], mutantSource + sourceExtOnly, txlDestDir, 
+          #  config._PROJECT_DIR))
+          #logger.debug("   '{}' '{}' '{}'".format(variableName, methodName, className))
 
           outFile = tempfile.SpooledTemporaryFile()
           errFile = tempfile.SpooledTemporaryFile()
@@ -311,11 +312,11 @@ def generate_mutants(generation, memberNum, txlOperator, sourceFile, destDir):
 
             mutantSource = sourceNameOnly + "_" + str(counter)
 
-            logger.debug("  '{}' '{}' '{}' '{}' '{}'".format(sourceFile, 
-              txlOperator[4], mutantSource + sourceExtOnly, txlDestDir, 
-              config._PROJECT_DIR))
-            logger.debug("  '{}' '{}' 'No method' '{}'".format(syncVar,
-              variableName, className))
+            #logger.debug("  '{}' '{}' '{}' '{}' '{}'".format(sourceFile, 
+            #  txlOperator[4], mutantSource + sourceExtOnly, txlDestDir, 
+            #  config._PROJECT_DIR))
+            #logger.debug("  '{}' '{}' 'No method' '{}'".format(syncVar,
+            #  variableName, className))
 
             outFile = tempfile.SpooledTemporaryFile()
             errFile = tempfile.SpooledTemporaryFile()
@@ -389,7 +390,8 @@ def generate_mutants(generation, memberNum, txlOperator, sourceFile, destDir):
           mutantSource+sourceExtOnly, txlDestDir, config._PROJECT_DIR))
         process = subprocess.Popen(['txl', sourceFile, txlOpRnd, '-',
           '-outfile', mutantSource + sourceExtOnly, '-outdir', txlDestDir,
-          '-syncvar', 'this'], stdout=outFile, stderr=errFile, cwd=config._PROJECT_DIR, shell=False)
+          '-syncvar', 'this'], stdout=outFile, stderr=errFile, cwd=config._PROJECT_DIR, 
+          shell=False)
         process.wait()
       elif txlOperator is config._MUTATION_ASM:
         txlOpRnd = txlOperator[4].replace(".Txl", "_RND.Txl")

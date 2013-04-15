@@ -41,7 +41,7 @@ def main():
   # time commands are different on Mac and Linux (See tester.py)
   outFile = tempfile.SpooledTemporaryFile()
   errFile = tempfile.SpooledTemporaryFile()
-  timeProcess = subprocess.Popen(['/usr/bin/time', '-v'], stdout=outFile, stderr=errFile, cwd=config._PROJECT_DIR, shell=False)
+  timeProcess = subprocess.Popen(['/usr/bin/time'], stdout=outFile, stderr=errFile, cwd=config._PROJECT_DIR, shell=False)
   timeProcess.wait()
   errFile.seek(0)
   errText = errFile.read()
