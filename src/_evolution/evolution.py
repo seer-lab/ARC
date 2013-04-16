@@ -139,7 +139,7 @@ def start():
           logger.info("ERROR: No best individual found durint the non-functional phase")
           logger.info("***************************************************************")
           logger.info(bestNonFunctional)
-          logger.info("")    
+          logger.info("")
         else:
           logger.info("******************************************************")
           logger.info("Best individual found during the non-functional phase:")
@@ -271,8 +271,8 @@ def check_has_mutations():
     if mutationOp[1]:
       checkInd += 1
       if len(individual.genome[checkInd]) != 0:
-        mutantsExist = True  
-  
+        mutantsExist = True
+
   return mutantsExist
 
 
@@ -293,11 +293,12 @@ def mutation(individual, deadlockVotes, dataraceVotes, nonFunctionalVotes):
 
   # Repopulate the individual's genome with new possible mutation locations
   # (Generates all mutations for the individual)
-  individual.repopulateGenome(_functionalPhase)
+  totNumMutants = individual.repopulateGenome(_functionalPhase)
 
   # Check if individual has mutations
   # If no mutants exist, reset and re-attempt mutation
-  if not check_has_mutations:
+  #if not check_has_mutations:
+  if totNumMutants == 0:
     logger.debug("No possible mutations for individual")
 
     # If in non-functional phase then this individual is done
@@ -307,20 +308,20 @@ def mutation(individual, deadlockVotes, dataraceVotes, nonFunctionalVotes):
     # Reset to pristine
     txl_operator.create_local_project(individual.generation, individual.id, True)
     # Generates all mutations for the pristine individual
-    individual.repopulateGenome(_functionalPhase)
+    totNumMutants = individual.repopulateGenome(_functionalPhase)
 
     # Check again for mutations
     # If mutants still don't exist, the pristine project has a problem
-    if not check_has_mutations:
+    #if not check_has_mutations:
+    if totNumMutants == 0:
       logger.error("A restarted individual has no mutations... terminating")
       raise Exception("No mutations in Functional Phase on pristine project")
 
-  # Pick a mutation operator to apply
-  limit = 50  # Number of attempts to find a valid mutation
-              # Counts down from 20 to 0            
-  successfulCompile = False
+  # If we reach this point, there are mutations
 
-  # Hold attempted mutations (operatorIndex[mut#]), so we do not retry them
+  # Hold attempted mutations, so we don't retry them
+  # It is a set of sets by operator type
+  # {{ASAT operators tried}, {ASIM operators tried}, ...}
   attemptedMutations = {}
 
   # Initialize attemptedMutations hash for valid operators
@@ -330,10 +331,16 @@ def mutation(individual, deadlockVotes, dataraceVotes, nonFunctionalVotes):
       operatorIndex += 1
       attemptedMutations[operatorIndex] = set()
 
-  # Keep trying to find a successful mutant within the retry limits
-  while limit > 0 and not successfulCompile:
-    logger.debug("Compilation limit (decreasing): {}".format(limit))
-    # Acquire operator type, one of config._MUTATIONS (ASAT, ...)
+  # Big while loop where we try all mutants in turn
+  totTriedMutants = 0
+  retry = True
+  while retry:
+
+    # Check if we have more mutants to try
+    if totTriedMutants == totNumMutants:
+      retry = False
+      break
+
     selectedOperator = feedback_selection(individual,
       deadlockVotes, dataraceVotes, nonFunctionalVotes)
 
@@ -346,25 +353,14 @@ def mutation(individual, deadlockVotes, dataraceVotes, nonFunctionalVotes):
         if mutationOp is selectedOperator:
           break
 
-    # The continue here is for efficiency sake
-    if len(individual.genome[operatorIndex]) == 0:
-      #logger.debug("No mutations at operatorIndex {}".format(operatorIndex))
-      limit -= 1
-      logger.debug("Limit: No mutants for selected operator")
+    # Look for a mutation we haven't tried yet
+    if len(attemptedMutations[operatorIndex]) is len(individual.genome[operatorIndex]):
       continue
 
-    #txl_operator.create_local_project(individual.generation, individual.id, False)
-
-    # Make it so we do not try the same mutation over and over
-    # TODO Could refactor this to work backwards from a set of mutants instead
-    #       of trying to do it randomly.
-    retry = True
-    while retry:
-
-      # Check to see if we have exhausted all mutants for this operator
-      if len(attemptedMutations[operatorIndex]) is len(individual.genome[operatorIndex]):
-        randomMutant = None
-        break
+    # When we get to here we have untried mutations (of a mutator type)
+    # to select from
+    keepTrying = True
+    while keepTrying:
 
       randomMutant = random.randint(0, len(individual.genome[operatorIndex]) - 1)
 
@@ -373,14 +369,13 @@ def mutation(individual, deadlockVotes, dataraceVotes, nonFunctionalVotes):
 
         # Add mutation to set of attemptedMutations
         attemptedMutations[operatorIndex].add(randomMutant)
-        retry = False
+        keepTrying = False
+      else:
+        keepTrying = True
 
-    # Move to another operator as this one has nothing left to mutate
-    if randomMutant is None:
-      limit -= 1
-      logger.debug("Limit: Ran out of mutants of the operator type")
-      continue
 
+    # When we get here, we have selected a new mutant
+    totTriedMutants += 1
     # Create the project, add the mutant
     txl_operator.create_local_project(individual.generation, individual.id, False)
 
@@ -393,6 +388,7 @@ def mutation(individual, deadlockVotes, dataraceVotes, nonFunctionalVotes):
     logger.debug("Attempting to compile...")
 
     # Compile target's source
+    successfulCompile = False
     if txl_operator.compile_project():
       successfulCompile = True
       logger.debug("Success!")
@@ -404,29 +400,29 @@ def mutation(individual, deadlockVotes, dataraceVotes, nonFunctionalVotes):
       # Switch the appropriate bit to 1 to record which instance is used
       individual.genome[operatorIndex][randomMutant] = 1
     else:
-      limit -= 1
-      logger.debug("Limit: Compiling failed, retrying another mutation")
+      logger.debug("Failed. Trying another mutation")
 
-  # Return true if successful, otherwise false (returned to pristine state)
-  if successfulCompile:
-    logger.debug("Selected operator for Individual {} at generation {}: {}, number {}".
-    format(individual.id, individual.generation, selectedOperator[0], randomMutant + 1))
-    return True  
-  else:    
-    # If we weren't able to compile a mutant project, reset it to the pristine and leave
-    # it for this generation. We'll try again next generation to do something with it.
-    logger.debug("Couldn't create a compilable mutant project. Resetting to the pristine project/bestIndividual.")
-    if _functionalPhase:
-      txl_operator.create_local_project(individual.generation, individual.id, True)
-    else:
-      txl_operator.create_local_project(individual.generation, individual.id,
-                                    True, individual.switchGeneration + 1)
+    # Return true if successful, otherwise false (returned to pristine state)
+    if successfulCompile:
+      logger.debug("Selected operator for Individual {} at generation {}: {}, number {}".
+      format(individual.id, individual.generation, selectedOperator[0], randomMutant + 1))
+      return True
 
-    # Update individual to reflect failed mutation
-    individual.lastOperator = None
-    individual.appliedOperators.append(None)
 
-    return False
+  # If we weren't able to compile a mutant project, reset it to the pristine and leave
+  # it for this generation. We'll try again next generation to do something with it.
+  logger.debug("Couldn't create a compilable mutant project. Resetting to the pristine project/bestIndividual.")
+  if _functionalPhase:
+    txl_operator.create_local_project(individual.generation, individual.id, True)
+  else:
+    txl_operator.create_local_project(individual.generation, individual.id,
+                                  True, individual.switchGeneration + 1)
+
+  # Update individual to reflect failed mutation
+  individual.lastOperator = None
+  individual.appliedOperators.append(None)
+
+  return False
 
 
 def evaluate(individual, worstScore):
@@ -512,6 +508,7 @@ def evaluate(individual, worstScore):
 
 def feedback_selection(individual, deadlockVotes, dataraceVotes, nonFunctionalVotes):
   """Given the individual this function will find the next operator to apply.
+  The operator selected will have generated mutants.
 
   The selection of the next operator takes into account the individual's last
   test execution as feedback. The feedback is used to heuristically guide what
@@ -523,7 +520,7 @@ def feedback_selection(individual, deadlockVotes, dataraceVotes, nonFunctionalVo
   global _functionalPhase
 
   # candidateChoices is a list of config._MUTATIONS
-  # {ASAT, ASIM, ...}
+  # { [ASAT, True, ...], [ASIM, True, ...], ...}
   candatateChoices = []
 
   # Acquire set of operators to use
@@ -534,19 +531,24 @@ def feedback_selection(individual, deadlockVotes, dataraceVotes, nonFunctionalVo
   else:
     mutationOperators = config._NONFUNCTIONAL_MUTATIONS
 
-  # Handle mutation selection (using random or heuristics)
+  # Case 1: Random selection
+  #         Randomly choose an operator that has generated mutants
   if config._RANDOM_MUTATION:
 
-    for operator in mutationOperators:
-        if operator[1]: # If enabled
+    checkInd = -1
+    for mutationOp in mutationOperators:
+      if mutationOp[1]:
+        checkInd += 1
+        if len(individual.genome[checkInd]) > 0:
           candatateChoices.append(operator)
 
     return candatateChoices[random.randint(0,len(candatateChoices)-1)]
 
+  # Case 2: Heuristic selection
   else:
     opType = 'race'
 
-    # Acquire the deadlock and datarace rates
+    # 1. Acquire the deadlock and datarace rates
     if len(individual.deadlocks) == 0:
       deadlockRate = .5
       dataraceRate = .5
@@ -558,7 +560,7 @@ def feedback_selection(individual, deadlockVotes, dataraceVotes, nonFunctionalVo
     totalBugRate = (deadlockRate + dataraceRate)
     choice = random.uniform(0, totalBugRate)
 
-    # Determine which bug type to use
+    # 2. Determine which bug type to use
     if (dataraceRate > deadlockRate):
       # If choice falls past the datarace range then type is lock
       if choice >= dataraceRate:
@@ -568,26 +570,57 @@ def feedback_selection(individual, deadlockVotes, dataraceVotes, nonFunctionalVo
       if choice <= deadlockRate:
         opType = 'lock'
 
-    # Select the appropriate operator based on enable/type/functional
-    # (See config.py)
+    # 3. Generate a list of operators that meet all the conditions
+    #    (Used for races, enabled, generated mutants, ...)
     if opType is 'race':
+      checkInd = -1
       for operator in mutationOperators:
-        if operator[1] and operator[2]:
+        # Is it enabled
+        if operator[1]:
+          checkInd += 1
+          # Is it enabled for data races and does it have mutants?
+          if operator[2] and len(individual.genome[checkInd]) > 0:
+            # If it is the functional phase and the operator fixes data races during the
+            # functional phase
+            # TODO: operator [2-3] and [5-6] are redundant
+            if _functionalPhase and operator[5]:
+              candatateChoices.append(operator)
+            if not _functionalPhase:
+              candatateChoices.append(operator)
+
+      #for operator in mutationOperators:
+      #  if operator[1] and operator[2]:
           # For the functional phase we can now specify what operators are used by
           # the deadlock and data race fixing process (See config.py)
-          if _functionalPhase and operator[5]:
-              candatateChoices.append(operator)
-          if not _functionalPhase:
-            candatateChoices.append(operator)
-    elif opType is 'lock':
-      for operator in mutationOperators:
-        if operator[1] and operator[3]:
-          if _functionalPhase and operator[6]:
-              candatateChoices.append(operator)
-          if not _functionalPhase:
-            candatateChoices.append(operator)
+      #    if _functionalPhase and operator[5]:
+      #        candatateChoices.append(operator)
+      #    if not _functionalPhase:
+      #      candatateChoices.append(operator)
 
-    # Acquire the operator chances based on what voting condition we have
+    elif opType is 'lock':
+      checkInd = -1
+      for operator in mutationOperators:
+        # Is it enabled
+        if operator[1]:
+          checkInd += 1
+          # Is it enabled for data races and does it have mutants?
+          if operator[3] and len(individual.genome[checkInd]) > 0:
+            # If it is the functional phase and the operator fixes data races during the
+            # functional phase
+            # TODO: operator [2-3] and [5-6] are redundant
+            if _functionalPhase and operator[6]:
+              candatateChoices.append(operator)
+            if not _functionalPhase:
+              candatateChoices.append(operator)
+
+      #for operator in mutationOperators:
+      #  if operator[1] and operator[3]:
+      #    if _functionalPhase and operator[6]:
+      #        candatateChoices.append(operator)
+      #    if not _functionalPhase:
+      #      candatateChoices.append(operator)
+
+    # 4. Acquire the operator chances based on what voting condition we have
     if _functionalPhase and opType is 'lock':
       operatorChances = get_operator_chances(candatateChoices, deadlockVotes)
       #logger.debug("Deadlock weighting: {}".format(operatorChances))
@@ -598,7 +631,7 @@ def feedback_selection(individual, deadlockVotes, dataraceVotes, nonFunctionalVo
       operatorChances = get_operator_chances(candatateChoices, nonFunctionalVotes)
       #logger.debug("Operator chance for non-functional phase: {}".format(operatorChances))
 
-    # Make selection of operator based on the adjusted weighting
+    # 5. Make selection of operator based on the adjusted weighting
     randomChance = random.randint(0,sum(operatorChances))
     currentRunning = 0  # Keeps track of sum (when we exceed this we are done)
     for i in xrange(len(operatorChances)):
@@ -612,6 +645,9 @@ def feedback_selection(individual, deadlockVotes, dataraceVotes, nonFunctionalVo
 
 
 def get_operator_chances(candatateChoices, votes):
+
+  # candidateChoices is a list of config._MUTATIONS
+  # { [ASAT, True, ...], [ASIM, True, ...], ...}
 
   operatorChances = [0] * len(candatateChoices)
   currentValue = len(candatateChoices) + 1
@@ -720,7 +756,8 @@ def adjust_operator_weighting(generation):
       beginningGeneration = individual.switchGeneration
 
     # Only consider the generations we are concerned with
-    for i in xrange(beginningGeneration,generation-1):
+    # xrange(1,3) -> xrange(0,1) zero based
+    for i in xrange(beginningGeneration - 1,generation - 2):
 
       # Only weight operators for valid mutations (ignore failed mutations)
       if individual.lastOperator is not None:
@@ -819,6 +856,7 @@ def get_best_individual(beforeMutation=False):
   generation = -1
 
   for individual in _population:
+    # xrange(1,3) -> xrange(0,1) zero based
     for i in xrange(0, individual.generation - 1):
       if individual.score[i] > bestScore:
         individualId = individual.id

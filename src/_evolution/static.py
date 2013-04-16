@@ -103,14 +103,14 @@ def run_chord_datarace():
 
 
 def did_chord_find_dataraces():
-  # arc/workspace/chord_output
+  # arc/workarea/chord_output
   chordOutDir = os.path.join(config._PROJECT_DIR, 'chord_output')
 
   if not os.path.exists(chordOutDir):
     logger.error("Chord output directory, {}, not found".format(chordOutDir))
     return False
 
-  # arc/workspace/chord_output/dataraces_by_fld.html
+  # arc/workarea/chord_output/dataraces_by_fld.html
   URL = os.path.join(chordOutDir, 'dataraces_by_fld.html')
 
   if not os.path.isfile(URL):
@@ -118,7 +118,7 @@ def did_chord_find_dataraces():
     return False
 
   # Back up the file
-  shutil.copy2(URL, os.path.join(config._TMP_DIR, 'dataraces_by_fld.html'))
+  shutil.copy(URL, os.path.join(config._TMP_DIR, 'dataraces_by_fld.html'))
 
   # A HTML page with 0 data races in it is 1,174 bytes in size. (For Chord 2.1)
   # (Attempts to find deadlocks resulted in 500MB files which were unuseable.)

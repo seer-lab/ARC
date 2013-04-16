@@ -85,6 +85,7 @@ class Individual():
 
     # Figure out the number of new possible mutation operator locations
     txl_operator.mutate_project(self.generation, self.id, mutationOperators)
+    # hits = [{ASAT = 4}, {ASIM = 0}, ...]
     hits = txl_operator.generate_representation(self.generation, self.id,
                                                 mutationOperators)
 
@@ -93,10 +94,14 @@ class Individual():
     self.stateSpace.append(0)
     for mutationOp in mutationOperators:
       if mutationOp[1]:
+        # {ASAT = 4} becomes ASAT = 0 0 0 0
+        # {ASIM = 0} becomes ASIM =
         self.genome[i] = [0] * hits[mutationOp[0]]
+        # Sum up the number of mutants, eg. 4
         self.stateSpace[-1] += hits[mutationOp[0]]
         i += 1
 
+    return self.stateSpace[-1]
 
   def __repr__(self):
     """Return a string representation of this individual """

@@ -12,6 +12,7 @@ import re
 import shutil
 import os
 import os.path
+import sys
 from _contest import contester
 from _evolution import evolution
 from _txl import txl_operator
@@ -36,9 +37,11 @@ def main():
     configRoot.close()
     restart = True
 
-  # Check for the workarea directory
-  if not os.path.exists(config._PROJECT_DIR):
-    os.makedirs(config._PROJECT_DIR)
+  if restart:
+    print("Config's _ROOT_DIR changed to {}. Restarting.".format(config._ROOT_DIR))
+    logger.info("Config's _ROOT_DIR changed to {}. Restarting.".format(config._ROOT_DIR))
+    python = sys.executable
+    os.execl(python, python, * sys.argv)
 
   # 2. With _ROOT_DIR configured, we can determine the operating system,
   #    config._OS we are running on.
@@ -46,9 +49,13 @@ def main():
   #   - On Linux, 'uname -o' returns 'GNU/Linux'
   #   - On Mac, 'uname -o' isn't recognized. 'uname' returns 'Darwin'
 
+  # Check for the workarea directory
+  if not os.path.exists(config._PROJECT_DIR):
+    os.makedirs(config._PROJECT_DIR)
+
   outFile = tempfile.SpooledTemporaryFile()
   errFile = tempfile.SpooledTemporaryFile()
-  helpProcess = subprocess.Popen(['uname', '-o'], stdout=outFile, stderr=errFile, 
+  helpProcess = subprocess.Popen(['uname', '-o'], stdout=outFile, stderr=errFile,
     cwd=config._PROJECT_DIR, shell=False)
   helpProcess.wait()
   outFile.seek(0)
@@ -61,11 +68,12 @@ def main():
     ourOS = 10 # Mac
 
   # 3. Set config._OS
+  restart = False
   logger.info("Configuring _OS in config.py")
   if (config._OS == "MAC" and ourOS == 20) or (config._OS == "LINUX" and ourOS == 10):
     configOS = fileinput.FileInput(files=('config.py'), inplace=1)
     for line in configOS:
-      if line.find("_OS =") is 0:
+      if line.find("_OS =") is 0 or line.find("_OS=") is 0:
         if ourOS == 10: # Mac
           line = "_OS = \"MAC\" " # Note the extra space at the end
         else:  # Linux
@@ -75,8 +83,14 @@ def main():
     restart = True
 
   if restart:
-    print("Configuration changed.  Restart ARC.")
-    exit(0)
+    if ourOS == 20:
+      outText = "Linux"
+    else:
+      outText = "MAC"
+    print("Config's _OS changed to {}. Restarting.".format(outText))
+    logger.info("Config's _OS changed to {}. Restarting.".format(outText))
+    python = sys.executable
+    os.execl(python, python, * sys.argv)
 
   # 4. Compile the project
   if os.path.exists(config._PROJECT_DIR):
@@ -99,35 +113,31 @@ def main():
     antProcess.wait()
     outFile.seek(0)
     outText = outFile.read()
-    #logger.debug("Classpath text:\n")
-    #logger.debug(outText)
     outFile.close()
-    config._PROJECT_CLASSPATH = re.search("-classpath'\s*\[junit\]\s*'(.*)'", 
+    config._PROJECT_CLASSPATH = re.search("-classpath'\s*\[junit\]\s*'(.*)'",
       outText).groups()[0]
-    #logger.debug("Classpath:\n")
-    #logger.debug(config._PROJECT_CLASSPATH)
 
   # 8. Acquire dynamic timeout value from ConTest
-  contestTime = contester.run_test_execution(config._CONTEST_RUNS * 
+  contestTime = contester.run_test_execution(config._CONTEST_RUNS *
     config._CONTEST_VALIDATION_MULTIPLIER)
   config._CONTEST_TIMEOUT_SEC = contestTime * config._CONTEST_TIMEOUT_MULTIPLIER
   logger.info("Using a timeout value of {}s".format(config._CONTEST_TIMEOUT_SEC))
 
-  # 9. Run the static analysis
-  static.configure_chord()
-  static.run_chord_datarace()
-  static.get_chord_targets()
-  static.load_contest_list()
-  static.create_merged_classVar_list()
-  static.create_final_triple()
-
-  # 10. Clean up the temporary directory (Probably has subdirs from previous runs)
+  # 9. Clean up the temporary directory (Probably has subdirs from previous runs)
   #logger.info("Cleaning TMP directory")
   if not os.path.exists(config._TMP_DIR):
     os.makedirs(config._TMP_DIR)
   else:
     shutil.rmtree(config._TMP_DIR)
     os.makedirs(config._TMP_DIR)
+
+  # 10. Run the static analysis
+  static.configure_chord()
+  static.run_chord_datarace()
+  static.get_chord_targets()
+  static.load_contest_list()
+  static.create_merged_classVar_list()
+  static.create_final_triple()
 
   # 11. Start the main bug-fixing procedure
   evolution.start()

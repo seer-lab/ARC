@@ -5,8 +5,8 @@
 - Resetting underperforming local projects by:
   - Copying the pristine project over of it
   - Copying a high-performing project over it
-- Copying local projects to the global one
-- Compiling (global) projects
+- Copying local projects to the work area
+- Compiling work area projects
 """
 
 import sys
@@ -68,7 +68,7 @@ def mutate_project(generation, memberNum, mutationOperators):
   #logger.debug("---------------------------")
   #logger.debug("generation:      {}".format(generation))
   #logger.debug("member num:      {}".format(memberNum))
-  #logger.debug("operators:       {}".format(mutationOperators))  
+  #logger.debug("operators:       {}".format(mutationOperators))
   #logger.debug("sourceDir:       {}".format(sourceDir))
   #logger.debug("destDir:         {}".format(destDir))
 
@@ -155,11 +155,8 @@ def generate_mutants(generation, memberNum, txlOperator, sourceFile, destDir):
     sourceRelPath = sourceNoFileName.replace(config._TMP_DIR + str(generation - 1) + os.sep
                     + str(memberNum) + os.sep, '')
 
-  #if sourceRelPath == '':
-  txlDestDir = "".join([destDir, sourceNameOnly, os.sep, txlOperator[0], os.sep])  
-  #else:
-  #  txlDestDir = "".join([destDir, sourceRelPath, sourceNameOnly, os.sep,
-  #                     txlOperator[0], os.sep])
+
+  txlDestDir = "".join([destDir, sourceNameOnly, os.sep, txlOperator[0], os.sep])
 
   # sourceFile:       source/BuggedProgram.java
   # destDir:          /Users/kelk/workspace/arc/tmp/1/1/
@@ -225,8 +222,8 @@ def generate_mutants(generation, memberNum, txlOperator, sourceFile, destDir):
             syncVar = line[-1]
             mutantSource = sourceNameOnly + "_" + str(counter)
 
-            #logger.debug("  '{}' '{}' '{}' '{}' '{}'".format(sourceFile, 
-            #  txlOperator[4], mutantSource + sourceExtOnly, txlDestDir, 
+            #logger.debug("  '{}' '{}' '{}' '{}' '{}'".format(sourceFile,
+            #  txlOperator[4], mutantSource + sourceExtOnly, txlDestDir,
             #  config._PROJECT_DIR))
             #logger.debug("  '{}' {}' '{}' '{}'".format(syncVar, variableName, methodName, className))
 
@@ -261,16 +258,16 @@ def generate_mutants(generation, memberNum, txlOperator, sourceFile, destDir):
               #logger.debug(error)
 
               counter += 1
- 
+
       else: # txlOperator is config._MUTATION_ASIM:
         for line in static.finalCMV:
           variableName = line[-1]
           methodName = line[-2]
-          className = line[-3] 
+          className = line[-3]
           mutantSource = sourceNameOnly + "_" + str(counter)
 
-          #logger.debug("  '{}' '{}' '{}' '{}' '{}'".format(sourceFile, 
-          #  txlOperator[4], mutantSource + sourceExtOnly, txlDestDir, 
+          #logger.debug("  '{}' '{}' '{}' '{}' '{}'".format(sourceFile,
+          #  txlOperator[4], mutantSource + sourceExtOnly, txlDestDir,
           #  config._PROJECT_DIR))
           #logger.debug("   '{}' '{}' '{}'".format(variableName, methodName, className))
 
@@ -312,8 +309,8 @@ def generate_mutants(generation, memberNum, txlOperator, sourceFile, destDir):
 
             mutantSource = sourceNameOnly + "_" + str(counter)
 
-            #logger.debug("  '{}' '{}' '{}' '{}' '{}'".format(sourceFile, 
-            #  txlOperator[4], mutantSource + sourceExtOnly, txlDestDir, 
+            #logger.debug("  '{}' '{}' '{}' '{}' '{}'".format(sourceFile,
+            #  txlOperator[4], mutantSource + sourceExtOnly, txlDestDir,
             #  config._PROJECT_DIR))
             #logger.debug("  '{}' '{}' 'No method' '{}'".format(syncVar,
             #  variableName, className))
@@ -345,11 +342,11 @@ def generate_mutants(generation, memberNum, txlOperator, sourceFile, destDir):
           className = line[-2]
 
           mutantSource = sourceNameOnly + "_" + str(counter)
-          
-          #logger.debug("  '{}' '{}' '{}' '{}' '{}'".format(sourceFile, 
-          #  txlOperator[4], sourceExtOnly, txlDestDir, 
+
+          #logger.debug("  '{}' '{}' '{}' '{}' '{}'".format(sourceFile,
+          #  txlOperator[4], sourceExtOnly, txlDestDir,
           #  config._PROJECT_DIR))
-          #logger.debug("  {}' 'No method' '{}'".format(variableName, 
+          #logger.debug("  {}' 'No method' '{}'".format(variableName,
           #  className))
 
           outFile = tempfile.SpooledTemporaryFile()
@@ -374,8 +371,8 @@ def generate_mutants(generation, memberNum, txlOperator, sourceFile, destDir):
       # To    : /Users/kelk/workspace/arc/src/_txl/SHSB_RND.Txl
       mutantSource = sourceNameOnly + "_" + str(counter)
 
-      #logger.debug("  '{}' '{}' '{}' '{}' '{}'".format(sourceFile, 
-      #  txlOperator[4], mutantSource + sourceExtOnly, txlDestDir, 
+      #logger.debug("  '{}' '{}' '{}' '{}' '{}'".format(sourceFile,
+      #  txlOperator[4], mutantSource + sourceExtOnly, txlDestDir,
       #  config._PROJECT_DIR))
 
       outFile = tempfile.SpooledTemporaryFile()
@@ -390,7 +387,7 @@ def generate_mutants(generation, memberNum, txlOperator, sourceFile, destDir):
           mutantSource+sourceExtOnly, txlDestDir, config._PROJECT_DIR))
         process = subprocess.Popen(['txl', sourceFile, txlOpRnd, '-',
           '-outfile', mutantSource + sourceExtOnly, '-outdir', txlDestDir,
-          '-syncvar', 'this'], stdout=outFile, stderr=errFile, cwd=config._PROJECT_DIR, 
+          '-syncvar', 'this'], stdout=outFile, stderr=errFile, cwd=config._PROJECT_DIR,
           shell=False)
         process.wait()
       elif txlOperator is config._MUTATION_ASM:
@@ -416,8 +413,8 @@ def generate_mutants(generation, memberNum, txlOperator, sourceFile, destDir):
 
     #logger.debug("Case 2: Non-add sync operator")
 
-    #logger.debug("  '{}' '{}' '{}' '{}' '{}'".format(sourceFile, 
-    #  txlOperator[4], sourceExtOnly, txlDestDir, 
+    #logger.debug("  '{}' '{}' '{}' '{}' '{}'".format(sourceFile,
+    #  txlOperator[4], sourceExtOnly, txlDestDir,
     #  config._PROJECT_DIR))
 
     outFile = tempfile.SpooledTemporaryFile()
@@ -454,7 +451,7 @@ def generate_representation(generation, memberNum, mutationOperators):
   for mutationOp in mutationOperators:
     rep[mutationOp[0]] = 0
 
-  # Recusive dir walk
+  # Recusive dir walk       tmp/1/1/
   recurDir = config._TMP_DIR + str(generation) + os.sep + str(memberNum) + os.sep
   for root, dirs, files in os.walk(recurDir):
     for aDir in dirs:
@@ -465,11 +462,14 @@ def generate_representation(generation, memberNum, mutationOperators):
         if "{}_".format(mutationOp[0]) in str(aDir):  # TODO more unique match
           rep[mutationOp[0]] += 1
 
+          # uniqueMutants at 1, 1, ASAT, 1 = /Users/kelk/workspace/ARC-Test-Suite
+          #  /test_area/arc/tmp/1/1/Account/ASAT/ASAT_Account_1.java_1
           #logger.debug("uniqueMutants at {}, {}, {}, {} = {}".format(generation,
           #           memberNum, mutationOp[0], rep[mutationOp[0]], root + os.sep + aDir))
           uniqueMutants[(generation, memberNum, mutationOp[0],
                       rep[mutationOp[0]])] = root + os.sep + aDir
 
+  # [{ASAT = 4}, {ASIM = 0}, ...]
   return rep
 
 
@@ -496,7 +496,7 @@ def create_local_project(generation, memberNum, restart, switchGeneration=0):
   memberNum (int): Which member of the population we are dealing with
   restart (boolean): Do we want to reset the member project back to the pristine one?
   """
-  
+
   #logger.debug("Input arguments:  Gen: {}, Mem: {} and Restart: {}".format(generation, memberNum, restart))
 
   staticPart = os.sep + str(memberNum) + os.sep + 'project' + os.sep
@@ -568,7 +568,7 @@ def move_mutant_to_local_project(generation, memberNum, txlOperator, mutantNum):
   # Use the dictionary defined at the top of the file
   # to find the DIRECTORY containing the mutant
   sourceDir = uniqueMutants[(generation, memberNum, txlOperator, mutantNum)]
-  
+
   fileName = ''
   # Find the FILE NAME of the mutant
   for files in os.listdir(sourceDir):
@@ -576,7 +576,7 @@ def move_mutant_to_local_project(generation, memberNum, txlOperator, mutantNum):
       fileName = files
       break
 
-  # Put together the full path of the source of the mutant    
+  # Put together the full path of the source of the mutant
   sourceFile = sourceDir + os.sep + fileName
 
   # Put together the destination DIRECTORY of the mutant
@@ -597,14 +597,14 @@ def move_mutant_to_local_project(generation, memberNum, txlOperator, mutantNum):
   dstFile = dstPath + cleanFileName
 
   #logger.debug("---------------------------")
-  #logger.debug("txlOperator:    {}".format(txlOperator))  
+  #logger.debug("txlOperator:    {}".format(txlOperator))
   #logger.debug("sourceDir:     {}".format(sourceDir))
   #logger.debug("fileName:       {}".format(fileName))
-  #logger.debug("sourceFile:     {}".format(sourceFile))  
+  #logger.debug("sourceFile:     {}".format(sourceFile))
   #logger.debug("basePath:       {}".format(baseDstPath))
   #logger.debug("relPath:        {}".format(relDstPath))
   #logger.debug("dstPath:        {}".format(dstPath))
-  #logger.debug("cleanFileName:  {}".format(cleanFileName))  
+  #logger.debug("cleanFileName:  {}".format(cleanFileName))
   #logger.debug("dstFile         {}".format(dstFile))
 
   if not os.path.exists(dstPath):
@@ -694,43 +694,3 @@ def move_best_project_to_output(generation, memberNum):
   if os.path.exists(config._PROJECT_OUTPUT_DIR):
     shutil.rmtree(config._PROJECT_OUTPUT_DIR)
   shutil.copytree(srcDir, config._PROJECT_OUTPUT_DIR)
-
-
-
-
-# -----------------------------------------------------------------------------
-#
-# Main
-#
-# -----------------------------------------------------------------------------
-
-# def main():
-#   gener = 1
-#   member = 4
-#   # Create the representation of a file (The array of numbers of mutants by type)
-#   testFile = config._PROJECT_SRC_DIR + 'DeadlockDemo.java'
-#   muties = []
-
-#   #backup_project()
-#   restore_project()
-
-#   mutate_project(gener, member, config._FUNCTIONAL_MUTATIONS)
-#   muties = generate_representation(gener, member, config._FUNCTIONAL_MUTATIONS)
-#   create_local_project(gener, member, False)
-#   move_mutant_to_local_project(gener, member, 'ASAS', 3)
-
-#   print 'Mutant numbers:'
-#   for i, v in enumerate(muties):
-#     print v
-
-#   mutate_project(2, member)
-#   muties = generate_representation(2, member)
-#   create_local_project(2, member, False)
-#   move_mutant_to_local_project(2, member, 'ASAS', 1)
-
-#   move_local_project_to_original(gener, member)
-
-#   compile_project()
-
-# if __name__ == "__main__":
-#   sys.exit(main())
