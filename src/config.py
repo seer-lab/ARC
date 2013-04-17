@@ -7,7 +7,7 @@ variables that are set in this file and are used all throughout ARC.
 import logging
 
 # System variables
-_ROOT_DIR = "/home/davidkelk/workspace/arc/"
+_ROOT_DIR = "/Users/kelk/workspace/arc/"
 _MAX_MEMORY_MB = 2000
 _MAX_CORES = 2
 _TMP_DIR = _ROOT_DIR + "tmp/"
@@ -16,12 +16,12 @@ _JUNIT_JAR = _ROOT_DIR + "lib/junit-4.8.1.jar"
 _LOG_LEVEL = "DEBUG"  # {OFF,ERROR,WARN,INFO,DEBUG}
 _LOG_FILE = "log.txt"  # If None then use stdout, otherwise specify a file
 _RANDOM_SEED = None  # None means use the system time, non-zero is fixed
-_OS = "LINUX"
+_OS = "MAC"
 
 # Target project variables
 
 # Original project is placed in the input directory.
-# Invariant: This directory is read-only
+# Invariant: This directory _ROOT_DIR = "/home/davidkelk/workspace/ARC-Test-Suite/test_area/arc/"is read-only
 _PROJECT_PRISTINE_DIR = _ROOT_DIR + "input/"
 _PROJECT_PRISTINE_SRC_DIR = _PROJECT_PRISTINE_DIR + "source/"
 
@@ -34,8 +34,8 @@ _SHARED_VARS_FILE = _PROJECT_DIR + "com_ibm_contest/sharedVars.txt"
 
 # A fixed project (if found) is placed in the output directory
 _PROJECT_OUTPUT_DIR = _ROOT_DIR + "output/"
-_PROJECT_PREFIX = "Account,Bank"  # Comma separated fully-qualifying class names or package prefixes
-_PROJECT_TESTSUITE = "AccountsTest"
+_PROJECT_PREFIX = "Account,Main,ManageAccount"  # Comma separated fully-qualifying class names or package prefixes
+_PROJECT_TESTSUITE = "AccountTest"
 _PROJECT_COMPILE = "compile"
 _PROJECT_TEST = "test"
 _PROJECT_CLASSPATH = None  # Automatically acquired using ant test if None
@@ -53,10 +53,10 @@ _CHORD_JAR = _CHORD_DIR + "chord.jar"
 _CONTEST_DIR = _ROOT_DIR + "lib/ConTest/"
 _CONTEST_KINGPROPERTY = _CONTEST_DIR + "KingProperties"
 _CONTEST_JAR = _CONTEST_DIR + "ConTest.jar"
-_CONTEST_RUNS = 10
+_CONTEST_RUNS = 5
 _CONTEST_TIMEOUT_SEC = 300 # Default timeout, it is adjusted dynamically
-_CONTEST_TIMEOUT_MULTIPLIER = 15  # The average execution time (with conTest) is multiplied by this
-_CONTEST_VALIDATION_MULTIPLIER = 3  # Allows for validation of functionality
+_CONTEST_TIMEOUT_MULTIPLIER = 20  # The average execution time (with conTest) is multiplied by this
+_CONTEST_VALIDATION_MULTIPLIER = 5  # Allows for validation of functionality
 
 # Mutation operator variables
 # [0]Name  [1]Enable  [2]Enable for DataRace  [3]Enable for Deadlock  [4]File
@@ -93,6 +93,9 @@ _RANDOM_MUTATION = False
 # Only perform functional phase
 _ONLY_FUNCTIONAL = True
 
+# Only perform functional phase
+_ONLY_FUNCTIONAL = True
+
 # Evolution variables
 _EVOLUTION_GENERATIONS = 30
 _EVOLUTION_POPULATION = 5
@@ -110,7 +113,7 @@ _TIMEOUT_WEIGHT = 50
 
 # Convergence criteria, considering the window size ensure there is at least
 # a fitness score movement of delta
-_GENERATIONAL_IMPROVEMENT_WINDOW = 5
+_GENERATIONAL_IMPROVEMENT_WINDOW = 10
 _AVG_FITNESS_MIN_DELTA = 0.01
 _BEST_FITNESS_MIN_DELTA = 1
 

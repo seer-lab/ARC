@@ -8,7 +8,7 @@
 %
 % Based on ASK by J.S. Bradbury
 %
-% Typical (eventual) invocation:
+% Typical invocation:
 % txl ManageAccount.java ASAT.Txl - -outfile ManageAccount_1.java -outdir ASAT/ -class ManageAccount -method run -var account -syncvar coolness
 %
 % Notes:

@@ -209,7 +209,7 @@ def generate_mutants(generation, memberNum, txlOperator, sourceFile, destDir):
     # 1. We have (class, method, variable) triples
     if static.do_we_have_triples():
 
-      #logger.debug("Case 1-1: Add sync operators with triples")
+      # logger.debug("Case 1-1: Add sync operators with triples")
 
       if txlOperator is config._MUTATION_ASAT or txlOperator is config._MUTATION_ASM:
 
@@ -222,10 +222,11 @@ def generate_mutants(generation, memberNum, txlOperator, sourceFile, destDir):
             syncVar = line[-1]
             mutantSource = sourceNameOnly + "_" + str(counter)
 
-            #logger.debug("  '{}' '{}' '{}' '{}' '{}'".format(sourceFile,
-            #  txlOperator[4], mutantSource + sourceExtOnly, txlDestDir,
-            #  config._PROJECT_DIR))
-            #logger.debug("  '{}' {}' '{}' '{}'".format(syncVar, variableName, methodName, className))
+            # logger.debug("  '{}' '{}' '{}' '{}' '{}'".format(sourceFile,
+            #   txlOperator[4], mutantSource + sourceExtOnly, txlDestDir,
+            #   config._PROJECT_DIR))
+            # logger.debug("Class: '{}' Method: '{}' Var: '{}' Syncvar: '{}'".format(className,
+            #   methodName, variableName, syncVar))
 
             outFile = tempfile.SpooledTemporaryFile()
             errFile = tempfile.SpooledTemporaryFile()
@@ -246,18 +247,18 @@ def generate_mutants(generation, memberNum, txlOperator, sourceFile, destDir):
                       cwd=config._PROJECT_DIR, shell=False)
               process.wait()
 
-              #outFile.seek(0)
-              #errFile.seek(0)
-              #output = outFile.read()
-              #error = errFile.read()
-              #outFile.close()
-              #errFile.close()
-              #logger.debug("Mutant generation, Output text:\n")
-              #logger.debug(output)
-              #logger.debug("Mutant generation, Error text:\n")
-              #logger.debug(error)
+            # outFile.seek(0)
+            # errFile.seek(0)
+            # output = outFile.read()
+            # error = errFile.read()
+            # outFile.close()
+            # errFile.close()
+            # logger.debug("Mutant generation, Output text:\n")
+            # logger.debug(output)
+            # logger.debug("Mutant generation, Error text:\n")
+            # logger.debug(error)
 
-              counter += 1
+            counter += 1
 
       else: # txlOperator is config._MUTATION_ASIM:
         for line in static.finalCMV:
@@ -266,10 +267,10 @@ def generate_mutants(generation, memberNum, txlOperator, sourceFile, destDir):
           className = line[-3]
           mutantSource = sourceNameOnly + "_" + str(counter)
 
-          #logger.debug("  '{}' '{}' '{}' '{}' '{}'".format(sourceFile,
+          # logger.debug("  '{}' '{}' '{}' '{}' '{}'".format(sourceFile,
           #  txlOperator[4], mutantSource + sourceExtOnly, txlDestDir,
           #  config._PROJECT_DIR))
-          #logger.debug("   '{}' '{}' '{}'".format(variableName, methodName, className))
+          # logger.debug("   '{}' '{}' '{}'".format(variableName, methodName, className))
 
           outFile = tempfile.SpooledTemporaryFile()
           errFile = tempfile.SpooledTemporaryFile()
@@ -280,16 +281,16 @@ def generate_mutants(generation, memberNum, txlOperator, sourceFile, destDir):
                   stderr=errFile, cwd=config._PROJECT_DIR, shell=False)
           process.wait()
 
-          #outFile.seek(0)
-          #errFile.seek(0)
-          #output = outFile.read()
-          #error = errFile.read()
-          #outFile.close()
-          #errFile.close()
-          #logger.debug("Mutant generation, Output text:\n")
-          #logger.debug(output)
-          #logger.debug("Mutant generation, Error text:\n")
-          #logger.debug(error)
+          # outFile.seek(0)
+          # errFile.seek(0)
+          # output = outFile.read()
+          # error = errFile.read()
+          # outFile.close()
+          # errFile.close()
+          # logger.debug("Mutant generation, Output text:\n")
+          # logger.debug(output)
+          # logger.debug("Mutant generation, Error text:\n")
+          # logger.debug(error)
 
           counter += 1
 
@@ -334,6 +335,7 @@ def generate_mutants(generation, memberNum, txlOperator, sourceFile, destDir):
                       '-class', className, '-syncvar', syncVar], stdout=outFile,
                       stderr=errFile, cwd=config._PROJECT_DIR, shell=False)
               process.wait()
+
             counter += 1
 
       else: # ASIM
