@@ -448,8 +448,11 @@ def generate_representation(generation, memberNum, mutationOperators):
   #logger.debug("Arguments received: {} {}".format(generation, memberNum))
 
   rep = {}
+  # Ordering is the same as in config.*_MUTATIONS ?
   for mutationOp in mutationOperators:
     rep[mutationOp[0]] = 0
+
+  #logger.debug("Representation 1: {}".format(rep))
 
   # Recusive dir walk       tmp/1/1/
   recurDir = config._TMP_DIR + str(generation) + os.sep + str(memberNum) + os.sep
@@ -469,7 +472,8 @@ def generate_representation(generation, memberNum, mutationOperators):
           uniqueMutants[(generation, memberNum, mutationOp[0],
                       rep[mutationOp[0]])] = root + os.sep + aDir
 
-  # [{ASAT = 4}, {ASIM = 0}, ...]
+  # Representation: {'RSM': 0, 'ASIM': 4, 'ASAT': 5,
+  #logger.debug("Representation 2: {}".format(rep))
   return rep
 
 

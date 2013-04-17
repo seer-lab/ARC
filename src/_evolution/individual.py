@@ -85,7 +85,7 @@ class Individual():
 
     # Figure out the number of new possible mutation operator locations
     txl_operator.mutate_project(self.generation, self.id, mutationOperators)
-    # hits = [{ASAT = 4}, {ASIM = 0}, ...]
+    # hits = {'RSM': 0, 'ASIM': 4, 'ASAT': 5, ...}
     hits = txl_operator.generate_representation(self.generation, self.id,
                                                 mutationOperators)
 
@@ -94,12 +94,16 @@ class Individual():
     self.stateSpace.append(0)
     for mutationOp in mutationOperators:
       if mutationOp[1]:
-        # {ASAT = 4} becomes ASAT = 0 0 0 0
-        # {ASIM = 0} becomes ASIM =
+        # Genome: [[0, 0, 0, 0, 0], [0, 0, 0, 0], [], [], ...]
         self.genome[i] = [0] * hits[mutationOp[0]]
         # Sum up the number of mutants, eg. 4
         self.stateSpace[-1] += hits[mutationOp[0]]
         i += 1
+
+    # Genome: [[0, 0, 0, 0, 0], [0, 0, 0, 0], [], [], ...]
+    #logger.debug("Genome: {}".format(self.genome))
+    # stateSpace: [13, 10, 13, ...]
+    #logger.debug("stateSpace: {}".format(self.stateSpace))
 
     return self.stateSpace[-1]
 
