@@ -70,7 +70,8 @@ def initialize(bestIndividual=None):
 
 
 def start():
-  """The actual starting process for ARC's evolutionary process."""
+  """The actual starting process for ARC's evolutionary process.
+  """
 
   global _population
   global _functionalPhase
@@ -128,15 +129,11 @@ def start():
         logger.info("*****************************************************************")
         logger.info("Evolving population towards optimizing non-functional performance")
         logger.info("*****************************************************************")
-        logger.debug("BUG HUNT: BestFunctional generation: {}  Worst score: {}"
-          .format(bestFunctional.generation, worstScore))
         bestNonFunctional, bestNonFunctionalGeneration \
           = evolve(bestFunctional.generation, worstScore)
-        logger.debug("BUG HUNT: BestNonFunctional: {}  Best NonFunctional generation: {}"
-          .format(bestNonFunctional, bestNonFunctionalGeneration))
         if bestNonFunctional is None:
           logger.info("***************************************************************")
-          logger.info("ERROR: No best individual found durint the non-functional phase")
+          logger.info("ERROR: No best individual found during the non-functional phase")
           logger.info("***************************************************************")
           logger.info(bestNonFunctional)
           logger.info("")
@@ -175,6 +172,16 @@ def start():
 
 
 def evolve(generation=0, worstScore=0):
+  """This function is the workhorse for ARC. Fixing bugs and optimizing the
+  non-functional score are both done here
+
+  Attributes:
+    generation (int): Current generation
+    worstScore (int?): TODO: Not used
+
+  Returns:
+    individual (Individual): Best individual found, or None
+  """
 
   global _population
   global _functionalPhase
@@ -227,15 +234,13 @@ def evolve(generation=0, worstScore=0):
 
       elif not mutationSuccess and not _functionalPhase:
         # No more possible mutations in non-functional phase, time to terminate
-        return get_best_individual(True)
+        return get_best_individual()
 
     averageFitness.append(runningSum / config._EVOLUTION_POPULATION)
     bestFitness.append((highestSoFar, highestID))
 
     # Check the terminating conditions
     if not _functionalPhase:
-      logger.debug("BUG HUNT: Convergence check: Generation {} bestFitness {} averageFitness {}"
-        .format(generation, bestFitness, averageFitness))
       if convergence(generation, bestFitness, averageFitness):
         return get_best_individual()
 
@@ -264,20 +269,17 @@ def evolve(generation=0, worstScore=0):
       deadlockVotes, dataraceVotes, nonFunctionalVotes = adjust_operator_weighting(generation)
 
 
-def check_has_mutations():
-  checkInd = -1
-  mutantsExist = False
-  for mutationOp in mutationOperators:
-    if mutationOp[1]:
-      checkInd += 1
-      if len(individual.genome[checkInd]) != 0:
-        mutantsExist = True
-
-  return mutantsExist
-
-
 def mutation(individual, deadlockVotes, dataraceVotes, nonFunctionalVotes):
-  """A mutator for the individual using single mutation with feedback."""
+  """A mutator for the individual using single mutation with feedback.
+
+  Attributes:
+    individual (Individual): Who we are scoring
+    deadlockVotes, dataraceVotes, nonFunctionalVotes:
+      Votes by operator type, eg: ({'ASAT': 1}) See the operator_weighting fn
+
+  Returns:
+    boolean: Were any mutants created for the individual?
+  """
 
   logger.info("-------------------------------------------------------------")
   logger.info("Mutating individual {} at generation {}".format(individual.id,
@@ -297,7 +299,6 @@ def mutation(individual, deadlockVotes, dataraceVotes, nonFunctionalVotes):
 
   # Check if individual has mutations
   # If no mutants exist, reset and re-attempt mutation
-  #if not check_has_mutations:
   if totNumMutants == 0:
     logger.debug("No possible mutations for individual")
 
@@ -441,7 +442,13 @@ def feedback_selection(individual, deadlockVotes, dataraceVotes, nonFunctionalVo
   test execution as feedback. The feedback is used to heuristically guide what
   mutation operator to apply next.
 
-  Returns one of ASAT, ...
+  Attributes:
+    individual (Individual): Who we are scoring
+    deadlockVotes, dataraceVotes, nonFunctionalVotes:
+      Votes by operator type, eg: ({'ASAT': 1}) See the operator_weighting fn
+
+  Returns:
+    selectedOperator: One of ASAT, ASIM, ...
   """
 
   global _functionalPhase
@@ -458,8 +465,7 @@ def feedback_selection(individual, deadlockVotes, dataraceVotes, nonFunctionalVo
   else:
     mutationOperators = config._NONFUNCTIONAL_MUTATIONS
 
-  # Case 1: Random selection
-  #         Randomly choose an operator that has generated mutants
+  # Case 1: Randomly choose an operator that has generated mutants
   if config._RANDOM_MUTATION:
 
     checkInd = -1
@@ -472,107 +478,113 @@ def feedback_selection(individual, deadlockVotes, dataraceVotes, nonFunctionalVo
     return candidateChoices[random.randint(0,len(candidateChoices)-1)]
 
   # Case 2: Heuristic selection
+  opType = 'race'
+
+  # 1. Acquire the deadlock and datarace rates
+  if len(individual.deadlocks) == 0:
+    deadlockRate = .5
+    dataraceRate = .5
   else:
-    opType = 'race'
+    deadlockRate = individual.deadlocks[-1] / config._CONTEST_RUNS
+    dataraceRate = individual.dataraces[-1] / config._CONTEST_RUNS
 
-    # 1. Acquire the deadlock and datarace rates
-    if len(individual.deadlocks) == 0:
-      deadlockRate = .5
-      dataraceRate = .5
-    else:
-      deadlockRate = individual.deadlocks[-1] / config._CONTEST_RUNS
-      dataraceRate = individual.dataraces[-1] / config._CONTEST_RUNS
+  # Acquire a random value that is less then the total of the bug rates
+  totalBugRate = (deadlockRate + dataraceRate)
+  choice = random.uniform(0, totalBugRate)
 
-    # Acquire a random value that is less then the total of the bug rates
-    totalBugRate = (deadlockRate + dataraceRate)
-    choice = random.uniform(0, totalBugRate)
+  # 2. Determine which bug type to use
+  if (dataraceRate > deadlockRate):
+    # If choice falls past the datarace range then type is lock
+    if choice >= dataraceRate:
+      opType = 'lock'
+  else:
+    # If choice falls under the deadlock range then type is lock
+    if choice <= deadlockRate:
+      opType = 'lock'
 
-    # 2. Determine which bug type to use
-    if (dataraceRate > deadlockRate):
-      # If choice falls past the datarace range then type is lock
-      if choice >= dataraceRate:
-        opType = 'lock'
-    else:
-      # If choice falls under the deadlock range then type is lock
-      if choice <= deadlockRate:
-        opType = 'lock'
+  # logger.debug("opType: {}".format(opType))
 
-    #logger.debug("opType: {}".format(opType))
+  # 3. Generate a list of operators that meet all the conditions
+  #    (Used for races, enabled, generated mutants, ...)
+  if opType is 'race':
+    checkInd = -1
+    for operator in mutationOperators:
+      # Is it enabled
+      if operator[1]:
+        checkInd += 1
+        # Is it enabled for data races and does it have mutants?
+        if operator[2] and len(individual.genome[checkInd]) > 0:
+          # If it is the functional phase and the operator fixes data races during the
+          # functional phase
+          if _functionalPhase and operator[5]:
+            candidateChoices.append(operator)
+          if not _functionalPhase:
+            candidateChoices.append(operator)
 
-    # 3. Generate a list of operators that meet all the conditions
-    #    (Used for races, enabled, generated mutants, ...)
-    if opType is 'race':
-      checkInd = -1
-      for operator in mutationOperators:
-        # Is it enabled
-        if operator[1]:
-          checkInd += 1
-          # Is it enabled for data races and does it have mutants?
-          if operator[2] and len(individual.genome[checkInd]) > 0:
-            # If it is the functional phase and the operator fixes data races during the
-            # functional phase
-            if _functionalPhase and operator[5]:
-              candidateChoices.append(operator)
-            if not _functionalPhase:
-              candidateChoices.append(operator)
+  elif opType is 'lock':
+    checkInd = -1
+    for operator in mutationOperators:
+      # Is it enabled
+      if operator[1]:
+        checkInd += 1
+        # Is it enabled for data races and does it have mutants?
+        if operator[3] and len(individual.genome[checkInd]) > 0:
+          # If it is the functional phase and the operator fixes data races during the
+          # functional phase
+          if _functionalPhase and operator[6]:
+            candidateChoices.append(operator)
+          if not _functionalPhase:
+            candidateChoices.append(operator)
 
-    elif opType is 'lock':
-      checkInd = -1
-      for operator in mutationOperators:
-        # Is it enabled
-        if operator[1]:
-          checkInd += 1
-          # Is it enabled for data races and does it have mutants?
-          if operator[3] and len(individual.genome[checkInd]) > 0:
-            # If it is the functional phase and the operator fixes data races during the
-            # functional phase
-            if _functionalPhase and operator[6]:
-              candidateChoices.append(operator)
-            if not _functionalPhase:
-              candidateChoices.append(operator)
+  # logger.debug("Before opChances candidateChoices: {}".format(candidateChoices))
+  # logger.debug("                 deadlockVotes:    {}".format(deadlockVotes))
+  # logger.debug("                 dataraceVotes:    {}".format(dataraceVotes))
 
-    # 4. Acquire the operator chances based on what voting condition we have
-    if _functionalPhase and opType is 'lock':
-      operatorChances = get_operator_chances(candidateChoices, deadlockVotes)
-      #logger.debug("Deadlock weighting: {}".format(operatorChances))
-    elif _functionalPhase and opType is 'race':
-      operatorChances = get_operator_chances(candidateChoices, dataraceVotes)
-      #logger.debug("Datarace weighting: {}".format(operatorChances))
-    else:
-      operatorChances = get_operator_chances(candidateChoices, nonFunctionalVotes)
-      #logger.debug("Operator chance for non-functional phase: {}".format(operatorChances))
+  # 4. Acquire the operator chances based on what voting condition we have
+  if _functionalPhase and opType is 'lock':
+    operatorChances = get_operator_chances(candidateChoices, deadlockVotes)
+    #logger.debug("Deadlock weighting: {}".format(operatorChances))
+  elif _functionalPhase and opType is 'race':
+    operatorChances = get_operator_chances(candidateChoices, dataraceVotes)
+    #logger.debug("Datarace weighting: {}".format(operatorChances))
+  else:
+    operatorChances = get_operator_chances(candidateChoices, nonFunctionalVotes)
+    #logger.debug("Operator chance for non-functional phase: {}".format(operatorChances))
 
-    # 5. Select an operator based on the adjusted weighting
+  # 5. Select an operator based on the adjusted weighting
 
-    # We may have the situation where the sum(operatorChances) is 0. In this case we
-    # use an equal weighting of 1 for every operator in candidateChoices
-    if sum(operatorChances) is 0:
-      randomChance = random.randint(0,len(candidateChoices))
-      currentRunning = 0  # Keeps track of sum (when we exceed this we are done)
-      for i in xrange(len(candidateChoices)):
-        currentRunning += 1
-        if randomChance <= currentRunning:
-          selectedOperator = candidateChoices[i]
-          break
-    else:
-      randomChance = random.randint(0,sum(operatorChances))
-      currentRunning = 0  # Keeps track of sum (when we exceed this we are done)
-      for i in xrange(len(operatorChances)):
-        currentRunning += operatorChances[i]
-        if randomChance <= currentRunning:
-          selectedOperator = candidateChoices[i]
-          break
+  # logger.debug("selection candidateChoices: {}".format(candidateChoices))
+  # logger.debug("           operatorChances: {}".format(operatorChances))
 
+  randomChance = random.randint(0,sum(operatorChances))
+  currentRunning = 0  # Keeps track of sum (when we exceed this we are done)
+  for i in xrange(len(operatorChances)):
+    currentRunning += operatorChances[i]
+    if randomChance <= currentRunning:
+      selectedOperator = candidateChoices[i]
+      break
 
+  logger.debug("Selected operator returned: {}".format(selectedOperator[0]))
 
-    #logger.debug("Selected operator: {}".format(selectedOperator[0]))
-    return selectedOperator
+  return selectedOperator
 
 
 def get_operator_chances(candidateChoices, votes):
+  """Score each operator based on how successful it is. For example,
+  ASAT might get 5 points, ASIM 8 points, ...
+
+  Attributes:
+    candidateChoices: List of operators to weight
+    votes: Votes by operator type, eg: ({'ASAT': 1})
+  Returns:
+    operatorChances: Score of each operator, eg: ({'ASIM': 3})
+  """
 
   # candidateChoices is a list of config._MUTATIONS
   # { [ASAT, True, ...], [ASIM, True, ...], ...}
+
+  # logger.debug("entry candidateChoices: {}".format(candidateChoices))
+  # logger.debug("                 votes: {}".format(votes))
 
   operatorChances = [0] * len(candidateChoices)
   currentValue = len(candidateChoices) + 1
@@ -591,18 +603,30 @@ def get_operator_chances(candidateChoices, votes):
         operatorChances[i] = currentValue
     currentLarge = votes[op]
 
-  # Fill in chances where nothing was voted (gives largest unused chance value)
+    # logger.debug("Sorting candidateChoices {}".format(candidateChoices))
+    # logger.debug("        operatorChances  {}".format(operatorChances))
+    # logger.debug("        votes            {}".format(votes))
+
+  # It is possible to have arrived here with operator chances being [0].
+  # That is, there was only one applicable operator and it will be chosen
+  # 0% of the time. Give each operator a weighting of atleast 1.
   for operator in operatorChances:
-    if operator == 0:
-      operatorChances[operatorChances.index(operator)] = currentValue - 1
+    if operator <= 0:
+      operatorChances[operatorChances.index(operator)] = 1
+
+  # logger.debug("Returned operatorChances: {}".format(operatorChances))
 
   return operatorChances
 
 
 def evaluate(individual, worstScore):
-  """Perform the actual evaluation of said individual using ConTest testing.
+  """Determine the fitness of the individual.  (Functional or non-functional)
 
-  The fitness is determined using functional and non-functional fitness values.
+  Attributes:
+    individual (Individual): Who we are scoring
+    worstScore: TODO: Argument not used
+  Returns:
+    No return value
   """
 
   logger.info("Evaluating individual {} on generation {}".format(individual.id,
@@ -649,17 +673,18 @@ def evaluate(individual, worstScore):
         individual.deadlocks.append(contest.deadlocks)
         individual.errors.append(contest.errors)
     else:
-      logger.error("Hash value of member {} generation {} is NULL".format(individual.id, individual.generation))
-  else:
+      logger.error("Hash value of member {} generation {} is NULL".format(
+        individual.id, individual.generation))
+
+  else: # Non-functional phase
     # Ensure functionality is still there
-    # _functionalPhase is false here
     if contest.begin_testing(_functionalPhase, True,
           config._CONTEST_RUNS * config._CONTEST_VALIDATION_MULTIPLIER):
       logger.debug("Nonfunctional phase: Mutation didn't introduce any bugs")
-      #contest.clear_results()
 
       # Nonfunctional fitness
-      individual.score.append(get_average_non_functional_score(contest, individual, config._CONTEST_RUNS * config._CONTEST_VALIDATION_MULTIPLIER))
+      individual.score.append(get_average_non_functional_score(contest,
+        individual, config._CONTEST_RUNS * config._CONTEST_VALIDATION_MULTIPLIER))
     else:
       logger.debug("Nonfunctional phase: Mutation introduced a bug")
       individual.score.append(-1)
@@ -681,12 +706,20 @@ def evaluate(individual, worstScore):
 
 
 def get_average_non_functional_score(contest, individual, numberOfRuns = config._CONTEST_RUNS):
+  """Calculate the non-functional score of the individual
+
+  Precondition:
+    contest.begin_testing should be called before so the test information is
+      available
+  Attributes:
+    contest (Tester): Instance that did the testing in the Precondition
+    individual (Individual): Who we are scoring
+    numberOfRuns: TODO: Argument not used
+  Returns:
+    avgFitness (int): Nonfunctional fitness score
+  """
 
   logger.info("Getting average non-functional score")
-
-  # This individual's best generation should be the last one compiled
-  #contest = tester.Tester()
-  #contest.begin_testing(False, False, numberOfRuns)  # Measure performance
 
   # Get the average of realTime and voluntarySwitches
   avgRealTime = sum(contest.realTime, 0.0) / len(contest.realTime)
@@ -711,6 +744,8 @@ def get_average_non_functional_score(contest, individual, numberOfRuns = config.
   otherUnc = 0.0
 
   # Voluntary switches are more significant
+  # TODO: In a real program, how do avgRealTime and avgVoluntarySwitches
+  #       compare? Is one going to consistently be larger than the other?
   if (avgRealTime > avgVoluntarySwitches):
     sigNum = avgVoluntarySwitches
     sigUnc = uncVS
@@ -736,6 +771,16 @@ def get_average_non_functional_score(contest, individual, numberOfRuns = config.
 
 
 def adjust_operator_weighting(generation):
+  """During different stages of the ES, different operators may be more
+  successful.  Look back config._DYNAMIC_RANKING_WINDOW generations to
+  score how successful we have been at fixing data races and deadlocks.
+
+  Attributes:
+    generation (int): Current generation
+  Returns:
+    deadlockVotes, dataraceVotes, nonFunctionalVotes:
+      Votes by operator type, eg: ({'ASAT': 1})
+  """
 
   global _population
   global _functionalPhase
@@ -784,6 +829,7 @@ def adjust_operator_weighting(generation):
 
       #logger.debug("individual.deadlocks: {}".format(individual.deadlocks))
       #logger.debug("individual.dataraces: {}".format(individual.dataraces))
+
       # Figure if there was any improvement from the last generation
       if _functionalPhase:
         if individual.deadlocks[i+1] < individual.deadlocks[i]:
@@ -804,9 +850,6 @@ def adjust_operator_weighting(generation):
         if individual.score[i+1] > individual.score[i]:
           logger.debug("Non-functional improvement over individual {} in generation {}".
             format(individual.id, i))
-          logger.debug("Applied operators: {}".format(individual.appliedOperators))
-          j = individual.appliedOperators[i]
-          #logger.debug ("      ***** J is {} *****".format(j))
           nonFunctionalVotes[j] += 1
 
   logger.debug("Deadlock Votes: {}".format(deadlockVotes))
@@ -817,8 +860,18 @@ def adjust_operator_weighting(generation):
 
 
 def convergence(generation, bestFitness, averageFitness):
+  """The population could stagnate. That is, there is no (or little)
+  improvement in fitness over config._GENERATIONAL_IMPROVEMENT_WINDOW
+  generations.
 
-  # Alternate termination criteria to check for convergence
+  Attributes:
+    generation (int): Current generation
+    bestFitness (int): Highest fitness score in population
+    averageFitness(int): Average fitness of population
+  Returns:
+    boolean: Do we stop?
+  """
+
   avgFitTest = False
   maxFitTest = False
 
@@ -838,24 +891,36 @@ def convergence(generation, bestFitness, averageFitness):
             format(config._AVG_FITNESS_MIN_DELTA,
             config._GENERATIONAL_IMPROVEMENT_WINDOW))
       return True
+
     if not maxFitTest:
       logger.info("Maximum fitness hasn't moved by {} in {} generations".
             format(config._BEST_FITNESS_MIN_DELTA,
             config._GENERATIONAL_IMPROVEMENT_WINDOW))
       return True
+
   return False
 
 
 def terminate(individual, generation, generationLimit):
+  """Check to see if we should stop the algorithm.
+
+  Attributes:
+    generation (int): Current generation
+    generationLimit (int): Max number of generations allotted
+  Returns:
+    boolean:    Do we stop?
+    individual: Correct individual, nor None if it still has bugs
+  """
 
   global _population
   global _functionalPhase
 
-  # Check for terminating conditions
-  #for individual in _population:
+  # If an individual passes the base number of tests
   if _functionalPhase and individual.successes[-1]/config._CONTEST_RUNS == 1:
     logger.info("Found potential best individual {}".format(individual.id))
 
+    # ... and the individual passes the extended number of tests, we have
+    # found a fix for the dataraces(s) and deadlock(s)
     if tester.Tester().begin_testing(True, True,
           config._CONTEST_RUNS * config._CONTEST_VALIDATION_MULTIPLIER):
       tester.Tester().clear_results()
@@ -865,23 +930,31 @@ def terminate(individual, generation, generationLimit):
     else:
       tester.Tester().clear_results()
       logger.info("Potential best individual still has errors")
+
   if generation == generationLimit:
     logger.info("Exhausted all generations")
     return True, None
+
   return False, None
 
 
-def get_best_individual(beforeMutation=False):
-  # Returns individual and generation
+def get_best_individual():
+  """Return the highest scoring individual.
+
+  Returns:
+    individual: Highest scorer, or None
+    generation: Generation where high score occurs, or 0
+  """
 
   global _population
   global _functionalPhase
 
   bestScore = -2
-  individualId = -1
+  bestIndividual = None
   generation = -1
 
   for individual in _population:
+    # Determine the upper bound for xrange below
     upperBound = 0
     if len(individual.score) < individual.generation:
       upperBound = len(individual.score) - 1
@@ -890,12 +963,12 @@ def get_best_individual(beforeMutation=False):
 
     for i in xrange(0, upperBound):
       if individual.score[i] > bestScore:
-        individualId = individual.id
+        bestIndividual = individual
         generation = i + 1
         bestScore = individual.score[i]
 
-  if bestScore != -2:
-    return _population[individualId], generation
+  if bestIndividual is not None:
+    return bestIndividual, generation
   else:
     return None, 0
 
@@ -903,6 +976,12 @@ def get_best_individual(beforeMutation=False):
 def replace_lowest(generation):
   """Attempt to replace underperforming members with high-performing members or
   the original buggy program.
+
+  Attributes:
+    generation (int): Current generation of the ES
+
+  Returns:
+    No return arguments
   """
 
   global _population
@@ -922,83 +1001,85 @@ def replace_lowest(generation):
     sortedMembers[i].turnsUnderperforming += 1
 
   # Check to see if we can replace the weakest individuals
-  if generation % config._EVOLUTION_REPLACE_INTERVAL is 0:
+  if generation % config._EVOLUTION_REPLACE_INTERVAL is not 0:
+    _population = sorted(sortedMembers, key=lambda individual: individual.id)
+    return
 
-    logger.debug("Performing replacement of weakest individuals")
+  logger.debug("Performing replacement of weakest individuals")
 
-    # Acquire set of operators to use
-    if config._RANDOM_MUTATION:
-      mutationOperators = config._ALL_MUTATIONS
-    elif _functionalPhase:
-      mutationOperators = config._FUNCTIONAL_MUTATIONS
+  # Acquire set of operators to use
+  if config._RANDOM_MUTATION:
+    mutationOperators = config._ALL_MUTATIONS
+  elif _functionalPhase:
+    mutationOperators = config._FUNCTIONAL_MUTATIONS
+  else:
+    mutationOperators = config._NONFUNCTIONAL_MUTATIONS
+
+  # Replace or restart members who have underperformed for too long
+  for i in xrange(0, numUnder):
+
+    if (sortedMembers[i].turnsUnderperforming < config._EVOLUTION_REPLACE_WEAK_MIN_TURNS):
+      continue
     else:
-      mutationOperators = config._NONFUNCTIONAL_MUTATIONS
+      sortedMembers[i].turnsUnderperforming = 0
 
-    # Replace or restart members who have underperformed for too long
-    for i in xrange(0, numUnder):
+    randomNum = random.randint(1, 100)
 
-      if (sortedMembers[i].turnsUnderperforming < config._EVOLUTION_REPLACE_WEAK_MIN_TURNS):
-        continue
+    # Case 1: Replace an underperforming member with a fit member
+    if randomNum <= config._EVOLUTION_REPLACE_WITH_BEST_PERCENT:
+
+      while True:
+        # Take a member from the top 10% of the population
+        highMember =  random.randint(int(config._EVOLUTION_POPULATION * 0.9),
+                          config._EVOLUTION_POPULATION) - 1
+
+        # Ensure that the selected memeber is not the current member
+        if highMember is not i:
+          break
+
+      # Keep the id of the original member
+      lowId = sortedMembers[i].id
+      # logger.debug( "[INFO] Replacing ID: {} with {}".format(lowId, sortedMembers[highMember].id)
+      sortedMembers[i] = copy.deepcopy(sortedMembers[highMember])
+      sortedMembers[i].id = lowId
+      sortedMembers[i].wasReplaced[-1] = True
+
+      logger.debug("Case 1: Replacing a low performer with a high performer")
+      txl_operator.copy_local_project_a_to_b(sortedMembers[i].generation,
+                                             sortedMembers[highMember].id,
+                                             sortedMembers[i].generation,
+                                             sortedMembers[i].id)
+
+    # Case 2: Restart the member
+    # Code copy-pasted from initialize()
+    else:
+      # The number of enabled mutation operators
+      numOfOperators = 0
+      for operator in mutationOperators:
+        if operator[1]:
+          numOfOperators += 1
+
+      # logger.debug("[INFO] Restarting underperforming member ID: {}".format(sortedMembers[i].id)
+      # TODO We don't know in the timeline, when an individual is restarted
+      # If in functional restart off of local, otherwise off of best individual
+      sortedMembers[i].wasRestarted[-1] = True
+      if _functionalPhase:
+        # Reset the local project to it's pristine state
+        logger.debug("Case 2a: Reseting ID {} generation {} back to the pristine project".
+          format(sortedMembers[i].id, sortedMembers[i].generation))
+        txl_operator.create_local_project(sortedMembers[i].generation,
+          sortedMembers[i].id, True)
       else:
-        sortedMembers[i].turnsUnderperforming = 0
+        # Reset to best individual
+        logger.debug("Case 2b: Reseting ID {} generation {} back to the best individual project".
+          format(sortedMembers[i].id, sortedMembers[i].generation))
+        txl_operator.copy_local_project_a_to_b(sortedMembers[i].switchGeneration,
+                                              sortedMembers[i].id,
+                                              sortedMembers[i].generation,
+                                              sortedMembers[i].id)
 
-      randomNum = random.randint(1, 100)
-
-      # Case 1: Replace an underperforming member with a fit member
-      if randomNum <= config._EVOLUTION_REPLACE_WITH_BEST_PERCENT:
-
-        while True:
-          # Take a member from the top 10% of the population
-          highMember =  random.randint(int(config._EVOLUTION_POPULATION * 0.9),
-                            config._EVOLUTION_POPULATION) - 1
-
-          # Ensure that the selected memeber is not the current member
-          if highMember is not i:
-            break
-
-        # Keep the id of the original member
-        lowId = sortedMembers[i].id
-        # logger.debug( "[INFO] Replacing ID: {} with {}".format(lowId, sortedMembers[highMember].id)
-        sortedMembers[i] = copy.deepcopy(sortedMembers[highMember])
-        sortedMembers[i].id = lowId
-        sortedMembers[i].wasReplaced[-1] = True
-
-        logger.debug("Case 1: Replacing a low performer with a high performer")
-        txl_operator.copy_local_project_a_to_b(sortedMembers[i].generation,
-                                               sortedMembers[highMember].id,
-                                               sortedMembers[i].generation,
-                                               sortedMembers[i].id)
-
-      # Case 2: Restart the member
-      # Code copy-pasted from initialize()
-      else:
-        # The number of enabled mutation operators
-        numOfOperators = 0
-        for operator in mutationOperators:
-          if operator[1]:
-            numOfOperators += 1
-
-        # logger.debug("[INFO] Restarting underperforming member ID: {}".format(sortedMembers[i].id)
-        # TODO We don't know in the timeline, when an individual is restarted
-        # If in functional restart off of local, otherwise off of best individual
-        sortedMembers[i].wasRestarted[-1] = True
-        if _functionalPhase:
-          # Reset the local project to it's pristine state
-          logger.debug("Case 2: Reseting ID {} generation {} back to the pristine project".
-            format(sortedMembers[i].id, sortedMembers[i].generation))
-          txl_operator.create_local_project(sortedMembers[i].generation,
-            sortedMembers[i].id, True)
-        else:
-          # Reset to best individual
-          logger.debug("Case 2: Reseting ID {} generation {} back to the best individual project".
-            format(sortedMembers[i].id, sortedMembers[i].generation))
-          txl_operator.copy_local_project_a_to_b(sortedMembers[i].switchGeneration,
-                                                sortedMembers[i].id,
-                                                sortedMembers[i].generation,
-                                                sortedMembers[i].id)
-
-      # ALTERNATIVE: Reset the turnsUnderperforming at each interval
-      # sortedMembers[i].turnsUnderperforming = 0
+    # ALTERNATIVE: Reset the turnsUnderperforming at each interval
+    # sortedMembers[i].turnsUnderperforming = 0
 
   # Resort the population by ID and reassign it to the original variable
   _population = sorted(sortedMembers, key=lambda individual: individual.id)

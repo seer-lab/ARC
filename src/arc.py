@@ -33,7 +33,7 @@ def main():
     for line in configRoot:
       if line.find("_ROOT_DIR =") is 0:
         line = "_ROOT_DIR = \"{}\" ".format(os.path.split(os.getcwd())[0] + os.sep)
-      print(line[0:-1])  # Remove extra newlines (a trailing-space must exists in modified lines)
+      print(line[0:-1]) # Remove extra newlines (a trailing-space must exists in modified lines)
     configRoot.close()
     restart = True
 
@@ -44,10 +44,10 @@ def main():
     os.execl(python, python, * sys.argv)
 
   # 2. With _ROOT_DIR configured, we can determine the operating system,
-  #    config._OS we are running on.
+  # config._OS we are running on.
   # One way to do this is to use the 'uname' command:
-  #   - On Linux, 'uname -o' returns 'GNU/Linux'
-  #   - On Mac, 'uname -o' isn't recognized. 'uname' returns 'Darwin'
+  # - On Linux, 'uname -o' returns 'GNU/Linux'
+  # - On Mac, 'uname -o' isn't recognized. 'uname' returns 'Darwin'
 
   # Check for the workarea directory
   if not os.path.exists(config._PROJECT_DIR):
@@ -61,7 +61,7 @@ def main():
   outFile.seek(0)
   outText = outFile.read()
   outFile.close()
-  ourOS = 0   # 10 is Mac, 20 is Linux
+  ourOS = 0 # 10 is Mac, 20 is Linux
   if re.search("Linux", outText):
     ourOS = 20 # Linux
   else:
@@ -76,9 +76,9 @@ def main():
       if line.find("_OS =") is 0 or line.find("_OS=") is 0:
         if ourOS == 10: # Mac
           line = "_OS = \"MAC\" " # Note the extra space at the end
-        else:  # Linux
+        else: # Linux
           line = "_OS = \"LINUX\" "
-      print(line[0:-1])  # Remove extra newlines (a trailing-space must exists in modified lines)
+      print(line[0:-1]) # Remove extra newlines (a trailing-space must exists in modified lines)
     configOS.close()
     restart = True
 
