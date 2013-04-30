@@ -363,7 +363,7 @@ def generate_mutants(generation, memberNum, txlOperator, sourceFile, destDir):
 
           counter += 1
 
-    # 3. We have no targeting information. Notice the use of the '_RND' TXL operators
+    # 3. We have no targeting information. Note the use of the '_RND' TXL operators
     else:
 
       #logger.debug("Case 1-3: Add sync operators with no targeting info (random)")

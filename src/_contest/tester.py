@@ -69,7 +69,7 @@ class Tester():
       if functional:
         process = subprocess.Popen(['java', '-Xmx{}m'.format(config._PROJECT_TEST_MB),
           '-XX:-UseSplitVerifier',
-          '-cp', config._PROJECT_CLASSPATH + ":" + config._JUNIT_JAR , 
+          '-cp', config._PROJECT_CLASSPATH + ":" + config._JUNIT_JAR ,
           '-javaagent:' + config._CONTEST_JAR,
           '-Dcontest.verbose=0',  'org.junit.runner.JUnitCore',
           config._PROJECT_TESTSUITE], stdout=outFile,
@@ -177,12 +177,13 @@ class Tester():
         outFile.close()
         errFile.close()
 
-        # Acquire the number of faults (accoring to ant test)
+
         #logger.debug("==== Tester, Output text:\n")
         #logger.debug(output)
         #logger.debug("==== Tester, Error text:\n")
         #logger.debug(error)
 
+        # Acquire the number of faults (accoring to ant test)
         numTests = 0
         numFailures = 0
         numSuccesses = 0

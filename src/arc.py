@@ -114,6 +114,33 @@ def main():
     outFile.seek(0)
     outText = outFile.read()
     outFile.close()
+
+    # If you are getting an error at the re.search below, make sure the ant
+    # build file has the following sections:
+
+    # <path id="classpath.base">
+    #   <pathelement location="${current}" />
+    #   <pathelement location="${build.classes}" />
+    #   <pathelement location="${src.main}" />
+    # </path>
+    # <path id="classpath.test">
+    #   <pathelement location="../lib/junit-4.8.1.jar" />
+    #   <pathelement location="${tst-dir}" />
+    #   <path refid="classpath.base" />
+    # </path>
+
+    # <target name="test" depends="compile" >
+    #   <junit fork="yes">
+
+    #       <!-- THE TEST SUITE FILE-->
+    #       <test name = "Cache4jTest"/>
+
+    #       <!-- NEED TO BE THE CLASS FILES (NOT ABSOLUTE) -->
+    #       <classpath refid="classpath.test"/>
+    #       <formatter type="plain" usefile="false" /> <!-- to screen -->
+    #   </junit>
+    # </target>
+
     config._PROJECT_CLASSPATH = re.search("-classpath'\s*\[junit\]\s*'(.*)'",
       outText).groups()[0]
 

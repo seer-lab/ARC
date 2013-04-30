@@ -268,6 +268,9 @@ def did_contest_find_shared_variables():
     logger.error("ConTest's config._SHARED_VARS_FILE doesn't exist")
     return False
 
+  # If you are concerned ConTest didn't run correctly, uncomment the
+  # "logger.debug("==== Tester, Output text:\n")" section of lines in
+  # tester.py
   if os.path.getsize(config._SHARED_VARS_FILE) == 0:
     logger.info("ConTest didn't detect any shared variables (Or didn't run correctly.)")
     return False

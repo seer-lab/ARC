@@ -21,7 +21,7 @@ _OS = "MAC"
 # Target project variables
 
 # Original project is placed in the input directory.
-# Invariant: This directory _ROOT_DIR = "/home/davidkelk/workspace/ARC-Test-Suite/test_area/arc/"is read-only
+# Invariant: This directory is read-only
 _PROJECT_PRISTINE_DIR = _ROOT_DIR + "input/"
 _PROJECT_PRISTINE_SRC_DIR = _PROJECT_PRISTINE_DIR + "source/"
 
@@ -34,16 +34,18 @@ _SHARED_VARS_FILE = _PROJECT_DIR + "com_ibm_contest/sharedVars.txt"
 
 # A fixed project (if found) is placed in the output directory
 _PROJECT_OUTPUT_DIR = _ROOT_DIR + "output/"
-_PROJECT_PREFIX = "Account,Main,ManageAccount"  # Comma separated fully-qualifying class names or package prefixes
-_PROJECT_TESTSUITE = "AccountTest"
+
+_PROJECT_PREFIX = "SynchronizedCache,SoftCacheObject,LRUComparator,LFUComparator,FIFOComparator,EmptyCache,CacheInfoImpl,Configurator,CacheObject,CacheConfigImpl,BlockingCache,CacheFactory,CacheCleaner"  # Comma separated fully-qualifying class names or package prefixes
+_PROJECT_TESTSUITE = "Cache4jTest"
 _PROJECT_COMPILE = "compile"
 _PROJECT_TEST = "test"
 _PROJECT_CLASSPATH = None  # Automatically acquired using ant test if None
 _PROJECT_TEST_MB = 2000
+_SHARED_VARS_FILE = _PROJECT_DIR + "com_ibm_contest/sharedVars.txt"
 
 # Chord variables
-_CHORD_MAIN = "Main"
-_CHORD_COMMAND_LINE_ARGS = "out.txt little"
+_CHORD_MAIN = "SynchronizedCache"
+_CHORD_COMMAND_LINE_ARGS = ""
 
 _CHORD_DIR = _ROOT_DIR + "lib/Chord/"
 _CHORD_PROPERTIES = _CHORD_DIR + "chord.properties"
@@ -53,10 +55,10 @@ _CHORD_JAR = _CHORD_DIR + "chord.jar"
 _CONTEST_DIR = _ROOT_DIR + "lib/ConTest/"
 _CONTEST_KINGPROPERTY = _CONTEST_DIR + "KingProperties"
 _CONTEST_JAR = _CONTEST_DIR + "ConTest.jar"
-_CONTEST_RUNS = 5
+_CONTEST_RUNS = 15
 _CONTEST_TIMEOUT_SEC = 300 # Default timeout, it is adjusted dynamically
-_CONTEST_TIMEOUT_MULTIPLIER = 20  # The average execution time (with conTest) is multiplied by this
-_CONTEST_VALIDATION_MULTIPLIER = 5  # Allows for validation of functionality
+_CONTEST_TIMEOUT_MULTIPLIER = 15  # The average execution time (with conTest) is multiplied by this
+_CONTEST_VALIDATION_MULTIPLIER = 10  # Allows for validation of functionality
 
 # Mutation operator variables
 # [0]Name  [1]Enable  [2]Enable for DataRace  [3]Enable for Deadlock  [4]File
@@ -93,12 +95,9 @@ _RANDOM_MUTATION = False
 # Only perform functional phase
 _ONLY_FUNCTIONAL = True
 
-# Only perform functional phase
-_ONLY_FUNCTIONAL = True
-
 # Evolution variables
 _EVOLUTION_GENERATIONS = 30
-_EVOLUTION_POPULATION = 5
+_EVOLUTION_POPULATION = 30
 _EVOLUTION_REPLACE_LOWEST_PERCENT = 10
 _EVOLUTION_REPLACE_INTERVAL = 5  # Consider replacement on this generational interval
 _EVOLUTION_REPLACE_WEAK_MIN_TURNS = 3  # Min number of turns of underperforming before replacement
