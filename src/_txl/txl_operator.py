@@ -1,12 +1,12 @@
 """txl_operator.py contains functions related to:
 - Generating mutants
-- Backing up and restoring the pristine project
 - Creating local projects and copying mutants to them
 - Resetting underperforming local projects by:
   - Copying the pristine project over of it
   - Copying a high-performing project over it
 - Copying local projects to the work area
 - Compiling work area projects
+- Copying a correct project to the output directory
 """
 
 import sys
@@ -31,7 +31,7 @@ logger = logging.getLogger('arc')
 # (generation, memberNum, txlOperator, mutantNum) => directory path
 # For example:
 # (2 4 EXCR 6) -> /home/myrikhan/workspace/arc/tmp/2/4/source/DeadlockDemo
-#                 /EXCR/EXCR_DeadlockDemo.java_3
+#                 /EXCR/EXCR_DeadlockDemo.java_3/
 uniqueMutants = {}
 
 
@@ -45,32 +45,57 @@ def mutate_project(generation, memberNum, mutationOperators):
   """Create all of the mutants for a member of the genetic pool.  Mutants and
   projects are stored by generation and member. The source project depends on
   the generation:
-  Gen 1: The source project is the original project
+  Gen 1: The source project is the original project in the input directory
   Gen >= 2: Source project is from generation -1, for the same memberNum
 
   Attributes:
-  generation (int): Current generation of the evolutionary strategy
+  generation (int): Current generation of the evolutionary GA
   memberNum (int): Which member of the population we are mutating
   mutationOperators ([list]): one of {config._FUNCTIONAL_MUTATIONS,
     config._NONFUNCTIONAL_MUTATIONS}
   """
 
+  # Optimization: For generation 1, all members of the population will
+  #   have the same mutants as they are all mutating the base project
+  #   in the /input directory. So, instead of creating the mutants N
+  #   times, create them once (for member #1) and copy them to the
+  #   other member directories.
+  if generation == 1 and memberNum > 1:
+    # tmp/1/1/source/
+    srcDir = os.path.join(config._TMP_DIR, str(1), str(1),
+             config._PROJECT_SRC_DIR.replace(config._PROJECT_DIR, ''))
+    # tmp/1/2/source/
+    destDir = os.path.join(config._TMP_DIR, str(1), str(memberNum),
+              config._PROJECT_SRC_DIR.replace(config._PROJECT_DIR, ''))
+
+    if os.path.exists(destDir):
+      shutil.rmtree(destDir)
+    shutil.copytree(srcDir, destDir)
+
+    return
+
   #logger.debug("Arguments received: {} {} {}".format(generation, memberNum, mutationOperators))
 
-  destDir = config._TMP_DIR + str(generation) + os.sep + str(memberNum) + os.sep
+  # source/
+  codeDir = config._PROJECT_SRC_DIR.replace(config._PROJECT_DIR, '')
+
+  # tmp/3/4/source
+  destDir = os.path.join(config._TMP_DIR, str(generation), str(memberNum), codeDir)
 
   if generation == 1:
+    # input/source/
     sourceDir = config._PROJECT_PRISTINE_SRC_DIR
   else:
-    sourceDir = (config._TMP_DIR + str(generation - 1) + os.sep + str(memberNum) \
-                + os.sep + 'project' + os.sep)
+    # tmp/2/4/project/source/
+    sourceDir = os.path.join(config._TMP_DIR, str(generation - 1), str(memberNum),
+                'project', codeDir)
 
   #logger.debug("---------------------------")
-  #logger.debug("generation:      {}".format(generation))
-  #logger.debug("member num:      {}".format(memberNum))
-  #logger.debug("operators:       {}".format(mutationOperators))
-  #logger.debug("sourceDir:       {}".format(sourceDir))
-  #logger.debug("destDir:         {}".format(destDir))
+  #logger.debug("  generation: {}".format(generation))
+  #logger.debug("  member num: {}".format(memberNum))
+  #logger.debug("  operators: {}".format(mutationOperators))
+  #logger.debug("  sourceDir:  {}".format(sourceDir))
+  #logger.debug("  destDir:    {}".format(destDir))
 
   recursively_mutate_project(generation, memberNum, sourceDir, destDir,
                              mutationOperators)
@@ -79,7 +104,7 @@ def mutate_project(generation, memberNum, mutationOperators):
 def recursively_mutate_project(generation, memberNum, sourceDir, destDir, mutationOperators):
   """For a given member and generation, generate all of the mutants for a
   project.  The source project depends on the generation:
-  Gen 1: The source project is the original project
+  Gen 1: The source project is the original project from the input directory
   Gen >= 2: Source project is from generation -1, for the same memberNum
   Most of the work is farmed out to the generate_all_mutants function.
   These function exists for future flexibility.
@@ -93,17 +118,57 @@ def recursively_mutate_project(generation, memberNum, sourceDir, destDir, mutati
     config._NONFUNCTIONAL_MUTATIONS}
   """
 
-  for root, dirs, files in os.walk(sourceDir):
-    # Here we are interested in subdirectories only
-    for sourceSubDir in dirs:
-      recursively_mutate_project(generation, memberNum, sourceSubDir, destDir, mutationOperators)
+  #logger.debug("sourceDir    {}".format(sourceDir))
 
+  # tmp/2/4/project/source or input/source/
+  for root, dirs, files in os.walk(sourceDir):
 
     for aFile in files:
       if ("." in aFile and aFile.split(".")[1] == "java"):
+        # arc/input/source/main/net/sf/cache4j/Cache.java or
+        # tmp/1/3/source/main/net/sf/cache4j/Cache.java
         sourceFile = os.path.join(root, aFile)
 
-        generate_all_mutants(generation, memberNum, sourceFile, destDir,
+
+        #logger.debug("files array:  {}".format(files))
+        #logger.debug("file:         {}".format(aFile))
+        #logger.debug("sourceFile:   {}".format(sourceFile))
+
+        # We need to get the relative path of the source file and add it to the
+        # destination directory. For example,
+        # IF source dir = arc/input/source/main/net/sf/cache4j/
+        # THEN the rel path = main/net/sf/cache4j/
+        if generation == 1:
+          # arc/input/source/
+          subtr = config._PROJECT_PRISTINE_SRC_DIR
+        else:
+          # arc/tmp/2/4/project/source/
+          subtr = os.path.join(config._TMP_DIR, str(generation - 1), str(memberNum),
+                  'project', config._PROJECT_SRC_DIR.replace(config._PROJECT_DIR, ''))
+
+        # main/net/sf/cache4j/
+        reldir = root.replace(subtr, '')
+
+
+        # Use a throw-away local variable to hold the destination directory
+        # avoids problems with appending the relative directory more than once
+        # or appending a different local directory onto an existing one
+        # tmp/3/4/source
+        localDestDir = destDir
+
+        # only add the relative part on once :)
+        if destDir.find(reldir) is -1:
+          # tmp/3/4/source/main/net/sf/cache4j
+          localDestDir = os.path.join(destDir, reldir)
+
+        #logger.debug("--------------------------")
+        #logger.debug("  sourceFile:   {}".format(sourceFile))
+        #logger.debug("  destDir:      {}".format(destDir))
+        #logger.debug("  subtr:        {}".format(subtr))
+        #logger.debug("  reldir:       {}".format(reldir))
+        #logger.debug("  localDestDir: {}".format(localDestDir))
+
+        generate_all_mutants(generation, memberNum, sourceFile, localDestDir,
                              mutationOperators)
 
 
@@ -111,10 +176,10 @@ def generate_all_mutants(generation, memberNum, sourceFile, destDir, mutationOpe
   """See comment for recursively_mutate_project."""
 
   #logger.debug("---------------------------")
-  #logger.debug("generation:      {}".format(generation))
-  #logger.debug("member num:      {}".format(memberNum))
-  #logger.debug("sourceFile:      {}".format(sourceFile))
-  #logger.debug("destDir:         {}".format(destDir))
+  #logger.debug("  generation:      {}".format(generation))
+  #logger.debug("  member num:      {}".format(memberNum))
+  #logger.debug("  sourceFile:      {}".format(sourceFile))
+  #logger.debug("  destDir:         {}".format(destDir))
 
   for operator in mutationOperators:
     if operator[1]:  # If enabled
@@ -143,7 +208,7 @@ def generate_mutants(generation, memberNum, txlOperator, sourceFile, destDir):
   #sourceNameOnly:   Bank
   #sourceExtOnly:    .java
   sourceNoExt = os.path.splitext(sourceFile)[0]
-  sourceNoFileName = os.path.split(sourceNoExt)[0] + os.sep
+  sourceNoFileName = os.path.split(sourceNoExt)[0]
   sourceNameOnly = os.path.split(sourceNoExt)[1]
   sourceExtOnly = os.path.splitext(sourceFile)[1]
 
@@ -152,11 +217,11 @@ def generate_mutants(generation, memberNum, txlOperator, sourceFile, destDir):
   if (generation == 1):
     sourceRelPath = sourceNoFileName.replace(config._PROJECT_SRC_DIR, '')
   else:
-    sourceRelPath = sourceNoFileName.replace(config._TMP_DIR + str(generation - 1) + os.sep
-                    + str(memberNum) + os.sep, '')
+    sourceRelPath = sourceNoFileName.replace(os.path.join(config._TMP_DIR,
+                    str(generation - 1), str(memberNum)), '')
 
 
-  txlDestDir = "".join([destDir, sourceNameOnly, os.sep, txlOperator[0], os.sep])
+  txlDestDir = os.path.join(destDir, sourceNameOnly, txlOperator[0]) + os.sep
 
   # sourceFile:       source/BuggedProgram.java
   # destDir:          /Users/kelk/workspace/arc/tmp/1/1/
@@ -385,8 +450,10 @@ def generate_mutants(generation, memberNum, txlOperator, sourceFile, destDir):
       # Different operator when 2 args are available
       if txlOperator is config._MUTATION_ASAT:
         txlOpRnd = txlOperator[4].replace("ASAT.Txl", "ASAT_RND.Txl")
-        logger.debug("{} {} {} {} '{}'".format(txlOperator[4], sourceFile, txlOpRnd,
-          mutantSource+sourceExtOnly, txlDestDir, config._PROJECT_DIR))
+
+        #logger.debug("{} {} {} {} '{}'".format(txlOperator[4], sourceFile, txlOpRnd,
+        #  mutantSource+sourceExtOnly, txlDestDir, config._PROJECT_DIR))
+
         process = subprocess.Popen(['txl', sourceFile, txlOpRnd, '-',
           '-outfile', mutantSource + sourceExtOnly, '-outdir', txlDestDir,
           '-syncvar', 'this'], stdout=outFile, stderr=errFile, cwd=config._PROJECT_DIR,
@@ -456,27 +523,51 @@ def generate_representation(generation, memberNum, mutationOperators):
 
   #logger.debug("Representation 1: {}".format(rep))
 
-  # Recusive dir walk       tmp/1/1/
-  recurDir = config._TMP_DIR + str(generation) + os.sep + str(memberNum) + os.sep
-  for root, dirs, files in os.walk(recurDir):
+  # Recusive dir walk       tmp/1/1/source/
+  recurDir = os.path.join(config._TMP_DIR, str(generation), str(memberNum),
+                          config._PROJECT_SRC_DIR.replace(config._PROJECT_DIR, ''))
+
+  return recursive_generate_representation(generation, memberNum, recurDir, rep, mutationOperators)
+
+
+def recursive_generate_representation(generation, memberNum, recDir, representation, mutationOperators):
+  """See the documentation for generate_representation
+  """
+
+  for root, dirs, files in os.walk(recDir):
+
     for aDir in dirs:
+      #logger.debug("Dir:  {}".format(aDir))
+
+      foundMutant = False
 
       # Count mutant operator if present in dir name
       for mutationOp in mutationOperators:
 
-        if "{}_".format(mutationOp[0]) in str(aDir):  # TODO more unique match
-          rep[mutationOp[0]] += 1
-
-          # uniqueMutants at 1, 1, ASAT, 1 = /Users/kelk/workspace/ARC-Test-Suite
-          #  /test_area/arc/tmp/1/1/Account/ASAT/ASAT_Account_1.java_1
+        if "{}_".format(mutationOp[0]) in str(aDir):
+          representation[mutationOp[0]] += 1
+          foundMutant = True
+          # uniqueMutants at {1, 1, ASAT, 1} = /Users/kelk/workspace
+          #  /ARC-Test-Suite/test_area/arc/tmp/1/1/Account/ASAT
+          #  /ASAT_Account_1.java_1/
           #logger.debug("uniqueMutants at {}, {}, {}, {} = {}".format(generation,
-          #           memberNum, mutationOp[0], rep[mutationOp[0]], root + os.sep + aDir))
+          #           memberNum, mutationOp[0], rep[mutationOp[0]],
+          #           os.path.join(root, aDir)))
           uniqueMutants[(generation, memberNum, mutationOp[0],
-                      rep[mutationOp[0]])] = root + os.sep + aDir
+                      representation[mutationOp[0]])] = os.path.join(root, aDir)
 
-  # Representation: {'RSM': 0, 'ASIM': 4, 'ASAT': 5,
-  #logger.debug("Representation 2: {}".format(rep))
-  return rep
+          # Representation: {'RSM': 0, 'ASIM': 4, 'ASAT': 5, ...
+          #logger.debug("Representation: {}".format(representation))
+
+      if foundMutant:
+        return representation
+      else:
+        representation = recursive_generate_representation(generation, memberNum,
+                         os.path.join(recDir, aDir), representation, mutationOperators)
+
+  #logger.debug("Representation at end: {}".format(representation))
+
+  return representation
 
 
 # -----------------------------------------------------------------------------
@@ -505,19 +596,24 @@ def create_local_project(generation, memberNum, restart, switchGeneration=0):
 
   #logger.debug("Input arguments:  Gen: {}, Mem: {} and Restart: {}".format(generation, memberNum, restart))
 
-  staticPart = os.sep + str(memberNum) + os.sep + 'project' + os.sep
+  # 3/project
+  staticPart = os.path.join(str(memberNum), 'project')
 
   # If the indivudal is on the first or restarted, use the original (or switch gen for non-functional)
   if generation is 1 or restart:
     if switchGeneration > 0:
-      srcDir = config._TMP_DIR + str(switchGeneration) + staticPart
+      # tmp/1/3/project
+      srcDir = os.path.join(config._TMP_DIR, str(switchGeneration), staticPart)
     else:
+      # /input
       srcDir = config._PROJECT_PRISTINE_DIR
   else:
     # Note: generation - 1 vs generation
-    srcDir = config._TMP_DIR + str(generation - 1) + staticPart
+    # tmp/2/3/project
+    srcDir = os.path.join(config._TMP_DIR, str(generation - 1), staticPart)
 
-  destDir = config._TMP_DIR + str(generation) + staticPart
+  # tmp/3/3/project
+  destDir = os.path.join(config._TMP_DIR, str(generation), staticPart)
 
   #logger.debug("---------------------------")
   #logger.debug("staticPart: {} {}".format(staticPart,  os.path.exists(destDir)))
@@ -542,13 +638,11 @@ def copy_local_project_a_to_b(generationSrc, memberNumSrc, generationDst, member
   #logger.debug("Gen: {} Mem: {}  ->  Gen: {} Mem: {} ".format(generationSrc,
   #                              memberNumSrc, generationDst, memberNumDst))
 
-  staticPart = os.sep + 'project' + os.sep
+  srcDir = os.path.join(config._TMP_DIR, str(generationSrc), str(memberNumSrc),
+           'project')
 
-  srcDir = (config._TMP_DIR + str(generationSrc) + os.sep + str(memberNumSrc)
-            + staticPart)
-
-  destDir = (config._TMP_DIR + str(generationDst) + os.sep + str(memberNumDst)
-            + staticPart)
+  destDir = os.path.join(config._TMP_DIR, str(generationDst), str(memberNumDst),
+            'project')
 
   #logger.debug("Copying a local project from A to B:")
   #logger.debug("\nSrc: {}\nDst: {}".format(srcDir, destDir))
@@ -560,7 +654,7 @@ def copy_local_project_a_to_b(generationSrc, memberNumSrc, generationDst, member
 
 def move_mutant_to_local_project(generation, memberNum, txlOperator, mutantNum):
   """After the files have been mutated and the local project formed (by copying
-  it in), move a mutated file to the local project
+  it into tmp/gen/member/project/), move a mutated file to the local project
 
   Attributes:
   generation (int): Current generation of the evolutionary strategy
@@ -569,26 +663,55 @@ def move_mutant_to_local_project(generation, memberNum, txlOperator, mutantNum):
   mutantNum (int): Mutant number selected from the mutant dir
   """
 
-  logger.debug("Op: {} -> Gen: {} Mem: {} ".format(txlOperator, generation, memberNum))
+  #logger.debug("Op: {} -> Gen: {} Mem: {} ".format(txlOperator, generation, memberNum))
 
   # Use the dictionary defined at the top of the file
   # to find the DIRECTORY containing the mutant
+
+  # tmp/3/4/source/main/net/sf/cache4j/CacheCleaner/ASAT/
+  #   ASAT_CacheCleaner_1.java_1/CacheCleaner_1.java/
   sourceDir = uniqueMutants[(generation, memberNum, txlOperator, mutantNum)]
 
   fileName = ''
   # Find the FILE NAME of the mutant
   for files in os.listdir(sourceDir):
     if files.endswith(".java"):
+      # CacheCleaner_1.java
       fileName = files
       break
 
-  # Put together the full path of the source of the mutant
-  sourceFile = sourceDir + os.sep + fileName
+  #logger.debug("fileName:    {}".format(fileName))
+
+  # tmp/3/4/source/main/net/sf/cache4j/CacheCleaner/ASAT/
+  #   ASAT_CacheCleaner_1.java_1/CacheCleaner_1.java/CacheCleaner_1.java
+  sourceFile = os.path.join(sourceDir, fileName)
 
   # Put together the destination DIRECTORY of the mutant
-  baseDstPath = config._TMP_DIR + str(generation) + os.sep + str(memberNum)
-  relDstPath = config._PROJECT_SRC_DIR.replace(config._PROJECT_DIR, '')
-  dstPath = baseDstPath + os.sep + 'project' + os.sep + relDstPath
+  # tmp/3/4/project/source/
+  baseDestPath = os.path.join(config._TMP_DIR, str(generation), str(memberNum),
+                'project', config._PROJECT_SRC_DIR.replace(config._PROJECT_DIR, ''))
+
+  # Compute the relative part of the directory
+  # Given:
+  # tmp/3/4/source/main/net/sf/cache4j/CacheCleaner/ASAT/
+  #   ASAT_CacheCleaner_1.java_1/CacheCleaner_1.java
+  #
+  # The relative part is: main/net/sf/cache4j
+  #
+
+  # 1. Remove the tmp/3/4/source/ prefix to get
+  #    main/net/sf/cache4j/CacheCleaner/ASAT/ASAT_CacheCleaner_1.java_1/
+  #    CacheCleaner_1.java
+  relPart = sourceFile.replace(os.path.join(config._TMP_DIR, str(generation),
+            str(memberNum), config._PROJECT_SRC_DIR.replace(
+            config._PROJECT_DIR, '')), '')
+
+  # 2. Chop off the file name and the last three directories to get
+  #    main/net/sf/cache4j
+  relPart = os.path.split(relPart)[0]
+  relPart = os.path.split(relPart)[0]
+  relPart = os.path.split(relPart)[0]
+  relPart = os.path.split(relPart)[0]
 
   # For the destination file name, remove any ASAT_ prefix or
   # _NN suffix
@@ -600,26 +723,25 @@ def move_mutant_to_local_project(generation, memberNum, txlOperator, mutantNum):
     cleanFileName = cleanFileName.replace("ASIM_", "")
 
   # Full path of the destination of the mutant
-  dstFile = dstPath + cleanFileName
+  # tmp/3/4/project/source/main/net/sf/cache4j
+  destPath = os.path.join(baseDestPath, relPart)
+  # tmp/3/4/project/source/main/net/sf/cache4j/CacheCleaner.java
+  destFile = os.path.join(destPath, cleanFileName)
 
   #logger.debug("---------------------------")
-  #logger.debug("txlOperator:    {}".format(txlOperator))
-  #logger.debug("sourceDir:     {}".format(sourceDir))
-  #logger.debug("fileName:       {}".format(fileName))
-  #logger.debug("sourceFile:     {}".format(sourceFile))
-  #logger.debug("basePath:       {}".format(baseDstPath))
-  #logger.debug("relPath:        {}".format(relDstPath))
-  #logger.debug("dstPath:        {}".format(dstPath))
-  #logger.debug("cleanFileName:  {}".format(cleanFileName))
-  #logger.debug("dstFile         {}".format(dstFile))
+  #logger.debug("  txlOperator:   {}".format(txlOperator))
+  #logger.debug("  basePath:      {}".format(baseDstPath))
+  #logger.debug("  relPart:       {}".format(relPart))
+  #logger.debug("  cleanFileName: {}".format(cleanFileName))
 
-  if not os.path.exists(dstPath):
-    os.makedirs(dstPath)
+  if not os.path.exists(destPath):
+    os.makedirs(destPath)
 
-  #logger.debug("Moving mutant to local project:")
-  #logger.debug("\nSrc: {} \nDst: {}".format(sourceDir, dst))
+  logger.debug("Moving mutant to local project:")
+  logger.debug("  sourceFile: {}".format(sourceFile))
+  logger.debug("  destFile:   {}".format(destFile))
 
-  shutil.copy(sourceFile, dstFile)
+  shutil.copy(sourceFile, destFile)
 
 
 def move_local_project_to_workarea(generation, memberNum):
@@ -632,8 +754,8 @@ def move_local_project_to_workarea(generation, memberNum):
   memberNum (int): Which member of the population we are dealing with
   """
 
-  srcDir = (config._TMP_DIR + str(generation) + os.sep + str(memberNum) + os.sep \
-            + 'project' + os.sep)
+  srcDir = os.path.join(config._TMP_DIR, str(generation), str(memberNum),
+           'project')
 
   #logger.debug("Moving local project to work area:")
   #logger.debug("\nSrc: {}\nDst: {}".format(srcDir, config._PROJECT_DIR))
@@ -641,6 +763,7 @@ def move_local_project_to_workarea(generation, memberNum):
   if os.path.exists(config._PROJECT_DIR):
     shutil.rmtree(config._PROJECT_DIR)
   shutil.copytree(srcDir, config._PROJECT_DIR)
+
 
 def compile_project():
   """After the local project is copied to the work area, compile it."""
@@ -682,6 +805,7 @@ def compile_project():
   else:
     return True
 
+
 def move_best_project_to_output(generation, memberNum):
   """At the end of the process, copy the correct mutant program to the output
   directory
@@ -691,8 +815,8 @@ def move_best_project_to_output(generation, memberNum):
   memberNum (int): Which member of the population
   """
 
-  srcDir = (config._TMP_DIR + str(generation) + os.sep + str(memberNum) + os.sep \
-            + 'project' + os.sep)
+  srcDir = os.path.join(config._TMP_DIR, str(generation), str(memberNum),
+           'project')
 
   logger.debug("Moving local project to output:")
   logger.debug("\nSrc: {}\nDst: {}".format(srcDir, config._PROJECT_OUTPUT_DIR))

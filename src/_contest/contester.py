@@ -34,7 +34,9 @@ def setup():
   logger.info("Configuring ConTest's KingProperties file")
   for line in fileinput.FileInput(config._CONTEST_KINGPROPERTY, inplace=1):
     if line.find("targetClasses =") is 0:
-      line = "targetClasses = {} ".format(config._PROJECT_PREFIX.replace(".", "/"))
+      # change "." to "/" - as required by ConTest and remove any spaces introduced by
+      # formatting the project prefix in config.py
+      line = "targetClasses = {} ".format(config._PROJECT_PREFIX.replace(".", "/").replace(" ", ""))
     elif line.find("sourceDirs =") is 0:
       line = "sourceDirs = {} ".format(config._PROJECT_SRC_DIR)
     elif line.find("keepBackup =") is 0:
@@ -111,7 +113,7 @@ def test_execution(runs):
 
   testRunner = tester.Tester()
   try:
-    testRunner.begin_testing(True,runs=runs)
+    testRunner.begin_testing(True, False, runs=runs)
 
     #logger.info("Testing Runs Results...")
     #logger.info("Successes: {}".format(testRunner.successes))
@@ -141,7 +143,7 @@ def test_execution(runs):
 def run_contest():
   """Run the testsuite with ConTest using the approach in tester.py."""
   testRunner = tester.Tester()
-  testRunner.begin_testing(True)
+  testRunner.begin_testing(True, False)
 
 
 

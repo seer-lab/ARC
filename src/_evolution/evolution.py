@@ -659,12 +659,10 @@ def evaluate(individual, worstScore):
         logger.debug("Didn't find this mutated project hash in hash list: {}.  Adding it".format(hash))
         hashlist.add_hash(hash, individual.generation, individual.id)
 
-        contest.begin_testing(_functionalPhase)
+        contest.begin_testing(_functionalPhase, False)
 
-        individual.score.append((contest.successes * \
-                                    config._SUCCESS_WEIGHT) + \
-                                    (contest.timeouts * \
-                                    config._TIMEOUT_WEIGHT))
+        individual.score.append((contest.successes * config._SUCCESS_WEIGHT) + \
+                                (contest.timeouts * config._TIMEOUT_WEIGHT))
 
         # Store results into genome
         individual.successes.append(contest.successes)
@@ -678,8 +676,7 @@ def evaluate(individual, worstScore):
 
   else: # Non-functional phase
     # Ensure functionality is still there
-    if contest.begin_testing(_functionalPhase, True,
-          config._CONTEST_RUNS * config._CONTEST_VALIDATION_MULTIPLIER):
+    if contest.begin_testing(False, True, config._CONTEST_RUNS * config._CONTEST_VALIDATION_MULTIPLIER):
       logger.debug("Nonfunctional phase: Mutation didn't introduce any bugs")
 
       # Nonfunctional fitness
@@ -921,8 +918,7 @@ def terminate(individual, generation, generationLimit):
 
     # ... and the individual passes the extended number of tests, we have
     # found a fix for the dataraces(s) and deadlock(s)
-    if tester.Tester().begin_testing(True, True,
-          config._CONTEST_RUNS * config._CONTEST_VALIDATION_MULTIPLIER):
+    if tester.Tester().begin_testing(True, True, config._CONTEST_RUNS * config._CONTEST_VALIDATION_MULTIPLIER):
       tester.Tester().clear_results()
       logger.info("Found best individual {}".format(individual.id))
       individual.validated = True

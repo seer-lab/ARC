@@ -90,7 +90,7 @@ def configure_chord():
 def run_chord_datarace():
   os.chdir(config._PROJECT_DIR)
 
-  logger.info("Running Chord (This may take a while.)")
+  logger.info("Running Chord in datarace finding mode (This may take a while.)")
 
   outFile = tempfile.SpooledTemporaryFile()
   errFile = tempfile.SpooledTemporaryFile()
@@ -211,6 +211,9 @@ def find_tuple_in_list(inTuple, inList):
 def create_merged_classVar_list():
   # Merge class-variable from Chord and ConTest
 
+  if not do_we_have_contest_vars() and len(classVar) is 0:
+    logger.info("Neither ConTest nor Chord found any classes or variables used concurrently")
+
   # New: Build the merged class-variable list from whatever is available
   logger.info("Created merged (class, variable) list from:")
 
@@ -227,8 +230,6 @@ def create_merged_classVar_list():
       if not find_tuple_in_list(aTuple, mergedClassVar):
         #logger.debug("Adding Chord tuple {} to mergedClassVar".format(aTuple))
         mergedClassVar.append(aTuple)
-
-  #return True
 
 
 def do_we_have_merged_classVar():
@@ -277,8 +278,10 @@ def did_contest_find_shared_variables():
 
   return True
 
+
 def do_we_have_contest_vars():
   return len(conTestClassVar) > 0
+
 
 def load_contest_list():
   if not did_contest_find_shared_variables():

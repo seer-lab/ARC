@@ -49,11 +49,11 @@ class Tester():
   goodRuns = []  # True || False
 
 
-  def begin_testing(self, functional, nonFunctional=False, runs=config._CONTEST_RUNS):
+  def begin_testing(self, functional, exitOnFail = False, runs=config._CONTEST_RUNS):
     """Begins the testing phase by creating the test processes."""
 
     # Delete old ConTest longs.  Thousands can accumulate if this isn't done regularly
-    conTestLogDir = config._PROJECT_DIR + os.sep + 'com_ibm_contest' + os.sep + 'instLogs' + os.sep
+    conTestLogDir = os.path.join(config._PROJECT_DIR, 'com_ibm_contest', 'instLogs')
     if os.path.exists(conTestLogDir):
       shutil.rmtree(conTestLogDir)
       os.makedirs(conTestLogDir)
@@ -92,10 +92,10 @@ class Tester():
 
       success = self.run_test(process, outFile, errFile, i, functional)
 
-      # If last run was unsuccessful and we are in the non-functional, exit
+      # If last run was unsuccessful and we are verifying functionality
       if len(self.goodRuns) > 0:
-        if nonFunctional and not self.goodRuns[-1]:
-          logger.debug("Non-functional testing: A bug exists in the program")
+        if exitOnFail and not self.goodRuns[-1]:
+          logger.debug("Verification testing: A bug exists in the program")
           return False
 
     logger.debug("Test Runs Results...")
@@ -107,7 +107,12 @@ class Tester():
     logger.debug("Real Time: {}".format(self.realTime))
     logger.debug("Voluntary Switches: {}".format(self.voluntarySwitches))
     logger.debug("Good Runs: {}".format(self.goodRuns))
-    return True
+
+    if self.successes == runs:
+      return True
+    else:
+      return False
+
 
   def run_test(self, process, outFile, errFile, i, functional):
     """Runs a single test process.

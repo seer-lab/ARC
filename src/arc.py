@@ -116,7 +116,8 @@ def main():
     outFile.close()
 
     # If you are getting an error at the re.search below, make sure the ant
-    # build file has the following sections:
+    # build file has the following sections. _PROJECT_PRISTINE_SRC_DIR and
+    # related entries in config.py have to agree with what is in the ant file:
 
     # <path id="classpath.base">
     #   <pathelement location="${current}" />
@@ -151,7 +152,7 @@ def main():
   logger.info("Using a timeout value of {}s".format(config._CONTEST_TIMEOUT_SEC))
 
   # 9. Clean up the temporary directory (Probably has subdirs from previous runs)
-  #logger.info("Cleaning TMP directory")
+  logger.info("Cleaning TMP directory")
   if not os.path.exists(config._TMP_DIR):
     os.makedirs(config._TMP_DIR)
   else:
