@@ -124,8 +124,8 @@ rule ProcessSynchronizeStatementMutations
     P [?IdentifyMutationClass]
   by
     P [IdentifyMutationClass]
-      [print]
-      %[writeToFile]
+      %[print]
+      [writeToFile]
       % Undo mutation and return to original program
       [undoSynchronizedInsertMutation]
 end rule
