@@ -185,7 +185,7 @@ function undoSynchronizeStatementMutation
 
   deconstruct SyncStmt
     'MUTATED /* 'MUTANT: MutantStr1 [stringlit] */
-    'synchronized '( variableName [id] ')
+    'synchronized '( synchVar [id] ')
     '{
       OthStmt [other_statement]
     '}

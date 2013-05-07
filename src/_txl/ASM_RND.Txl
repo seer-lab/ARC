@@ -8,7 +8,7 @@
 % Based on ASK by J.S. Bradbury
 %
 % Typical invocation:
-% txl ManageAccount.java ASM.Txl - -outfile ManageAccount_1.java
+% txl ManageAccount.java ASM_RND.Txl - -outfile ManageAccount_1.java
 % -outdir ASM/ -syncvar gbk
 %
 % Notes:
@@ -91,7 +91,7 @@ function main
   % initialize and export the name of the current mutant which
   % will be used for folder name generation
   construct MutantOpName [stringlit]
-    "ASIM"
+    "ASM"
   export MutantOpName
 
   % Read in name of class and variable from ConTest
@@ -123,7 +123,8 @@ rule ProcessSynchronizeStatementMutations
   where
     P [?IdentifyMutationClass]
   by
-    P [IdentifyMutationClass]
+    P [doSynchronizedInsertMutation]
+      %[IdentifyMutationClass]
       %[print]
       [writeToFile]
       % Undo mutation and return to original program

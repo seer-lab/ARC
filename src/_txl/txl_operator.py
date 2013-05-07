@@ -1,5 +1,4 @@
-"""txl_operator.py contains functions related to:
-- Generating mutants
+"""txl_operator.py contains functions related to: - Generating mutants
 - Creating local projects and copying mutants to them
 - Resetting underperforming local projects by:
   - Copying the pristine project over of it
@@ -129,7 +128,6 @@ def recursively_mutate_project(generation, memberNum, sourceDir, destDir, mutati
         # tmp/1/3/source/main/net/sf/cache4j/Cache.java
         sourceFile = os.path.join(root, aFile)
 
-
         #logger.debug("files array:  {}".format(files))
         #logger.debug("file:         {}".format(aFile))
         #logger.debug("sourceFile:   {}".format(sourceFile))
@@ -148,7 +146,6 @@ def recursively_mutate_project(generation, memberNum, sourceDir, destDir, mutati
 
         # main/net/sf/cache4j/
         reldir = root.replace(subtr, '')
-
 
         # Use a throw-away local variable to hold the destination directory
         # avoids problems with appending the relative directory more than once
@@ -201,302 +198,226 @@ def generate_mutants(generation, memberNum, txlOperator, sourceFile, destDir):
   destDir (string): Where the project is being copied to
   """
 
-  #sourceFile:       /Users/kelk/workspace/arc/tmp/2/1/project/source/Bank.java
-  #sourceNoExt:      /Users/kelk/workspace/arc/tmp/2/1/project/source/Bank
-  #sourceNoFileName: /Users/kelk/workspace/arc/tmp/2/1/project/source/
-  #sourceRelPath     source/
-  #sourceNameOnly:   Bank
-  #sourceExtOnly:    .java
-  sourceNoExt = os.path.splitext(sourceFile)[0]
-  sourceNoFileName = os.path.split(sourceNoExt)[0]
-  sourceNameOnly = os.path.split(sourceNoExt)[1]
+  # sourceFile: tmp/1/3/source/main/net/sf/cache4j/Cache.java
+  # destDir   : tmp/3/4/source/main/net/sf/cache4j
+
+  # Cache
+  sourceNameOnly = os.path.split(os.path.splitext(sourceFile)[0])[1]
+  # .java
   sourceExtOnly = os.path.splitext(sourceFile)[1]
 
-  # The relative path is computed from the directory structure of the project itself
-  sourceRelPath = ''
-  if (generation == 1):
-    sourceRelPath = sourceNoFileName.replace(config._PROJECT_SRC_DIR, '')
-  else:
-    sourceRelPath = sourceNoFileName.replace(os.path.join(config._TMP_DIR,
-                    str(generation - 1), str(memberNum)), '')
-
-
+  # tmp/3/4/source/main/net/sf/cache4j/Cache/ASAT
   txlDestDir = os.path.join(destDir, sourceNameOnly, txlOperator[0]) + os.sep
 
-  # sourceFile:       source/BuggedProgram.java
-  # destDir:          /Users/kelk/workspace/arc/tmp/1/1/
-  # txlOperator:      ASAS
-  # sourceNoExt:      source/BuggedProgram
-  # sourceNoFileName: source/
-  # sourceRelPath:    source/
-  # sourceNameOnly:   BuggedProgram
-  # sourceExtOnly:    .java
-  # txlDestDir:       /Users/kelk/workspace/arc/tmp/1/1/source/BuggedProgram/ASAS/
-  # txlOperator[4]:   /Users/kelk/workspace/arc/src/_txl/ASAS.Txl
-
-  #logger.debug("---------------------------")
-  #logger.debug("sourceFile:       {}".format(sourceFile))
-  #logger.debug("destDir:          {}".format(destDir))
-  #logger.debug("txlOperator:      {}".format(txlOperator[0]))
-  #logger.debug("sourceNoExt:      {}".format(sourceNoExt))
-  #logger.debug("sourceNoFileName: {}".format(sourceNoFileName))
-  #logger.debug("sourceRelPath:    {}".format(sourceRelPath))
-  #logger.debug("sourceNameOnly:   {}".format(sourceNameOnly))
-  #logger.debug("sourceExtOnly:    {}".format(sourceExtOnly))
-  #logger.debug("txlDestDir:       {}".format(txlDestDir))
-  #logger.debug("txlOperator[4]:   {}".format(txlOperator[4]))
-
   # If the output directory doesn't exist, create it, otherwise clean subdirectories
+  # arc/tmp/1/1/source/BuggedProgram/ASAS/
   if os.path.exists(txlDestDir):
     shutil.rmtree(txlDestDir)
   os.makedirs(txlDestDir)
 
-  # In static.py we put together a list of (class, method, variable) tuples in finalCMV
-  # of the class.method.variable(s) involved in the bug.
-  # Ideally we use that list to reduce the number of mutants generated.  BUT, the static
-  # analysis may have failed and/or ConTest may have failed.  We have 3 + 1 cases to
-  # consider:
-  # The first 3 cases deal with targeting information for ASAT, ASM and ASIM:
-  # 1. We have (class, method, variable) targeting information from ConTest and static
-  #    analysis
-  # 2. We have (class, variable) targeting information from ConTest (or static analysis?)
-  # 3. We have no targeting information. (In effect we're doing random search.)
-  # The fourth case deals with the other operators:
-  # 4. Generate mutants for all other operators
+  # I don't understand how TXL scopes things.  It appears to ALWAYS be global search
+  # and replace, even when one attempts to narrow the scope to a sub tree.
+  # Because of this, ASM, ASIM and ASAT were producing duplicate mutants - 2015 ASIM
+  # mutants for example (When the actual number was 15.) Over time this caused the
+  # 8 GB HD on the mac mini to fill up and an out of HD space error to occur.
+  #
+  # I've refactored the code to try and minimize mutant duplication.  Consequences:
+  # - ASM adds synch to all methods now.  No targeting. If there are 15 methods and
+  #   8 variables used concurrently in the class, that means 120 mutants.
+  #     Functionality lost: Matching methods, when we have triples
+  #     Functionality gained: Accurate mutant counts
+  #     New assumption: One class per file and it has the same name as the filename
+  # - ASIM now adds synchronization to all method headers
+  # - ASAT has been pruned back. It use to produce thousands of mutants, most dupes.
+  #   It was: synchronize(x){... y ...}
+  #   now it synchronizes on the variable it is looking for.
+  #   eg: syncronize(x){ ... x ...}. So far it is working.  I have no idea why though.
+  #     Same lost/gained/assumption as ASM
 
-  if txlOperator is config._MUTATION_ASAT or txlOperator is config._MUTATION_ASM \
-    or txlOperator is config._MUTATION_ASIM:
 
-    #logger.debug("Case 1: Add sync operators")
+  counter = 1
 
-    counter = 1
-
-    # 1. We have (class, method, variable) triples
+  # ----- ASM -----
+  if txlOperator is config._MUTATION_ASM:
     if static.do_we_have_triples():
+      for lineCMV in static.finalCMV:
 
-      # logger.debug("Case 1-1: Add sync operators with triples")
+        # Only make mutants where the variable is within scope of the class
+        # If ('SynchronizedCache', 'someMethod', '_memorySize') and
+        #    ('CacheObject', 'someOtherMethod', '_objSize') are in static.finalCMV,
+        # when line[-3] is CacheObject, only the second line is in scope
+        if sourceNameOnly != lineCMV[-3]:
+          continue
 
-      if txlOperator is config._MUTATION_ASAT or txlOperator is config._MUTATION_ASM:
+        variableName = lineCMV[-1]
+        outFile = tempfile.SpooledTemporaryFile()
+        errFile = tempfile.SpooledTemporaryFile()
+        mutantSource = sourceNameOnly + "_" + str(counter)
 
-        for line in static.finalCMV:
-          variableName = line[-1]
-          methodName = line[-2]
-          className = line[-3]
+        process = subprocess.Popen(['txl', sourceFile, config._TXL_DIR + 'ASM_RND.Txl', '-',
+                '-outfile', mutantSource + sourceExtOnly, '-outdir', txlDestDir,
+                '-syncvar', variableName],
+                stdout=outFile, stderr=errFile, cwd=config._PROJECT_DIR, shell=False)
+        process.wait()
 
-          for line in static.finalCMV:
-            syncVar = line[-1]
-            mutantSource = sourceNameOnly + "_" + str(counter)
+        # Note to self: Keep this snipped for debugging purposes
+        #
+        # outFile.seek(0)
+        # errFile.seek(0)
+        # output = outFile.read()
+        # error = errFile.read()
+        # outFile.close()
+        # errFile.close()
+        # logger.debug("Mutant generation, Output text:\n")
+        # logger.debug(output)
+        # logger.debug("Mutant generation, Error text:\n")
+        # logger.debug(error)
 
-            # logger.debug("  '{}' '{}' '{}' '{}' '{}'".format(sourceFile,
-            #   txlOperator[4], mutantSource + sourceExtOnly, txlDestDir,
-            #   config._PROJECT_DIR))
-            # logger.debug("Class: '{}' Method: '{}' Var: '{}' Syncvar: '{}'".format(className,
-            #   methodName, variableName, syncVar))
+        counter += 1
 
-            outFile = tempfile.SpooledTemporaryFile()
-            errFile = tempfile.SpooledTemporaryFile()
-
-            if txlOperator is config._MUTATION_ASAT:
-              process = subprocess.Popen(['txl', sourceFile, txlOperator[4], '-',
-                      '-outfile', mutantSource + sourceExtOnly, '-outdir', txlDestDir,
-                      '-class', className, '-method', methodName, '-var', variableName,
-                      '-syncvar', syncVar], stdout=outFile, stderr=errFile,
-                      cwd=config._PROJECT_DIR, shell=False)
-              process.wait()
-
-            if txlOperator is config._MUTATION_ASM:
-              process = subprocess.Popen(['txl', sourceFile, txlOperator[4], '-',
-                      '-outfile', mutantSource + sourceExtOnly, '-outdir', txlDestDir,
-                      '-class', className, '-method', methodName,
-                      '-syncvar', syncVar], stdout=outFile, stderr=errFile,
-                      cwd=config._PROJECT_DIR, shell=False)
-              process.wait()
-
-            # outFile.seek(0)
-            # errFile.seek(0)
-            # output = outFile.read()
-            # error = errFile.read()
-            # outFile.close()
-            # errFile.close()
-            # logger.debug("Mutant generation, Output text:\n")
-            # logger.debug(output)
-            # logger.debug("Mutant generation, Error text:\n")
-            # logger.debug(error)
-
-            counter += 1
-
-      else: # txlOperator is config._MUTATION_ASIM:
-        for line in static.finalCMV:
-          variableName = line[-1]
-          methodName = line[-2]
-          className = line[-3]
-          mutantSource = sourceNameOnly + "_" + str(counter)
-
-          # logger.debug("  '{}' '{}' '{}' '{}' '{}'".format(sourceFile,
-          #  txlOperator[4], mutantSource + sourceExtOnly, txlDestDir,
-          #  config._PROJECT_DIR))
-          # logger.debug("   '{}' '{}' '{}'".format(variableName, methodName, className))
-
-          outFile = tempfile.SpooledTemporaryFile()
-          errFile = tempfile.SpooledTemporaryFile()
-
-          process = subprocess.Popen(['txl', sourceFile, txlOperator[4], '-',
-                  '-outfile', mutantSource + sourceExtOnly, '-outdir', txlDestDir,
-                  '-class', className, '-method', methodName], stdout=outFile,
-                  stderr=errFile, cwd=config._PROJECT_DIR, shell=False)
-          process.wait()
-
-          # outFile.seek(0)
-          # errFile.seek(0)
-          # output = outFile.read()
-          # error = errFile.read()
-          # outFile.close()
-          # errFile.close()
-          # logger.debug("Mutant generation, Output text:\n")
-          # logger.debug(output)
-          # logger.debug("Mutant generation, Error text:\n")
-          # logger.debug(error)
-
-          counter += 1
-
-    # 2. We have (class, variable) doubles
     elif static.do_we_have_merged_classVar():
+      for lineMCV in static.mergedClassVar:
+        # See comment above
+        if sourceNameOnly != lineMCV[-2]:
+          continue
 
-      #logger.debug("Case 1-2: Add sync operators with doubles")
+        variableName = lineMCV[-1]
+        mutantSource = sourceNameOnly + "_" + str(counter)
+        outFile = tempfile.SpooledTemporaryFile()
+        errFile = tempfile.SpooledTemporaryFile()
 
-      # ASAT and ASM use syncVar (ASIM Doesn't)
-      if txlOperator is config._MUTATION_ASAT or txlOperator is config._MUTATION_ASM:
-        for line in static.mergedClassVar:
-          variableName = line[-1]
-          className = line[-2]
+        process = subprocess.Popen(['txl', sourceFile, config._TXL_DIR + 'ASM_RND.Txl', '-',
+                '-outfile', mutantSource + sourceExtOnly, '-outdir', txlDestDir,
+                '-syncvar', variableName],
+                stdout=outFile, stderr=errFile, cwd=config._PROJECT_DIR, shell=False)
+        process.wait()
 
-          for line in static.mergedClassVar:
-            syncVar = line[-1]
+        counter += 1
 
-            mutantSource = sourceNameOnly + "_" + str(counter)
-
-            #logger.debug("  '{}' '{}' '{}' '{}' '{}'".format(sourceFile,
-            #  txlOperator[4], mutantSource + sourceExtOnly, txlDestDir,
-            #  config._PROJECT_DIR))
-            #logger.debug("  '{}' '{}' 'No method' '{}'".format(syncVar,
-            #  variableName, className))
-
-            outFile = tempfile.SpooledTemporaryFile()
-            errFile = tempfile.SpooledTemporaryFile()
-
-            # Different operator when 2 args are available
-            if txlOperator is config._MUTATION_ASAT:
-              txlOpTwo = txlOperator[4].replace(".Txl", "_CV.Txl")
-              process = subprocess.Popen(['txl', sourceFile, txlOpTwo, '-',
-                      '-outfile', mutantSource + sourceExtOnly, '-outdir', txlDestDir,
-                      '-class', className, '-var', variableName,
-                      '-syncvar', syncVar], stdout=outFile, stderr=errFile,
-                      cwd=config._PROJECT_DIR, shell=False)
-              process.wait()
-            elif txlOperator is config._MUTATION_ASM:
-              txlOpTwo = txlOperator[4].replace(".Txl", "_C.Txl")
-              process = subprocess.Popen(['txl', sourceFile, txlOpTwo, '-',
-                      '-outfile', mutantSource + sourceExtOnly, '-outdir', txlDestDir,
-                      '-class', className, '-syncvar', syncVar], stdout=outFile,
-                      stderr=errFile, cwd=config._PROJECT_DIR, shell=False)
-              process.wait()
-
-            counter += 1
-
-      else: # ASIM
-        for line in static.mergedClassVar:
-          variableName = line[-1]
-          className = line[-2]
-
-          mutantSource = sourceNameOnly + "_" + str(counter)
-
-          #logger.debug("  '{}' '{}' '{}' '{}' '{}'".format(sourceFile,
-          #  txlOperator[4], sourceExtOnly, txlDestDir,
-          #  config._PROJECT_DIR))
-          #logger.debug("  {}' 'No method' '{}'".format(variableName,
-          #  className))
-
-          outFile = tempfile.SpooledTemporaryFile()
-          errFile = tempfile.SpooledTemporaryFile()
-
-          txlOpTwo = txlOperator[4].replace(".Txl", "_C.Txl")
-          process = subprocess.Popen(['txl', sourceFile, txlOpTwo, '-',
-                  '-outfile', mutantSource + sourceExtOnly, '-outdir', txlDestDir,
-                  '-class', className], stdout=outFile,
-                  stderr=errFile, cwd=config._PROJECT_DIR, shell=False)
-          process.wait()
-
-          counter += 1
-
-    # 3. We have no targeting information. Note the use of the '_RND' TXL operators
+    # No targeting information, so fall back on the 'this' variable
     else:
-
-      #logger.debug("Case 1-3: Add sync operators with no targeting info (random)")
-
-      # Random operator when no args are available
-      # Change: /Users/kelk/workspace/arc/src/_txl/SHSB.Txl
-      # To    : /Users/kelk/workspace/arc/src/_txl/SHSB_RND.Txl
-      mutantSource = sourceNameOnly + "_" + str(counter)
-
-      #logger.debug("  '{}' '{}' '{}' '{}' '{}'".format(sourceFile,
-      #  txlOperator[4], mutantSource + sourceExtOnly, txlDestDir,
-      #  config._PROJECT_DIR))
-
       outFile = tempfile.SpooledTemporaryFile()
       errFile = tempfile.SpooledTemporaryFile()
+      mutantSource = sourceNameOnly + "_" + str(counter)
 
-      # TODO: Can we generalize '-syncvar', '-this'
-
-      # Different operator when 2 args are available
-      if txlOperator is config._MUTATION_ASAT:
-        txlOpRnd = txlOperator[4].replace("ASAT.Txl", "ASAT_RND.Txl")
-
-        #logger.debug("{} {} {} {} '{}'".format(txlOperator[4], sourceFile, txlOpRnd,
-        #  mutantSource+sourceExtOnly, txlDestDir, config._PROJECT_DIR))
-
-        process = subprocess.Popen(['txl', sourceFile, txlOpRnd, '-',
-          '-outfile', mutantSource + sourceExtOnly, '-outdir', txlDestDir,
-          '-syncvar', 'this'], stdout=outFile, stderr=errFile, cwd=config._PROJECT_DIR,
-          shell=False)
-        process.wait()
-      elif txlOperator is config._MUTATION_ASM:
-        txlOpRnd = txlOperator[4].replace(".Txl", "_RND.Txl")
-        process = subprocess.Popen(['txl', sourceFile, txlOpRnd, '-',
-          '-outfile', mutantSource + sourceExtOnly, '-outdir', txlDestDir,
-          '-syncvar', 'this'], stdout=outFile,
-          stderr=errFile, cwd=config._PROJECT_DIR, shell=False)
-        process.wait()
-      else: # ASIM
-        txlOpRnd = txlOperator[4].replace(".Txl", "_RND.Txl")
-        process = subprocess.Popen(['txl', sourceFile, txlOpRnd, '-',
-          '-outfile', mutantSource + sourceExtOnly, '-outdir', txlDestDir],
-          stdout=outFile,
-          stderr=errFile, cwd=config._PROJECT_DIR, shell=False)
-        process.wait()
+      process = subprocess.Popen(['txl', sourceFile, config._TXL_DIR + 'ASM_RND.Txl', '-',
+              '-outfile', mutantSource + sourceExtOnly, '-outdir', txlDestDir,
+              '-syncvar', 'this'],
+              stdout=outFile, stderr=errFile, cwd=config._PROJECT_DIR, shell=False)
+      process.wait()
 
       counter += 1
 
-  # 4. For the operators that shrink or remove synchronization, we don't target files
-  #    used in concurrency.  (The txl invocation doesn't use the -class, etc.. args)
+  # ----- ASIM -----
+  elif txlOperator is config._MUTATION_ASIM:
+    outFile = tempfile.SpooledTemporaryFile()
+    errFile = tempfile.SpooledTemporaryFile()
+    mutantSource = sourceNameOnly + "_" + str(counter)
+
+    process = subprocess.Popen(['txl', sourceFile, config._TXL_DIR + 'ASIM_RND.Txl', '-',
+            '-outfile', mutantSource + sourceExtOnly, '-outdir', txlDestDir,],
+            stdout=outFile, stderr=errFile, cwd=config._PROJECT_DIR, shell=False)
+    process.wait()
+
+    counter += 1
+
+  # ----- ASAT ------
+  elif txlOperator is config._MUTATION_ASAT:
+    # Case 1: We have the (class, method, variable) triples
+    if static.do_we_have_triples():
+      for lineCMV in static.finalCMV:
+        if sourceNameOnly != lineCMV[-3]:
+          continue
+
+        variableName = lineCMV[-1]
+        methodName = lineCMV[-2]
+        className = lineCMV[-3]
+
+        # This is where the mutant explosion occurs. Ideally there should be a second
+        # for loop (commented out below) for the variable to synchronize on, syncVar.
+        # eg: synchronized(syncVar) { ... variableName ...}
+        # But because I don't get TXL it I've fallen back on:
+        # synchronized(variableName) { ... variableName ...}
+
+        # for lineCMV2 in static.finalCMV:
+
+        syncVar = lineCMV[-1] # Was lineCMV2
+        mutantSource = sourceNameOnly + "_" + str(counter)
+        outFile = tempfile.SpooledTemporaryFile()
+        errFile = tempfile.SpooledTemporaryFile()
+
+        process = subprocess.Popen(['txl', sourceFile, config._TXL_DIR + 'ASAT.Txl', '-',
+                '-outfile', mutantSource + sourceExtOnly, '-outdir', txlDestDir,
+                '-class', className, '-method', methodName, '-var', variableName,
+                '-syncvar', syncVar], stdout=outFile, stderr=errFile,
+                cwd=config._PROJECT_DIR, shell=False)
+        process.wait()
+
+        counter += 1
+
+    # Case 2: We have (class, variable) doubles
+    elif static.do_we_have_merged_classVar():
+      for lineMCV in static.mergedClassVar:
+        if sourceNameOnly != lineMCV[-2]:
+          continue
+
+        variableName = lineMCV[-1]
+        className = lineMCV[-2]
+
+        # for lineMCV2 in static.mergedClassVar:
+        syncVar = lineMCV[-1] # Was MCV2
+        mutantSource = sourceNameOnly + "_" + str(counter)
+        outFile = tempfile.SpooledTemporaryFile()
+        errFile = tempfile.SpooledTemporaryFile()
+
+        # Different operator when 2 args are available
+        process = subprocess.Popen(['txl', sourceFile, config._TXL_DIR + 'ASAT_CV.Txl', '-',
+                '-outfile', mutantSource + sourceExtOnly, '-outdir', txlDestDir,
+                '-class', className, '-var', variableName, '-syncvar', syncVar],
+                stdout=outFile, stderr=errFile, cwd=config._PROJECT_DIR, shell=False)
+        process.wait()
+
+        counter += 1
+
+    # Case 3: No targeting information for ASAT. Fall back on the 'this' variable
+    else:
+      mutantSource = sourceNameOnly + "_" + str(counter)
+      outFile = tempfile.SpooledTemporaryFile()
+      errFile = tempfile.SpooledTemporaryFile()
+
+      process = subprocess.Popen(['txl', sourceFile, config._TXL_DIR + 'ASAT_RND.Txl', '-',
+                '-outfile', mutantSource + sourceExtOnly, '-outdir', txlDestDir,
+                '-syncvar', 'this'], stdout=outFile, stderr=errFile,
+                cwd=config._PROJECT_DIR, shell=False)
+      process.wait()
+
+      counter += 1
+
+  # ----- Other operators -----
+  # For the operators that shrink or remove synchronization, we don't target files
+  # used in concurrency.  (The txl invocation doesn't use the -class, etc.. args)
   else:
-
-    #logger.debug("Case 2: Non-add sync operator")
-
-    #logger.debug("  '{}' '{}' '{}' '{}' '{}'".format(sourceFile,
-    #  txlOperator[4], sourceExtOnly, txlDestDir,
-    #  config._PROJECT_DIR))
-
+    mutantSource = sourceNameOnly + "_" + str(counter)
     outFile = tempfile.SpooledTemporaryFile()
     errFile = tempfile.SpooledTemporaryFile()
 
     process = subprocess.Popen(['txl', sourceFile, txlOperator[4], '-',
-              '-outfile', sourceNameOnly + sourceExtOnly, '-outdir', txlDestDir],
+              '-outfile', mutantSource + sourceExtOnly, '-outdir', txlDestDir],
               stdout=outFile, stderr=errFile, cwd=config._PROJECT_DIR, shell=False)
     process.wait()
 
+    counter += 1
+
+
   # Cleanup: Delete empty directories
+  # tmp/3/4/source/main/net/sf/cache4j/Cache/ASAT
   if sum((len(f) for _, _, f in os.walk(txlDestDir))) == 0:
     shutil.rmtree(txlDestDir)
+
+  # tmp/3/4/source/main/net/sf/cache4j/Cache
+  sourceDestDir = os.path.join(destDir, sourceNameOnly)
+  if sum((len(f) for _, _, f in os.walk(sourceDestDir))) == 0:
+    shutil.rmtree(sourceDestDir)
 
 
 def generate_representation(generation, memberNum, mutationOperators):
