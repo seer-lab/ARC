@@ -639,25 +639,54 @@ def evaluate(individual, worstScore):
 
   if _functionalPhase:
     # Check if we have encountered this mutant already
-    hash = hashlist.generate_hash(individual.generation, individual.id)
-    if hash is not None:
-      hashGen, hashMem =  hashlist.find_hash(hash)
+    md5Hash = hashlist.generate_hash(individual.generation, individual.id)
+    if md5Hash is not None:
+      hashGen, hashMem =  hashlist.find_hash(md5Hash)
       # If we have, we can skip the contest runs (saves time) and copy the testing
       # results from the first mutatn
       if hashGen != -1 and hashMem != -1:
-        logger.debug("Found this mutated project hash in hash list: {}.  Skipping evaluation".format(hash))
+        logger.debug("This is the same as generation {}, member {}.  Skipping evaluation".format(hashGen, hashMem))
         prevIndvidual = _population[hashMem]
 
-        individual.score.append(hashMem.score[hashGen])
-        individual.successes.append(hashMem.successes[hashMem])
-        individual.timeouts.append(hashMem.timeouts[hashMem])
-        individual.dataraces.append(hashMem.dataraces[hashMem])
-        individual.deadlocks.append(hashMem.deadlocks[hashMem])
-        individual.errors.append(hashMem.errors[hashMem])
+        logger.debug("hashGen  : {}".format(hashGen))
+        logger.debug("Score    : {}".format(prevIndvidual.score))
+        logger.debug("Successes: {}".format(prevIndvidual.successes))
+        logger.debug("Timeouts : {}".format(prevIndvidual.timeouts))
+
+        if len(prevIndvidual.score) == 0 or len(prevIndvidual.score) < hashGen:
+          individual.score.append(0)
+        else:
+          individual.score.append(prevIndvidual.score[hashGen- 1])
+
+        if len(prevIndvidual.successes) == 0 or len(prevIndvidual.successes) < hashGen:
+          individual.successes.append(0)
+        else:
+          individual.successes.append(prevIndvidual.successes[hashGen - 1])
+
+        if len(prevIndvidual.timeouts) == 0 or len(prevIndvidual.timeouts) < hashGen:
+          individual.timeouts.append(0)
+        else:
+          individual.timeouts.append(prevIndvidual.timeouts[hashGen - 1])
+
+        if len(prevIndvidual.dataraces) == 0 or len(prevIndvidual.dataraces) < hashGen:
+          individual.dataraces.append(0)
+        else:
+          individual.dataraces.append(prevIndvidual.dataraces[hashGen - 1])
+
+        if len(prevIndvidual.deadlocks) == 0 or len(prevIndvidual.deadlocks) < hashGen:
+          individual.deadlocks.append(0)
+        else:
+          individual.deadlocks.append(prevIndvidual.deadlocks[hashGen - 1])
+
+        if len(prevIndvidual.errors) == 0 or len(prevIndvidual.errors) < hashGen:
+          individual.errors.append(0)
+        else:
+          individual.errors.append(prevIndvidual.errors[hashGen - 1])
+
       # If we haven't seen this mutant before, evaluate it with contest
       else:
-        logger.debug("Didn't find this mutated project hash in hash list: {}.  Adding it".format(hash))
-        hashlist.add_hash(hash, individual.generation, individual.id)
+        logger.debug("Didn't find this mutated project hash in hash list: {}.  Adding it".format(md5Hash))
+        hashlist.add_hash(md5Hash, individual.generation, individual.id)
 
         contest.begin_testing(_functionalPhase, False)
 
@@ -731,6 +760,7 @@ def get_average_non_functional_score(contest, individual, numberOfRuns = config.
   minRT = min(contest.realTime)
   maxVS = max(contest.voluntarySwitches)
   minVS = min(contest.voluntarySwitches)
+  # Uncertainties in both
   uncRT = (maxRT - minRT) / avgRealTime
   uncVS = (maxVS - minVS) / avgVoluntarySwitches
 
