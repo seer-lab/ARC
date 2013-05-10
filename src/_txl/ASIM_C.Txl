@@ -3,7 +3,8 @@
 % (Automatic Repair of Concurrency Bugs)
 % Only class targeting information (_C) is available
 %
-% David Kelk, Kevin Jalbert and Jeremy Bradbury
+% Copyright David Kelk and Kevin Jalbert, 2012
+%           David Kelk, 2013
 %
 % Based on ASK by J.S. Bradbury
 %

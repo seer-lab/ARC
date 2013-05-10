@@ -228,12 +228,6 @@ def generate_mutants(generation, memberNum, txlOperator, sourceFile, destDir):
   #     Functionality gained: Accurate mutant counts
   #     New assumption: One class per file and it has the same name as the filename
   # - ASIM now adds synchronization to all method headers
-  # - ASAT has been pruned back. It use to produce thousands of mutants, most dupes.
-  #   It was: synchronize(x){... y ...}
-  #   now it synchronizes on the variable it is looking for.
-  #   eg: syncronize(x){ ... x ...}. So far it is working.  I have no idea why though.
-  #     Same lost/gained/assumption as ASM
-
 
   counter = 1
 
@@ -333,27 +327,21 @@ def generate_mutants(generation, memberNum, txlOperator, sourceFile, destDir):
         methodName = lineCMV[-2]
         className = lineCMV[-3]
 
-        # This is where the mutant explosion occurs. Ideally there should be a second
-        # for loop (commented out below) for the variable to synchronize on, syncVar.
-        # eg: synchronized(syncVar) { ... variableName ...}
-        # But because I don't get TXL it I've fallen back on:
-        # synchronized(variableName) { ... variableName ...}
+        for lineCMV2 in static.finalCMV:
 
-        # for lineCMV2 in static.finalCMV:
+          syncVar = lineCMV2[-1] # Was lineCMV2
+          mutantSource = sourceNameOnly + "_" + str(counter)
+          outFile = tempfile.SpooledTemporaryFile()
+          errFile = tempfile.SpooledTemporaryFile()
 
-        syncVar = lineCMV[-1] # Was lineCMV2
-        mutantSource = sourceNameOnly + "_" + str(counter)
-        outFile = tempfile.SpooledTemporaryFile()
-        errFile = tempfile.SpooledTemporaryFile()
+          process = subprocess.Popen(['txl', sourceFile, config._TXL_DIR + 'ASAT.Txl', '-',
+                  '-outfile', mutantSource + sourceExtOnly, '-outdir', txlDestDir,
+                  '-class', className, '-method', methodName, '-var', variableName,
+                  '-syncvar', syncVar], stdout=outFile, stderr=errFile,
+                  cwd=config._PROJECT_DIR, shell=False)
+          process.wait()
 
-        process = subprocess.Popen(['txl', sourceFile, config._TXL_DIR + 'ASAT.Txl', '-',
-                '-outfile', mutantSource + sourceExtOnly, '-outdir', txlDestDir,
-                '-class', className, '-method', methodName, '-var', variableName,
-                '-syncvar', syncVar], stdout=outFile, stderr=errFile,
-                cwd=config._PROJECT_DIR, shell=False)
-        process.wait()
-
-        counter += 1
+          counter += 1
 
     # Case 2: We have (class, variable) doubles
     elif static.do_we_have_merged_classVar():
@@ -364,20 +352,20 @@ def generate_mutants(generation, memberNum, txlOperator, sourceFile, destDir):
         variableName = lineMCV[-1]
         className = lineMCV[-2]
 
-        # for lineMCV2 in static.mergedClassVar:
-        syncVar = lineMCV[-1] # Was MCV2
-        mutantSource = sourceNameOnly + "_" + str(counter)
-        outFile = tempfile.SpooledTemporaryFile()
-        errFile = tempfile.SpooledTemporaryFile()
+        for lineMCV2 in static.mergedClassVar:
+          syncVar = lineMCV2[-1] # Was MCV2
+          mutantSource = sourceNameOnly + "_" + str(counter)
+          outFile = tempfile.SpooledTemporaryFile()
+          errFile = tempfile.SpooledTemporaryFile()
 
-        # Different operator when 2 args are available
-        process = subprocess.Popen(['txl', sourceFile, config._TXL_DIR + 'ASAT_CV.Txl', '-',
-                '-outfile', mutantSource + sourceExtOnly, '-outdir', txlDestDir,
-                '-class', className, '-var', variableName, '-syncvar', syncVar],
-                stdout=outFile, stderr=errFile, cwd=config._PROJECT_DIR, shell=False)
-        process.wait()
+          # Different operator when 2 args are available
+          process = subprocess.Popen(['txl', sourceFile, config._TXL_DIR + 'ASAT_CV.Txl', '-',
+                  '-outfile', mutantSource + sourceExtOnly, '-outdir', txlDestDir,
+                  '-class', className, '-var', variableName, '-syncvar', syncVar],
+                  stdout=outFile, stderr=errFile, cwd=config._PROJECT_DIR, shell=False)
+          process.wait()
 
-        counter += 1
+          counter += 1
 
     # Case 3: No targeting information for ASAT. Fall back on the 'this' variable
     else:

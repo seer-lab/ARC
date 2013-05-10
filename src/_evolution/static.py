@@ -1,13 +1,18 @@
-# Static analysis of parallel code is performed in this unit
-# Currently Chord is used
-# Other tools can be added as needed.
+""" Perform a static analysis of the source to be fixed to gain
+information about the classes, methods and variables used
+concurrently.
+
+Currently Chord is used. This unit can be adapted to other static,
+dynamic or other analysis tools as needed.
+
+Copyright David Kelk, 2012-13
+"""
 
 import subprocess
 import os
 import os.path
 import sys
 sys.path.append("..")  # To allow importing parent directory module
-
 import zipfile
 import config
 import re
@@ -15,7 +20,6 @@ import tempfile
 import shutil
 import fileinput
 import sys
-
 import urllib2
 from bs4 import BeautifulSoup
 

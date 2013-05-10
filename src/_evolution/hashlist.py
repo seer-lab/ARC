@@ -1,3 +1,9 @@
+"""Calculate hashes of projects so we can detect duplicate mutants and
+avoid the efford of running them through ConTest a second time.
+
+Copyright David Kelk 2012-13
+"""
+
 import os
 import os.path
 import sys

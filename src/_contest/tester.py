@@ -2,6 +2,9 @@
 
 The Tester class will run a testsuite using ConTest to introduce random thread
 sleep() and yeild() into the executing testsuite.
+
+Copyright David Kelk and Kevin Jalbert, 2012
+          David Kelk, 2013
 """
 
 from __future__ import division

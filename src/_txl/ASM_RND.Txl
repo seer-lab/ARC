@@ -1,9 +1,10 @@
 %***********************************************************
-% ASM_C (Add Sync around a Method from ConTest) Mutator for ARC
+% ASM_RND (Add Sync around a Method from ConTest) Mutator for ARC
 % (Automatic Repair of Concurrency Bugs)
-% With no (_RND) targeting information
+% With no targeting information (_RND)
 %
-% David Kelk, Kevin Jalbert and Jeremy Bradbury
+% Copyright David Kelk and Kevin Jalbert, 2012
+%           David Kelk, 2013
 %
 % Based on ASK by J.S. Bradbury
 %

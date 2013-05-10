@@ -2,6 +2,9 @@
 
 The entry point for ARC is found in this module. The configurations are held
 within the config.py module.
+
+Copyright David Kelk and Kevin Jalbert, 2012
+          David Kelk, 2013
 """
 
 import config

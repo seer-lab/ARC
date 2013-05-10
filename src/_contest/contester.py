@@ -3,6 +3,9 @@
 The setup() method should be called first to ensure that the testsuite and
 ConTest are setup correctly. The run_contest() method will start the testing
 approach using tester.py.
+
+Copyright David Kelk and Kevin Jalbert, 2012
+          David Kelk, 2013
 """
 
 import sys

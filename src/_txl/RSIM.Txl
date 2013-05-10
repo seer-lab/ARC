@@ -2,7 +2,8 @@
 % RSIM (Remove Sync In a Method Header) Mutator for ARC
 % (Automatic Repair of Concurrency Bugs)
 %
-% David Kelk, Kevin Jalbert and Jeremy Bradbury
+% Copyright David Kelk and Kevin Jalbert, 2012
+%           David Kelk, 2013
 %
 % Based on RSK by J.S. Bradbury
 %

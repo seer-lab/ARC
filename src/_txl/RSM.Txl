@@ -2,7 +2,8 @@
 % RSM (Remove Sync around a Method Body from ConTest) Mutator for ARC
 % (Automatic Repair of Concurrency Bugs)
 %
-% David Kelk, Kevin Jalbert and Jeremy Bradbury
+% Copyright David Kelk and Kevin Jalbert, 2012
+%           David Kelk, 2013
 %
 % Based on ASK by J.S. Bradbury
 %

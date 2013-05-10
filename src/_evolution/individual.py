@@ -3,6 +3,9 @@
 This genome is based off of a classic 2D binary string representation, but has
 the capabilities to have a variable width for each row. In addition, there are
 specific attributes used in the ARC evolutionary process.
+
+Copyright David Kelk and Kevin Jalbert, 2012
+          David Kelk, 2013
 """
 
 from _txl import txl_operator

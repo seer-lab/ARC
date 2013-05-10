@@ -3,7 +3,8 @@
 % (Automatic Repair of Concurrency Bugs)
 % No targeting information (_RND) is available
 %
-% David Kelk, Kevin Jalbert and Jeremy Bradbury, Mar. 2012
+% Copyright David Kelk and Kevin Jalbert, 2012
+%           David Kelk, 2013
 %
 % Based on ASK by J.S. Bradbury
 %
