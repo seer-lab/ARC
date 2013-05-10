@@ -27,10 +27,10 @@ logger = logging.getLogger('arc')
 
 # A dictionary to hold the path of unique mutations by individual's and
 # generation. The mapping is:
-# (generation, memberNum, txlOperator, mutantNum) => directory path
+# (generation, memberNum, txlOperator, mutantNum) => mutant file
 # For example:
 # (2 4 EXCR 6) -> /home/myrikhan/workspace/arc/tmp/2/4/source/DeadlockDemo
-#                 /EXCR/EXCR_DeadlockDemo.java_3/
+#                 /EXCR/EXCR_DeadlockDemo_1.java_3
 uniqueMutants = {}
 
 
@@ -204,9 +204,9 @@ def generate_mutants(generation, memberNum, txlOperator, sourceFile, destDir):
   # Cache
   sourceNameOnly = os.path.split(os.path.splitext(sourceFile)[0])[1]
   # .java
-  sourceExtOnly = os.path.splitext(sourceFile)[1]
+  #sourceExtOnly = os.path.splitext(sourceFile)[1]
 
-  # tmp/3/4/source/main/net/sf/cache4j/Cache/ASAT
+  # tmp/3/4/source/main/net/sf/cache4j/Cache/ASAT/
   txlDestDir = os.path.join(destDir, sourceNameOnly, txlOperator[0]) + os.sep
 
   # If the output directory doesn't exist, create it, otherwise clean subdirectories
@@ -215,19 +215,6 @@ def generate_mutants(generation, memberNum, txlOperator, sourceFile, destDir):
     shutil.rmtree(txlDestDir)
   os.makedirs(txlDestDir)
 
-  # I don't understand how TXL scopes things.  It appears to ALWAYS be global search
-  # and replace, even when one attempts to narrow the scope to a sub tree.
-  # Because of this, ASM, ASIM and ASAT were producing duplicate mutants - 2015 ASIM
-  # mutants for example (When the actual number was 15.) Over time this caused the
-  # 8 GB HD on the mac mini to fill up and an out of HD space error to occur.
-  #
-  # I've refactored the code to try and minimize mutant duplication.  Consequences:
-  # - ASM adds synch to all methods now.  No targeting. If there are 15 methods and
-  #   8 variables used concurrently in the class, that means 120 mutants.
-  #     Functionality lost: Matching methods, when we have triples
-  #     Functionality gained: Accurate mutant counts
-  #     New assumption: One class per file and it has the same name as the filename
-  # - ASIM now adds synchronization to all method headers
 
   counter = 1
 
@@ -249,7 +236,7 @@ def generate_mutants(generation, memberNum, txlOperator, sourceFile, destDir):
         mutantSource = sourceNameOnly + "_" + str(counter)
 
         process = subprocess.Popen(['txl', sourceFile, config._TXL_DIR + 'ASM_RND.Txl', '-',
-                '-outfile', mutantSource + sourceExtOnly, '-outdir', txlDestDir,
+                '-outfile', mutantSource, '-outdir', txlDestDir,
                 '-syncvar', variableName],
                 stdout=outFile, stderr=errFile, cwd=config._PROJECT_DIR, shell=False)
         process.wait()
@@ -281,7 +268,7 @@ def generate_mutants(generation, memberNum, txlOperator, sourceFile, destDir):
         errFile = tempfile.SpooledTemporaryFile()
 
         process = subprocess.Popen(['txl', sourceFile, config._TXL_DIR + 'ASM_RND.Txl', '-',
-                '-outfile', mutantSource + sourceExtOnly, '-outdir', txlDestDir,
+                '-outfile', mutantSource, '-outdir', txlDestDir,
                 '-syncvar', variableName],
                 stdout=outFile, stderr=errFile, cwd=config._PROJECT_DIR, shell=False)
         process.wait()
@@ -295,7 +282,7 @@ def generate_mutants(generation, memberNum, txlOperator, sourceFile, destDir):
       mutantSource = sourceNameOnly + "_" + str(counter)
 
       process = subprocess.Popen(['txl', sourceFile, config._TXL_DIR + 'ASM_RND.Txl', '-',
-              '-outfile', mutantSource + sourceExtOnly, '-outdir', txlDestDir,
+              '-outfile', mutantSource, '-outdir', txlDestDir,
               '-syncvar', 'this'],
               stdout=outFile, stderr=errFile, cwd=config._PROJECT_DIR, shell=False)
       process.wait()
@@ -309,7 +296,7 @@ def generate_mutants(generation, memberNum, txlOperator, sourceFile, destDir):
     mutantSource = sourceNameOnly + "_" + str(counter)
 
     process = subprocess.Popen(['txl', sourceFile, config._TXL_DIR + 'ASIM_RND.Txl', '-',
-            '-outfile', mutantSource + sourceExtOnly, '-outdir', txlDestDir,],
+            '-outfile', mutantSource, '-outdir', txlDestDir,],
             stdout=outFile, stderr=errFile, cwd=config._PROJECT_DIR, shell=False)
     process.wait()
 
@@ -335,7 +322,7 @@ def generate_mutants(generation, memberNum, txlOperator, sourceFile, destDir):
           errFile = tempfile.SpooledTemporaryFile()
 
           process = subprocess.Popen(['txl', sourceFile, config._TXL_DIR + 'ASAT.Txl', '-',
-                  '-outfile', mutantSource + sourceExtOnly, '-outdir', txlDestDir,
+                  '-outfile', mutantSource, '-outdir', txlDestDir,
                   '-class', className, '-method', methodName, '-var', variableName,
                   '-syncvar', syncVar], stdout=outFile, stderr=errFile,
                   cwd=config._PROJECT_DIR, shell=False)
@@ -353,14 +340,14 @@ def generate_mutants(generation, memberNum, txlOperator, sourceFile, destDir):
         className = lineMCV[-2]
 
         for lineMCV2 in static.mergedClassVar:
-          syncVar = lineMCV2[-1] # Was MCV2
+          syncVar = lineMCV2[-1]
           mutantSource = sourceNameOnly + "_" + str(counter)
           outFile = tempfile.SpooledTemporaryFile()
           errFile = tempfile.SpooledTemporaryFile()
 
           # Different operator when 2 args are available
           process = subprocess.Popen(['txl', sourceFile, config._TXL_DIR + 'ASAT_CV.Txl', '-',
-                  '-outfile', mutantSource + sourceExtOnly, '-outdir', txlDestDir,
+                  '-outfile', mutantSource, '-outdir', txlDestDir,
                   '-class', className, '-var', variableName, '-syncvar', syncVar],
                   stdout=outFile, stderr=errFile, cwd=config._PROJECT_DIR, shell=False)
           process.wait()
@@ -374,7 +361,7 @@ def generate_mutants(generation, memberNum, txlOperator, sourceFile, destDir):
       errFile = tempfile.SpooledTemporaryFile()
 
       process = subprocess.Popen(['txl', sourceFile, config._TXL_DIR + 'ASAT_RND.Txl', '-',
-                '-outfile', mutantSource + sourceExtOnly, '-outdir', txlDestDir,
+                '-outfile', mutantSource, '-outdir', txlDestDir,
                 '-syncvar', 'this'], stdout=outFile, stderr=errFile,
                 cwd=config._PROJECT_DIR, shell=False)
       process.wait()
@@ -390,7 +377,7 @@ def generate_mutants(generation, memberNum, txlOperator, sourceFile, destDir):
     errFile = tempfile.SpooledTemporaryFile()
 
     process = subprocess.Popen(['txl', sourceFile, txlOperator[4], '-',
-              '-outfile', mutantSource + sourceExtOnly, '-outdir', txlDestDir],
+              '-outfile', mutantSource, '-outdir', txlDestDir],
               stdout=outFile, stderr=errFile, cwd=config._PROJECT_DIR, shell=False)
     process.wait()
 
@@ -445,34 +432,27 @@ def recursive_generate_representation(generation, memberNum, recDir, representat
 
   for root, dirs, files in os.walk(recDir):
 
-    for aDir in dirs:
+    #for aDir in dirs:
       #logger.debug("Dir:  {}".format(aDir))
+      #representation = recursive_generate_representation(generation, memberNum,
+      #                  os.path.join(recDir, aDir), representation, mutationOperators)
 
-      foundMutant = False
-
-      # Count mutant operator if present in dir name
+    for aFile in files:
+      # Find the operator
       for mutationOp in mutationOperators:
 
-        if "{}_".format(mutationOp[0]) in str(aDir):
-          representation[mutationOp[0]] += 1
-          foundMutant = True
-          # uniqueMutants at {1, 1, ASAT, 1} = /Users/kelk/workspace
-          #  /ARC-Test-Suite/test_area/arc/tmp/1/1/Account/ASAT
-          #  /ASAT_Account_1.java_1/
-          #logger.debug("uniqueMutants at {}, {}, {}, {} = {}".format(generation,
-          #           memberNum, mutationOp[0], rep[mutationOp[0]],
-          #           os.path.join(root, aDir)))
-          uniqueMutants[(generation, memberNum, mutationOp[0],
-                      representation[mutationOp[0]])] = os.path.join(root, aDir)
+        representation[mutationOp[0]] += 1
+        # uniqueMutants at {1, 1, ASAT, 1} = /Users/kelk/workspace
+        #  /ARC-Test-Suite/test_area/arc/tmp/1/1/Account/ASAT
+        #  /ASAT_Account_1.java_1
+        #logger.debug("uniqueMutants at {}, {}, {}, {} = {}".format(generation,
+        #           memberNum, mutationOp[0], rep[mutationOp[0]],
+        #           os.path.join(root, aDir)))
+        uniqueMutants[(generation, memberNum, mutationOp[0],
+                    representation[mutationOp[0]])] = os.path.join(root, aFile)
 
-          # Representation: {'RSM': 0, 'ASIM': 4, 'ASAT': 5, ...
-          #logger.debug("Representation: {}".format(representation))
-
-      if foundMutant:
-        return representation
-      else:
-        representation = recursive_generate_representation(generation, memberNum,
-                         os.path.join(recDir, aDir), representation, mutationOperators)
+        # Representation: {'RSM': 0, 'ASIM': 4, 'ASAT': 5, ...
+        #logger.debug("Representation at file step: {}".format(representation))
 
   #logger.debug("Representation at end: {}".format(representation))
 
@@ -503,12 +483,14 @@ def create_local_project(generation, memberNum, restart, switchGeneration=0):
   restart (boolean): Do we want to reset the member project back to the pristine one?
   """
 
-  #logger.debug("Input arguments:  Gen: {}, Mem: {} and Restart: {}".format(generation, memberNum, restart))
+  #logger.debug("Input arguments:  Gen: {}, Mem: {} and Restart: {}".format
+  #  (generation, memberNum, restart))
 
   # 3/project
   staticPart = os.path.join(str(memberNum), 'project')
 
-  # If the indivudal is on the first or restarted, use the original (or switch gen for non-functional)
+  # If the indivudal is on the first or restarted, use the original (or switch
+  # gen for non-functional)
   if generation is 1 or restart:
     if switchGeneration > 0:
       # tmp/1/3/project
@@ -577,23 +559,8 @@ def move_mutant_to_local_project(generation, memberNum, txlOperator, mutantNum):
   # Use the dictionary defined at the top of the file
   # to find the DIRECTORY containing the mutant
 
-  # tmp/3/4/source/main/net/sf/cache4j/CacheCleaner/ASAT/
-  #   ASAT_CacheCleaner_1.java_1/CacheCleaner_1.java/
-  sourceDir = uniqueMutants[(generation, memberNum, txlOperator, mutantNum)]
-
-  fileName = ''
-  # Find the FILE NAME of the mutant
-  for files in os.listdir(sourceDir):
-    if files.endswith(".java"):
-      # CacheCleaner_1.java
-      fileName = files
-      break
-
-  #logger.debug("fileName:    {}".format(fileName))
-
-  # tmp/3/4/source/main/net/sf/cache4j/CacheCleaner/ASAT/
-  #   ASAT_CacheCleaner_1.java_1/CacheCleaner_1.java/CacheCleaner_1.java
-  sourceFile = os.path.join(sourceDir, fileName)
+  # tmp/3/4/source/main/net/sf/cache4j/CacheCleaner/ASAT/CacheCleaner_1_1.java
+  sourceFile = uniqueMutants[(generation, memberNum, txlOperator, mutantNum)]
 
   # Put together the destination DIRECTORY of the mutant
   # tmp/3/4/project/source/
@@ -602,34 +569,27 @@ def move_mutant_to_local_project(generation, memberNum, txlOperator, mutantNum):
 
   # Compute the relative part of the directory
   # Given:
-  # tmp/3/4/source/main/net/sf/cache4j/CacheCleaner/ASAT/
-  #   ASAT_CacheCleaner_1.java_1/CacheCleaner_1.java
+  # tmp/3/4/source/main/net/sf/cache4j/CacheCleaner/ASAT/CacheCleaner_1_1.java
   #
   # The relative part is: main/net/sf/cache4j
   #
-
   # 1. Remove the tmp/3/4/source/ prefix to get
-  #    main/net/sf/cache4j/CacheCleaner/ASAT/ASAT_CacheCleaner_1.java_1/
-  #    CacheCleaner_1.java
+  #    main/net/sf/cache4j/CacheCleaner/ASAT/CacheCleaner_1_1.java
   relPart = sourceFile.replace(os.path.join(config._TMP_DIR, str(generation),
             str(memberNum), config._PROJECT_SRC_DIR.replace(
             config._PROJECT_DIR, '')), '')
 
-  # 2. Chop off the file name and the last three directories to get
+  # 2. Chop off the file name and the last two directories to get
   #    main/net/sf/cache4j
   relPart = os.path.split(relPart)[0]
   relPart = os.path.split(relPart)[0]
   relPart = os.path.split(relPart)[0]
-  relPart = os.path.split(relPart)[0]
 
-  # For the destination file name, remove any ASAT_ prefix or
-  # _NN suffix
-  cleanFileName = fileName
-  if txlOperator in ["ASAT", "ASM", "ASIM"]:
-    cleanFileName = re.sub("_\d+.java", ".java", cleanFileName)
-    cleanFileName = cleanFileName.replace("ASAT_", "")
-    cleanFileName = cleanFileName.replace("ASM_", "")
-    cleanFileName = cleanFileName.replace("ASIM_", "")
+  # For the destination file name, remove the _NN_NN suffix
+  cleanFileName = os.path.split(sourceFile)[1]
+
+  # _1_1.java -> .java
+  cleanFileName = re.sub("_\d+_\d+.java", ".java", cleanFileName)
 
   # Full path of the destination of the mutant
   # tmp/3/4/project/source/main/net/sf/cache4j

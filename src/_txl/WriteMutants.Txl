@@ -1,4 +1,11 @@
 %***********************************************************
+% WriteMutants.Txl for CORE and ARC
+%
+% Copyright D David Kelk, 2013
+%
+% Based on WriteMutants.Txl by J.S. Bradbury
+%***********************************************************
+%***********************************************************
 % WriteMutants.Txl
 % Jeremy S. Bradbury
 
@@ -21,6 +28,8 @@ function constructDirectory
 	construct slash [stringlit]
 		"/"
 
+  % outdir / DirValue  : tmp/3/4/source/main/net/sf/cache4j/Cache/ASAT
+  % outfile / FileValue: account_1.java
 	import TXLargs [repeat stringlit]
 		deconstruct * TXLargs
 			"-outfile" FileValue [stringlit] "-outdir" DirValue [stringlit]
@@ -38,11 +47,20 @@ function constructDirectory
 	construct sep [stringlit]
 		"_"
 
+  construct javaext [stringlit]
+    ".java"
+
 	% get the input file name
 	import TXLinput [stringlit]
 
 	by
-		DirValue [+MutantOpName] [+ sep] [+ FileValue] [+ sep] [+ MutantCount] [print]
+    % outdir / DirValue  : tmp/3/4/source/main/net/sf/cache4j/Cache/ASAT
+    % outfile / FileValue: account_1.java
+	  % 1_Account_1.java
+	  % tmp/3/4/source/main/net/sf/cache4j/Cache/ASAT/1_Account_1.java
+		% DirValue [+MutantOpName] [+ sep] [+ FileValue] [+ sep] [+ MutantCount] [print]
+    % _ [+MutantOpName] [+ sep] [+ FileValue] [+ sep] [+ MutantCount] [print]
+    _   [+ FileValue] [+ sep] [+ MutantCount] [+ javaext] [print]
 end function
 
 %------------------------------------------------------------
@@ -55,6 +73,8 @@ function writeToFile
 	% get the input file name
 	import TXLinput [stringlit]
 
+  % outdir / DirValue  : tmp/3/4/source/main/net/sf/cache4j/Cache/ASAT
+  % outfile / FileValue: account_1.java
 	import TXLargs [repeat stringlit]
 		deconstruct * TXLargs
 			"-outfile" FileValue [stringlit] "-outdir" DirValue [stringlit] otherarge [repeat stringlit]
@@ -62,28 +82,32 @@ function writeToFile
 	construct slash [stringlit]
 		"/"
 
+	% tmp/3/4/source/main/net/sf/cache4j/Cache/ASAT/1_Account_1.java
 	% get current mutant's  directory name
-	construct dirname [stringlit]
+	construct newFileName [stringlit]
 		_ [constructDirectory]
 
 	% create new mutant directory
 	construct mkdirCmd [stringlit]
 		"mkdir "
 
+	% mkdir tmp/3/4/source/main/net/sf/cache4j/Cache/ASAT/
 	construct mkdirCmd2 [stringlit]
-		mkdirCmd [+ dirname]
+	%	mkdirCmd [+ dirname]
+    mkdirCmd [+ DirValue]
 
 	construct cdCmd [stringlit]
 		"cd "
 
 	construct cdCmd2 [stringlit]
-		cdCmd [+ dirname]
+	%	cdCmd [+ dirname]
+    cdCmd [+ DirValue]
 
 	construct dirCmd [stringlit]
 		"ls"
 
 	construct filename [stringlit]
-		dirname [+ slash] [+ FileValue]
+		DirValue [+ slash] [+ newFileName]
 
 	by
 		P

@@ -8,9 +8,8 @@
 %
 % Based on ASK by J.S. Bradbury
 %
-% Typical (eventual) invocation:
-% txl ManageAccount.java ASAT.Txl - -outfile ManageAccount_1.java
-% -outdir ASAT/ -class ManageAccount -var account -syncvar coolness
+% Typical invocation:
+% txl ManageAccount.java ASAT_CV.Txl - -outfile ManageAccount_1.java -outdir ASAT/ -class ManageAccount -var account -syncvar coolness
 %
 % Notes:
 % - Java files must be named _1.java, _2.java due to the fact
@@ -98,7 +97,7 @@ function main
   % initialize and export the name of the current mutant which
   % will be used for folder name generation
   construct MutantOpName [stringlit]
-    "ASAT"
+    "ASAT_CV"
   export MutantOpName
 
   % Read in name of class and variable from ConTest
@@ -195,11 +194,11 @@ function doSynchronizeStatementMutation
 
   import variableName [id]
 
-  where
-    AStmt [ContainsID variableName]
-
   deconstruct AStmt
     OtherStatement [other_statement]
+
+  where
+    OtherStatement [ContainsID variableName]
 
   % create mutant comment to appear in source
   construct MutantString [stringlit]
