@@ -24,6 +24,9 @@ import config
 
 import logging
 logger = logging.getLogger('arc')
+# Send2Trash from https://pypi.python.org/pypi/Send2Trash
+# See arc.py for more details
+from send2trash import send2trash
 
 # A dictionary to hold the path of unique mutations by individual's and
 # generation. The mapping is:
@@ -58,7 +61,7 @@ def mutate_project(generation, memberNum, mutationOperators):
   #   have the same mutants as they are all mutating the base project
   #   in the /input directory. So, instead of creating the mutants N
   #   times, create them once (for member #1) and copy them to the
-  #   other member directories.
+  #   other member directories for generation 1.
   if generation == 1 and memberNum > 1:
     # tmp/1/1/source/
     srcDir = os.path.join(config._TMP_DIR, str(1), str(1),
@@ -203,8 +206,6 @@ def generate_mutants(generation, memberNum, txlOperator, sourceFile, destDir):
 
   # Cache
   sourceNameOnly = os.path.split(os.path.splitext(sourceFile)[0])[1]
-  # .java
-  #sourceExtOnly = os.path.splitext(sourceFile)[1]
 
   # tmp/3/4/source/main/net/sf/cache4j/Cache/ASAT/
   txlDestDir = os.path.join(destDir, sourceNameOnly, txlOperator[0]) + os.sep
@@ -214,7 +215,6 @@ def generate_mutants(generation, memberNum, txlOperator, sourceFile, destDir):
   if os.path.exists(txlDestDir):
     shutil.rmtree(txlDestDir)
   os.makedirs(txlDestDir)
-
 
   counter = 1
 
@@ -235,10 +235,10 @@ def generate_mutants(generation, memberNum, txlOperator, sourceFile, destDir):
         errFile = tempfile.SpooledTemporaryFile()
         mutantSource = sourceNameOnly + "_" + str(counter)
 
-        process = subprocess.Popen(['txl', sourceFile, config._TXL_DIR + 'ASM_RND.Txl', '-',
-                '-outfile', mutantSource, '-outdir', txlDestDir,
-                '-syncvar', variableName],
-                stdout=outFile, stderr=errFile, cwd=config._PROJECT_DIR, shell=False)
+        process = subprocess.Popen(['txl', sourceFile, config._TXL_DIR +
+                'ASM_RND.Txl', '-', '-outfile', mutantSource, '-outdir',
+                txlDestDir, '-syncvar', variableName], stdout=outFile,
+                stderr=errFile, cwd=config._PROJECT_DIR, shell=False)
         process.wait()
 
         # Note to self: Keep this snipped for debugging purposes
@@ -256,7 +256,9 @@ def generate_mutants(generation, memberNum, txlOperator, sourceFile, destDir):
 
         counter += 1
 
-    elif static.do_we_have_merged_classVar():
+
+    #  We have class, variable information
+    if static.do_we_have_merged_classVar():
       for lineMCV in static.mergedClassVar:
         # See comment above
         if sourceNameOnly != lineMCV[-2]:
@@ -267,9 +269,9 @@ def generate_mutants(generation, memberNum, txlOperator, sourceFile, destDir):
         outFile = tempfile.SpooledTemporaryFile()
         errFile = tempfile.SpooledTemporaryFile()
 
-        process = subprocess.Popen(['txl', sourceFile, config._TXL_DIR + 'ASM_RND.Txl', '-',
-                '-outfile', mutantSource, '-outdir', txlDestDir,
-                '-syncvar', variableName],
+        process = subprocess.Popen(['txl', sourceFile, config._TXL_DIR +
+                'ASM_RND.Txl', '-', '-outfile', mutantSource,
+                '-outdir', txlDestDir, '-syncvar', variableName],
                 stdout=outFile, stderr=errFile, cwd=config._PROJECT_DIR, shell=False)
         process.wait()
 
@@ -281,9 +283,9 @@ def generate_mutants(generation, memberNum, txlOperator, sourceFile, destDir):
       errFile = tempfile.SpooledTemporaryFile()
       mutantSource = sourceNameOnly + "_" + str(counter)
 
-      process = subprocess.Popen(['txl', sourceFile, config._TXL_DIR + 'ASM_RND.Txl', '-',
-              '-outfile', mutantSource, '-outdir', txlDestDir,
-              '-syncvar', 'this'],
+      process = subprocess.Popen(['txl', sourceFile, config._TXL_DIR +
+              'ASM_RND.Txl', '-', '-outfile', mutantSource, '-outdir',
+              txlDestDir, '-syncvar', 'this'],
               stdout=outFile, stderr=errFile, cwd=config._PROJECT_DIR, shell=False)
       process.wait()
 
@@ -295,8 +297,9 @@ def generate_mutants(generation, memberNum, txlOperator, sourceFile, destDir):
     errFile = tempfile.SpooledTemporaryFile()
     mutantSource = sourceNameOnly + "_" + str(counter)
 
-    process = subprocess.Popen(['txl', sourceFile, config._TXL_DIR + 'ASIM_RND.Txl', '-',
-            '-outfile', mutantSource, '-outdir', txlDestDir,],
+    process = subprocess.Popen(['txl', sourceFile, config._TXL_DIR +
+            'ASIM_RND.Txl', '-', '-outfile', mutantSource, '-outdir',
+            txlDestDir,],
             stdout=outFile, stderr=errFile, cwd=config._PROJECT_DIR, shell=False)
     process.wait()
 
@@ -316,22 +319,27 @@ def generate_mutants(generation, memberNum, txlOperator, sourceFile, destDir):
 
         for lineCMV2 in static.finalCMV:
 
-          syncVar = lineCMV2[-1] # Was lineCMV2
+          syncVar = lineCMV2[-1]
+
           mutantSource = sourceNameOnly + "_" + str(counter)
           outFile = tempfile.SpooledTemporaryFile()
           errFile = tempfile.SpooledTemporaryFile()
 
-          process = subprocess.Popen(['txl', sourceFile, config._TXL_DIR + 'ASAT.Txl', '-',
-                  '-outfile', mutantSource, '-outdir', txlDestDir,
-                  '-class', className, '-method', methodName, '-var', variableName,
-                  '-syncvar', syncVar], stdout=outFile, stderr=errFile,
-                  cwd=config._PROJECT_DIR, shell=False)
+          process = subprocess.Popen(['txl', sourceFile, config._TXL_DIR +
+                  'ASAT.Txl', '-', '-outfile', mutantSource, '-outdir',
+                  txlDestDir, '-class', className, '-method', methodName,
+                  '-var', variableName, '-syncvar', syncVar],
+                  stdout=outFile, stderr=errFile, cwd=config._PROJECT_DIR,
+                  shell=False)
           process.wait()
 
           counter += 1
 
-    # Case 2: We have (class, variable) doubles
-    elif static.do_we_have_merged_classVar():
+    # Case 2:
+    # Two subcases to consider:
+    # a. We have doubles, but not triples
+    # b. We have triples, but no mutants were produced, so try doubles
+    if (static.do_we_have_merged_classVar() and not static.do_we_have_triples()) or (not os.listdir(txlDestDir) and static.do_we_have_triples() and static.do_we_have_merged_classVar()):
       for lineMCV in static.mergedClassVar:
         if sourceNameOnly != lineMCV[-2]:
           continue
@@ -346,10 +354,11 @@ def generate_mutants(generation, memberNum, txlOperator, sourceFile, destDir):
           errFile = tempfile.SpooledTemporaryFile()
 
           # Different operator when 2 args are available
-          process = subprocess.Popen(['txl', sourceFile, config._TXL_DIR + 'ASAT_CV.Txl', '-',
-                  '-outfile', mutantSource, '-outdir', txlDestDir,
-                  '-class', className, '-var', variableName, '-syncvar', syncVar],
-                  stdout=outFile, stderr=errFile, cwd=config._PROJECT_DIR, shell=False)
+          process = subprocess.Popen(['txl', sourceFile, config._TXL_DIR +
+                  'ASAT_CV.Txl', '-', '-outfile', mutantSource, '-outdir',
+                  txlDestDir, '-class', className, '-var', variableName,
+                  '-syncvar', syncVar], stdout=outFile, stderr=errFile,
+                  cwd=config._PROJECT_DIR, shell=False)
           process.wait()
 
           counter += 1
@@ -360,10 +369,10 @@ def generate_mutants(generation, memberNum, txlOperator, sourceFile, destDir):
       outFile = tempfile.SpooledTemporaryFile()
       errFile = tempfile.SpooledTemporaryFile()
 
-      process = subprocess.Popen(['txl', sourceFile, config._TXL_DIR + 'ASAT_RND.Txl', '-',
-                '-outfile', mutantSource, '-outdir', txlDestDir,
-                '-syncvar', 'this'], stdout=outFile, stderr=errFile,
-                cwd=config._PROJECT_DIR, shell=False)
+      process = subprocess.Popen(['txl', sourceFile, config._TXL_DIR +
+                'ASAT_RND.Txl', '-', '-outfile', mutantSource,
+                '-outdir', txlDestDir, '-syncvar', 'this'], stdout=outFile,
+                stderr=errFile, cwd=config._PROJECT_DIR, shell=False)
       process.wait()
 
       counter += 1
@@ -458,14 +467,30 @@ def recursive_generate_representation(generation, memberNum, recDir, representat
 
   return representation
 
+def clean_up_mutants(generation, memberNum):
+  """Once a project has been successfully compiled, delete all of the mutants
+  for that member. This should help cull the prolem of taking up gigabytes of
+  space and generating million(s) of files.
+
+  Attributes:
+  generation (int): Current generation of the evolutionary strategy
+  memberNum (int): Which member of the population we are mutating
+  mutationOperators ([list]): one of {config._FUNCTIONAL_MUTATIONS,
+    config._NONFUNCTIONAL_MUTATIONS}
+  """
+
+  cleanDir = os.path.join(config._TMP_DIR, str(generation), str(memberNum))
+
+  for root, dirs, files in os.walk(cleanDir):
+    for aDir in dirs:
+      if aDir <> "project":
+        send2trash(os.path.join(root, aDir))
 
 # -----------------------------------------------------------------------------
 #
 # Project related functions
 #
 # -----------------------------------------------------------------------------
-
-# TODO: Split the project related functions into a separate file?
 
 def create_local_project(generation, memberNum, restart, switchGeneration=0):
   """After mutating the files, create the project for a member of

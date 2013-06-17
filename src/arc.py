@@ -21,6 +21,9 @@ from _evolution import evolution
 from _txl import txl_operator
 from _evolution import static
 import fileinput
+# Send2Trash from https://pypi.python.org/pypi/Send2Trash
+# Details on its use is in step 9 below
+from send2trash import send2trash
 
 import logging
 logger = logging.getLogger('arc')
@@ -111,8 +114,9 @@ def main():
   if config._PROJECT_CLASSPATH is None:
     outFile = tempfile.SpooledTemporaryFile()
     errFile = tempfile.SpooledTemporaryFile()
-    antProcess = subprocess.Popen(['ant', '-v', config._PROJECT_TEST], stdout=outFile,
-                    stderr=errFile, cwd=config._PROJECT_DIR, shell=False)
+    antProcess = subprocess.Popen(['ant', '-v', config._PROJECT_TEST],
+                 stdout=outFile, stderr=errFile, cwd=config._PROJECT_DIR,
+                 shell=False)
     antProcess.wait()
     outFile.seek(0)
     outText = outFile.read()
@@ -149,17 +153,28 @@ def main():
       outText).groups()[0]
 
   # 8. Acquire dynamic timeout value from ConTest
-  contestTime = contester.run_test_execution(config._CONTEST_RUNS *
-    config._CONTEST_VALIDATION_MULTIPLIER)
+  contestTime = contester.run_test_execution(20)
+  # Too many runs is overkill
+  #contestTime = contester.run_test_execution(config._CONTEST_RUNS *
+  #  config._CONTEST_VALIDATION_MULTIPLIER)
   config._CONTEST_TIMEOUT_SEC = contestTime * config._CONTEST_TIMEOUT_MULTIPLIER
   logger.info("Using a timeout value of {}s".format(config._CONTEST_TIMEOUT_SEC))
 
   # 9. Clean up the temporary directory (Probably has subdirs from previous runs)
   logger.info("Cleaning TMP directory")
+  # Cleaning up a previous run could take half an hour on the mac
+  # (10,000+ files is slow)
+  # Trying an alternate approach: Sending the files to the trash
+  # Using an external module, Send2Trash from:
+  # https://pypi.python.org/pypi/Send2Trash
+  # Install command: pip install Send2Trash
+  # Some info on pip at: https://pypi.python.org/pypi
+
   if not os.path.exists(config._TMP_DIR):
     os.makedirs(config._TMP_DIR)
   else:
-    shutil.rmtree(config._TMP_DIR)
+    send2trash(config._TMP_DIR)
+    #shutil.rmtree(config._TMP_DIR) Native python, slow
     os.makedirs(config._TMP_DIR)
 
   # 10. Run the static analysis

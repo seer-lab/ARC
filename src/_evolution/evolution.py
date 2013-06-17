@@ -240,6 +240,13 @@ def evolve(generation=0, worstScore=0):
         # No more possible mutations in non-functional phase, time to terminate
         return get_best_individual()
 
+      # We can remove mutants for generation n-2. (We must keep generation n-1
+      # for the restart case.)
+      if individual.generation > 2:
+        logger.debug("Cleaning up mutants for generation {} member {}."
+          .format(individual.generation - 2, individual.id))
+        txl_operator.clean_up_mutants(individual.generation - 2, individual.id)
+
     averageFitness.append(runningSum / config._EVOLUTION_POPULATION)
     bestFitness.append((highestSoFar, highestID))
 
@@ -418,7 +425,7 @@ def mutation(individual, deadlockVotes, dataraceVotes, nonFunctionalVotes):
       individual.genome[operatorIndex][randomMutant] = 1
 
       logger.debug("Selected operator for Individual {} at generation {}: {}, number {}".
-      format(individual.id, individual.generation, selectedOperator[0], randomMutant + 1))
+        format(individual.id, individual.generation, selectedOperator[0], randomMutant + 1))
       return True
 
 
