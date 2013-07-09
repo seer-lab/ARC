@@ -3,6 +3,7 @@ tmp
 project_backup
 input
 output
+workarea
 
 *.py[co]
 

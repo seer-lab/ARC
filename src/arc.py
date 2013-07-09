@@ -195,7 +195,7 @@ if __name__ == '__main__':
   parser = argparse.ArgumentParser(
     description="ARC: Automatically Repair Concurrency bugs in Java "\
                   "<https://github.com/sqrg-uoit/arc>",
-    version="ARC 0.2.0",
+    version="ARC 1.0.0",
     usage="python arc.py")
 
   # Parse the arguments passed from the shell
