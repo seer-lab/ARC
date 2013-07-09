@@ -1,4 +1,5 @@
-"""txl_operator.py contains functions related to: - Generating mutants
+"""txl_operator.py contains functions related to:
+- Generating mutants
 - Creating local projects and copying mutants to them
 - Resetting underperforming local projects by:
   - Copying the pristine project over of it
@@ -451,9 +452,8 @@ def recursive_generate_representation(generation, memberNum, recDir, representat
       for mutationOp in mutationOperators:
 
         representation[mutationOp[0]] += 1
-        # uniqueMutants at {1, 1, ASAT, 1} = /Users/kelk/workspace
-        #  /ARC-Test-Suite/test_area/arc/tmp/1/1/Account/ASAT
-        #  /ASAT_Account_1.java_1
+        # uniqueMutants at {1, 1, ASAT, 1} = /home/david/workspace
+        #  /arc/tmp/1/1/Account/ASAT/ASAT_Account_1.java_1
         #logger.debug("uniqueMutants at {}, {}, {}, {} = {}".format(generation,
         #           memberNum, mutationOp[0], rep[mutationOp[0]],
         #           os.path.join(root, aDir)))

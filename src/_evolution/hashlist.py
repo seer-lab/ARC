@@ -52,7 +52,7 @@ def find_hash(newHash):
   if prevSeenMutantProj.has_key(newHash):
     return prevSeenMutantProj[(newHash)]
   else:
-    return (-1, -1)
+    return -1, -1
 
 
 

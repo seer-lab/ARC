@@ -888,7 +888,7 @@ def adjust_operator_weighting(generation):
         if individual.score[i+1] > individual.score[i]:
           logger.debug("Non-functional improvement over individual {} in generation {}".
             format(individual.id, i))
-          nonFunctionalVotes[j] += 1
+          nonFunctionalVotes[i] += 1
 
   logger.debug("Deadlock Votes: {}".format(deadlockVotes))
   logger.debug("Datarace Votes: {}".format(dataraceVotes))
