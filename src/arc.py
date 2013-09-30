@@ -26,7 +26,7 @@ import fileinput
 from send2trash import send2trash
 
 import logging
-logger = logging.getLogger('arc')
+logger = logging.getLogger('output-log')
 
 def main():
   """The entry point to ARC, to start the evolutionary approach."""

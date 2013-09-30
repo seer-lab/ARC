@@ -14,7 +14,7 @@ import logging
 import hashlib
 import shutil
 
-logger = logging.getLogger('arc')
+logger = logging.getLogger('output-log')
 
 # A dictionary to hold the path of unique mutations by individual's and
 # generation. The mapping is:

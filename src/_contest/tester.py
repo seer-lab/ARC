@@ -21,7 +21,7 @@ sys.path.append("..")  # To allow importing parent directory module
 import config
 
 import logging
-logger = logging.getLogger('arc')
+logger = logging.getLogger('output-log')
 
 
 class Tester():

@@ -24,7 +24,7 @@ sys.path.append("..")  # To allow importing parent directory module
 import config
 
 import logging
-logger = logging.getLogger('arc')
+logger = logging.getLogger('output-log')
 # Send2Trash from https://pypi.python.org/pypi/Send2Trash
 # See arc.py for more details
 from send2trash import send2trash

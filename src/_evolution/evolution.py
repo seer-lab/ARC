@@ -21,7 +21,7 @@ import hashlist
 import static
 
 import logging
-logger = logging.getLogger('arc')
+logger = logging.getLogger('output-log')
 
 # Set random's seed
 if config._RANDOM_SEED is None:

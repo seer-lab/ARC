@@ -24,7 +24,7 @@ import urllib2
 from bs4 import BeautifulSoup
 
 import logging
-logger = logging.getLogger('arc')
+logger = logging.getLogger('output-log')
 
 # We get two kinds of output from Chord's static analysis:
 

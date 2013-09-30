@@ -15,7 +15,7 @@ sys.path.append("..")  # To allow importing parent directory module
 import config
 
 import logging
-logger = logging.getLogger('arc')
+logger = logging.getLogger('output-log')
 
 class Individual():
   """A 2D binary string that has a variable width for each row.
