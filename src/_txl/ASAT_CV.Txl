@@ -3,6 +3,9 @@
 % (Automatic Repair of Concurrency Bugs)
 % Class and variable (_CV) targeting information only available
 %
+% -syncvar: Synchronization variable - synchronized(syncvar)
+% -var: A statement must contain var for it to be synchronized
+%
 % Copyright David Kelk and Kevin Jalbert, 2012
 %           David Kelk, 2013
 %
@@ -42,13 +45,23 @@ include "JavaCommentOverrides.Grm"
 
 % Local grammar overrides
 
+redefine variable_declaration
+       [attr labelM] [repeat modifier] [rest_of_variable_declaration] [NL]
+     | [attr labelM] [repeat modifier] [rest_of_variable_declaration] /* 'MUTANT: [stringlit] */ [NL]
+end redefine
+
+define rest_of_variable_declaration
+    [type_specifier] [variable_declarators] ';
+end define
+
 redefine statement
         [sync_other_statement]
     |   [attr labelM] [other_statement]
 end redefine
 
 define other_statement
-        [label_statement]
+        [variable_declaration]  %
+    |   [label_statement]
     |   [empty_statement]
     |   [expression_statement]
     |   [if_statement]

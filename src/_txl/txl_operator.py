@@ -58,6 +58,8 @@ def mutate_project(generation, memberNum, mutationOperators):
     config._NONFUNCTIONAL_MUTATIONS}
   """
 
+  logger.debug("generation, member: {}, {}".format(generation, memberNum))
+
   # Optimization: For generation 1, all members of the population will
   #   have the same mutants as they are all mutating the base project
   #   in the /input directory. So, instead of creating the mutants N
@@ -121,6 +123,7 @@ def recursively_mutate_project(generation, memberNum, sourceDir, destDir, mutati
     config._NONFUNCTIONAL_MUTATIONS}
   """
 
+  logger.debug("generation, member: {}, {}".format(generation, memberNum))
   #logger.debug("sourceDir    {}".format(sourceDir))
 
   # tmp/2/4/project/source or input/source/
@@ -182,6 +185,8 @@ def generate_all_mutants(generation, memberNum, sourceFile, destDir, mutationOpe
   #logger.debug("  sourceFile:      {}".format(sourceFile))
   #logger.debug("  destDir:         {}".format(destDir))
 
+  logger.debug("generation, member: {}, {}".format(generation, memberNum))
+
   for operator in mutationOperators:
     if operator[1]:  # If enabled
 
@@ -201,6 +206,8 @@ def generate_mutants(generation, memberNum, txlOperator, sourceFile, destDir):
   sourceFile (string): The specific file from the source project we are mutating
   destDir (string): Where the project is being copied to
   """
+
+  logger.debug("generation, member: {}, {}".format(generation, memberNum))
 
   # sourceFile: tmp/1/3/source/main/net/sf/cache4j/Cache.java
   # destDir   : tmp/3/4/source/main/net/sf/cache4j
@@ -226,19 +233,20 @@ def generate_mutants(generation, memberNum, txlOperator, sourceFile, destDir):
 
         # Only make mutants where the variable is within scope of the class
         # If ('SynchronizedCache', 'someMethod', '_memorySize') and
-        #    ('CacheObject', 'someOtherMethod', '_objSize') are in static.finalCMV,
-        # when line[-3] is CacheObject, only the second line is in scope
+        #    ('CacheObject', 'someOtherMethod', '_objSize') are in
+        # static._classMethVar, when the file/class name is CacheObject,
+        # only the second line is in scope
         if sourceNameOnly != lineCMV[-3]:
           continue
 
-        variableName = lineCMV[-1]
         outFile = tempfile.SpooledTemporaryFile()
         errFile = tempfile.SpooledTemporaryFile()
         mutantSource = sourceNameOnly + "_" + str(counter)
 
         process = subprocess.Popen(['txl', sourceFile, config._TXL_DIR +
-                'ASM_RND.Txl', '-', '-outfile', mutantSource, '-outdir',
-                txlDestDir, '-syncvar', variableName], stdout=outFile,
+                'ASM_CMV.Txl', '-', '-outfile', mutantSource, '-outdir',
+                txlDestDir, '-class', lineCMV[-3], '-method', lineCMV[-2],
+                '-syncvar', lineCMV[-1]], stdout=outFile,
                 stderr=errFile, cwd=config._PROJECT_DIR, shell=False)
         process.wait()
 
@@ -260,39 +268,39 @@ def generate_mutants(generation, memberNum, txlOperator, sourceFile, destDir):
 
     #  We have class, variable information
     if static.do_we_have_merged_classVar():
-      for lineMCV in static.mergedClassVar:
-        # See comment above
-        if sourceNameOnly != lineMCV[-2]:
+      for lineCV in static.mergedClassVar:
+        if sourceNameOnly != lineCV[-2]:
           continue
 
-        variableName = lineMCV[-1]
         mutantSource = sourceNameOnly + "_" + str(counter)
         outFile = tempfile.SpooledTemporaryFile()
         errFile = tempfile.SpooledTemporaryFile()
 
         process = subprocess.Popen(['txl', sourceFile, config._TXL_DIR +
-                'ASM_RND.Txl', '-', '-outfile', mutantSource,
-                '-outdir', txlDestDir, '-syncvar', variableName],
-                stdout=outFile, stderr=errFile, cwd=config._PROJECT_DIR, shell=False)
+                'ASM_CV.Txl', '-', '-outfile', mutantSource, '-outdir',
+                txlDestDir, '-class', lineCV[-2], '-syncvar', lineCV[-1]],
+                stdout=outFile, stderr=errFile, cwd=config._PROJECT_DIR,
+                shell=False)
         process.wait()
 
         counter += 1
 
     # No targeting information, so fall back on the 'this' variable
-    else:
+    if not static.do_we_have_triples() and not static.do_we_have_merged_classVar():
       outFile = tempfile.SpooledTemporaryFile()
       errFile = tempfile.SpooledTemporaryFile()
       mutantSource = sourceNameOnly + "_" + str(counter)
 
       process = subprocess.Popen(['txl', sourceFile, config._TXL_DIR +
-              'ASM_RND.Txl', '-', '-outfile', mutantSource, '-outdir',
-              txlDestDir, '-syncvar', 'this'],
-              stdout=outFile, stderr=errFile, cwd=config._PROJECT_DIR, shell=False)
+              'ASM_V.Txl', '-', '-outfile', mutantSource, '-outdir',
+              txlDestDir, '-syncvar', 'this'], stdout=outFile,
+              stderr=errFile, cwd=config._PROJECT_DIR, shell=False)
       process.wait()
 
       counter += 1
 
   # ----- ASIM -----
+  # I don't think much is gained by using ASIM_C.txt or ASIM_CM.txl
   elif txlOperator is config._MUTATION_ASIM:
     outFile = tempfile.SpooledTemporaryFile()
     errFile = tempfile.SpooledTemporaryFile()
@@ -300,8 +308,8 @@ def generate_mutants(generation, memberNum, txlOperator, sourceFile, destDir):
 
     process = subprocess.Popen(['txl', sourceFile, config._TXL_DIR +
             'ASIM_RND.Txl', '-', '-outfile', mutantSource, '-outdir',
-            txlDestDir,],
-            stdout=outFile, stderr=errFile, cwd=config._PROJECT_DIR, shell=False)
+            txlDestDir,], stdout=outFile, stderr=errFile,
+            cwd=config._PROJECT_DIR, shell=False)
     process.wait()
 
     counter += 1
@@ -314,12 +322,7 @@ def generate_mutants(generation, memberNum, txlOperator, sourceFile, destDir):
         if sourceNameOnly != lineCMV[-3]:
           continue
 
-        variableName = lineCMV[-1]
-        methodName = lineCMV[-2]
-        className = lineCMV[-3]
-
         for lineCMV2 in static.finalCMV:
-
           syncVar = lineCMV2[-1]
 
           mutantSource = sourceNameOnly + "_" + str(counter)
@@ -327,29 +330,27 @@ def generate_mutants(generation, memberNum, txlOperator, sourceFile, destDir):
           errFile = tempfile.SpooledTemporaryFile()
 
           process = subprocess.Popen(['txl', sourceFile, config._TXL_DIR +
-                  'ASAT.Txl', '-', '-outfile', mutantSource, '-outdir',
-                  txlDestDir, '-class', className, '-method', methodName,
-                  '-var', variableName, '-syncvar', syncVar],
+                  'ASAT_CMV.Txl', '-', '-outfile', mutantSource, '-outdir',
+                  txlDestDir, '-class', lineCMV[-3], '-method', lineCMV[-2],
+                  '-var', lineCMV[-1], '-syncvar', syncVar],
                   stdout=outFile, stderr=errFile, cwd=config._PROJECT_DIR,
                   shell=False)
           process.wait()
 
           counter += 1
 
-    # Case 2:
-    # Two subcases to consider:
-    # a. We have doubles, but not triples
-    # b. We have triples, but no mutants were produced, so try doubles
-    if (static.do_we_have_merged_classVar() and not static.do_we_have_triples()) or (not os.listdir(txlDestDir) and static.do_we_have_triples() and static.do_we_have_merged_classVar()):
-      for lineMCV in static.mergedClassVar:
-        if sourceNameOnly != lineMCV[-2]:
+    if static.do_we_have_merged_classVar():
+      logger.debug("{}".format(static.mergedClassVar))
+      for lineCV in static.mergedClassVar:
+        #logger.debug("ASAT_CV: Comparing {} to {}".format(sourceNameOnly, lineCV[-2]))
+        if sourceNameOnly != lineCV[-2]:
           continue
 
-        variableName = lineMCV[-1]
-        className = lineMCV[-2]
+        for lineCV2 in static.mergedClassVar:
+          syncVar = lineCV2[-1]
 
-        for lineMCV2 in static.mergedClassVar:
-          syncVar = lineMCV2[-1]
+          logger.debug("class, var, sync: {}, {}, {}".format(lineCV[-2],\
+            lineCV[-1], lineCV2[-1]))
           mutantSource = sourceNameOnly + "_" + str(counter)
           outFile = tempfile.SpooledTemporaryFile()
           errFile = tempfile.SpooledTemporaryFile()
@@ -357,7 +358,7 @@ def generate_mutants(generation, memberNum, txlOperator, sourceFile, destDir):
           # Different operator when 2 args are available
           process = subprocess.Popen(['txl', sourceFile, config._TXL_DIR +
                   'ASAT_CV.Txl', '-', '-outfile', mutantSource, '-outdir',
-                  txlDestDir, '-class', className, '-var', variableName,
+                  txlDestDir, '-class', lineCV[-2], '-var', lineCV[-1],
                   '-syncvar', syncVar], stdout=outFile, stderr=errFile,
                   cwd=config._PROJECT_DIR, shell=False)
           process.wait()
@@ -365,14 +366,14 @@ def generate_mutants(generation, memberNum, txlOperator, sourceFile, destDir):
           counter += 1
 
     # Case 3: No targeting information for ASAT. Fall back on the 'this' variable
-    else:
+    if not static.do_we_have_merged_classVar() and not static.do_we_have_triples():
       mutantSource = sourceNameOnly + "_" + str(counter)
       outFile = tempfile.SpooledTemporaryFile()
       errFile = tempfile.SpooledTemporaryFile()
 
       process = subprocess.Popen(['txl', sourceFile, config._TXL_DIR +
-                'ASAT_RND.Txl', '-', '-outfile', mutantSource,
-                '-outdir', txlDestDir, '-syncvar', 'this'], stdout=outFile,
+                'ASAT_RND.Txl', '-', '-outfile', mutantSource, '-outdir',
+                txlDestDir, '-syncvar', 'this'], stdout=outFile,
                 stderr=errFile, cwd=config._PROJECT_DIR, shell=False)
       process.wait()
 
