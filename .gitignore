@@ -1,10 +1,12 @@
-# ARC generated directories
+# ARC generated directories and files
 tmp
 project_backup
 input
 output
 workarea
-
+src/config.py
+lib/Chord/
+lib/ConTest/
 *.py[co]
 
 # Packages
@@ -62,3 +64,4 @@ pip-log.txt
 *.maf
 *.mtc
 *.mtc0
+*.bak
