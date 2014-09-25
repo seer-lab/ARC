@@ -4,10 +4,10 @@ The entry point for ARC is found in this module. The configurations are held
 within the config.py module.
 
 Copyright David Kelk and Kevin Jalbert, 2012
-          David Kelk, 2013
+          David Kelk, 2013 - 2014
 """
 
-import config
+
 import argparse
 import subprocess
 import tempfile
@@ -16,6 +16,30 @@ import shutil
 import os
 import os.path
 import sys
+import fileinput
+
+# Convenience code
+# Make sure config._ROOT_DIR is set correctly.  This is a problem
+# when CORE is run on different machines at the same time.
+coreDir = os.path.split(os.getcwd())[0] + os.sep
+srcConfig = os.path.join("..", "input", "config.py")
+if os.path.exists(srcConfig):
+  configRoot = fileinput.FileInput(files=(srcConfig), inplace=1)
+  for line in configRoot:
+    if line.find("_ROOT_DIR =") is 0:
+      line = "_ROOT_DIR = \"{}\" ".format(coreDir)
+    print(line[0:-1]) # Remove extra newlines (a trailing-space must exists in modified lines)
+  configRoot.close()
+
+# Look for input/config.py and copy it to src so it doesn't
+# have to be done manually every time
+  if os.path.exists("config.py"):
+    os.remove("config.py")
+  if os.path.exists("config.pyc"):
+    os.remove("config.pyc")
+  shutil.copy(srcConfig, ".")
+
+import config
 from _contest import contester
 from _evolution import evolution
 from _txl import txl_operator
@@ -177,14 +201,25 @@ def main():
     #shutil.rmtree(config._TMP_DIR) Native python, slow
     os.makedirs(config._TMP_DIR)
 
-  # 10. Run the static analysis
-  static.configure_chord()
-  static.run_chord_datarace()
-  static.get_chord_targets()
-  static.load_contest_list()
-  static.create_merged_classVar_list()
+  # We're keeping a database (config file) containing the results
+  # of previous static analysis runs. Check it first.
+  if not static.find_static_in_db(config._PROJECT_TESTSUITE):
+    static.configure_chord()
+    static.run_chord_datarace()
+    static.get_chord_targets()
+    static.load_contest_list()
+
+  static.get_synch_vars_from_functions()
+
+  static.eliminate_primitives()
   static.create_final_triple()
 
+  # Write the discovered values to file right away. The
+  # final values are written in the finally block of
+  # evolution.start() at the end of the run.
+  if len(static._classVar) > 0 or len(static._classMeth) > 0 \
+    or len(static._classMethVar) > 0:
+    static.write_static_to_db(config._PROJECT_TESTSUITE)
   # 11. Start the main bug-fixing procedure
   evolution.start()
 

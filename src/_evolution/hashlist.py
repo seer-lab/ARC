@@ -52,8 +52,7 @@ def find_hash(newHash):
   if prevSeenMutantProj.has_key(newHash):
     return prevSeenMutantProj[(newHash)]
   else:
-    return -1, -1
-
+    return (None, None)
 
 
 def add_hash(newHash, generation, memberNum):
@@ -61,7 +60,7 @@ def add_hash(newHash, generation, memberNum):
 
   if find_hash(newHash) == (-1, -1):
     prevSeenMutantProj[(newHash)] = (generation, memberNum)
-    logger.debug("Added {} -> ({}, {}) to hash list".format(newHash,generation, memberNum))
+    #logger.debug("Added {} -> ({}, {}) to hash list".format(newHash,generation, memberNum))
 
 
 # From http://code.activestate.com/recipes/576973-getting-the-sha-1-or-md5-hash-of-a-directory/

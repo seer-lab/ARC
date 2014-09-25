@@ -253,12 +253,8 @@ class Tester():
 
     # If ConTest hasn't given us a list of (class.variable) involved in concurrency
     # yet, we keep looking for it.
-    # Getting the ConTest information may allow us to fill the config.finalCMV list with
-    # (class, method, variable) information, so we should try to do so again.
-    if not static.do_we_have_contest_vars():
-      if static.load_contest_list():
-        static.create_merged_classVar_list()
-        static.create_final_triple()
+    static.load_contest_list()
+
 
   def clear_results(self):
     """Clears the results of the test runs thus far."""

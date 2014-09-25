@@ -58,7 +58,7 @@ def mutate_project(generation, memberNum, mutationOperators):
     config._NONFUNCTIONAL_MUTATIONS}
   """
 
-  logger.debug("generation, member: {}, {}".format(generation, memberNum))
+  #logger.debug("generation, member: {}, {}".format(generation, memberNum))
 
   # Optimization: For generation 1, all members of the population will
   #   have the same mutants as they are all mutating the base project
@@ -123,7 +123,7 @@ def recursively_mutate_project(generation, memberNum, sourceDir, destDir, mutati
     config._NONFUNCTIONAL_MUTATIONS}
   """
 
-  logger.debug("generation, member: {}, {}".format(generation, memberNum))
+  #logger.debug("generation, member: {}, {}".format(generation, memberNum))
   #logger.debug("sourceDir    {}".format(sourceDir))
 
   # tmp/2/4/project/source or input/source/
@@ -185,7 +185,7 @@ def generate_all_mutants(generation, memberNum, sourceFile, destDir, mutationOpe
   #logger.debug("  sourceFile:      {}".format(sourceFile))
   #logger.debug("  destDir:         {}".format(destDir))
 
-  logger.debug("generation, member: {}, {}".format(generation, memberNum))
+  #logger.debug("generation, member: {}, {}".format(generation, memberNum))
 
   for operator in mutationOperators:
     if operator[1]:  # If enabled
@@ -207,7 +207,7 @@ def generate_mutants(generation, memberNum, txlOperator, sourceFile, destDir):
   destDir (string): Where the project is being copied to
   """
 
-  logger.debug("generation, member: {}, {}".format(generation, memberNum))
+  #logger.debug("generation, member: {}, {}".format(generation, memberNum))
 
   # sourceFile: tmp/1/3/source/main/net/sf/cache4j/Cache.java
   # destDir   : tmp/3/4/source/main/net/sf/cache4j
@@ -228,8 +228,8 @@ def generate_mutants(generation, memberNum, txlOperator, sourceFile, destDir):
 
   # ----- ASM -----
   if txlOperator is config._MUTATION_ASM:
-    if static.do_we_have_triples():
-      for lineCMV in static.finalCMV:
+    if static.do_we_have_CMV():  # Class, method, synchronization variable
+      for lineCMV in static._classMethVar:
 
         # Only make mutants where the variable is within scope of the class
         # If ('SynchronizedCache', 'someMethod', '_memorySize') and
@@ -267,8 +267,8 @@ def generate_mutants(generation, memberNum, txlOperator, sourceFile, destDir):
 
 
     #  We have class, variable information
-    if static.do_we_have_merged_classVar():
-      for lineCV in static.mergedClassVar:
+    if static.do_we_have_CV():  # Class, synchronization variable
+      for lineCV in static._classVar:
         if sourceNameOnly != lineCV[-2]:
           continue
 
@@ -286,7 +286,7 @@ def generate_mutants(generation, memberNum, txlOperator, sourceFile, destDir):
         counter += 1
 
     # No targeting information, so fall back on the 'this' variable
-    if not static.do_we_have_triples() and not static.do_we_have_merged_classVar():
+    if not static.do_we_have_CV and not static.do_we_have_CMV:
       outFile = tempfile.SpooledTemporaryFile()
       errFile = tempfile.SpooledTemporaryFile()
       mutantSource = sourceNameOnly + "_" + str(counter)
@@ -317,12 +317,12 @@ def generate_mutants(generation, memberNum, txlOperator, sourceFile, destDir):
   # ----- ASAT ------
   elif txlOperator is config._MUTATION_ASAT:
     # Case 1: We have the (class, method, variable) triples
-    if static.do_we_have_triples():
-      for lineCMV in static.finalCMV:
+    if static.do_we_have_CMV():
+      for lineCMV in static._classMethVar:
         if sourceNameOnly != lineCMV[-3]:
           continue
 
-        for lineCMV2 in static.finalCMV:
+        for lineCMV2 in static._classMethVar:
           syncVar = lineCMV2[-1]
 
           mutantSource = sourceNameOnly + "_" + str(counter)
@@ -339,18 +339,17 @@ def generate_mutants(generation, memberNum, txlOperator, sourceFile, destDir):
 
           counter += 1
 
-    if static.do_we_have_merged_classVar():
-      logger.debug("{}".format(static.mergedClassVar))
-      for lineCV in static.mergedClassVar:
+    if static.do_we_have_CV():
+      for lineCV in static._classVar:
         #logger.debug("ASAT_CV: Comparing {} to {}".format(sourceNameOnly, lineCV[-2]))
         if sourceNameOnly != lineCV[-2]:
           continue
 
-        for lineCV2 in static.mergedClassVar:
+        for lineCV2 in static._classVar:
           syncVar = lineCV2[-1]
 
-          logger.debug("class, var, sync: {}, {}, {}".format(lineCV[-2],\
-            lineCV[-1], lineCV2[-1]))
+          #logger.debug("class, var, sync: {}, {}, {}".format(lineCV[-2],\
+          #  lineCV[-1], lineCV2[-1]))
           mutantSource = sourceNameOnly + "_" + str(counter)
           outFile = tempfile.SpooledTemporaryFile()
           errFile = tempfile.SpooledTemporaryFile()
@@ -366,7 +365,7 @@ def generate_mutants(generation, memberNum, txlOperator, sourceFile, destDir):
           counter += 1
 
     # Case 3: No targeting information for ASAT. Fall back on the 'this' variable
-    if not static.do_we_have_merged_classVar() and not static.do_we_have_triples():
+    if not static.do_we_have_CV and not static.do_we_have_CMV:
       mutantSource = sourceNameOnly + "_" + str(counter)
       outFile = tempfile.SpooledTemporaryFile()
       errFile = tempfile.SpooledTemporaryFile()
@@ -468,6 +467,7 @@ def recursive_generate_representation(generation, memberNum, recDir, representat
 
   return representation
 
+
 def clean_up_mutants(generation, memberNum):
   """Once a project has been successfully compiled, delete all of the mutants
   for that member. This should help cull the prolem of taking up gigabytes of
@@ -486,6 +486,16 @@ def clean_up_mutants(generation, memberNum):
     for aDir in dirs:
       if aDir <> "project":
         send2trash(os.path.join(root, aDir))
+
+
+def clean_up_remaining_mutants():
+  """Clean up any remaining directories containing mutant files."""
+
+  for gen in xrange(1,config._EVOLUTION_GENERATIONS+1):
+    for mem in xrange(1, config._EVOLUTION_POPULATION+1):
+      sourceDir = os.path.join(config._TMP_DIR, str(gen), str(mem), "source")
+      if os.path.isdir(sourceDir):
+        send2trash(sourceDir)
 
 # -----------------------------------------------------------------------------
 #
@@ -632,9 +642,9 @@ def move_mutant_to_local_project(generation, memberNum, txlOperator, mutantNum):
   if not os.path.exists(destPath):
     os.makedirs(destPath)
 
-  logger.debug("Moving mutant to local project:")
-  logger.debug("  sourceFile: {}".format(sourceFile))
-  logger.debug("  destFile:   {}".format(destFile))
+  #logger.debug("Moving mutant to local project:")
+  #logger.debug("  sourceFile: {}".format(sourceFile))
+  #logger.debug("  destFile:   {}".format(destFile))
 
   shutil.copy(sourceFile, destFile)
 
@@ -695,7 +705,7 @@ def compile_project():
   #logger.debug(errText)
 
   if (outText.find("build failed") >= 0 or errText.find("build failed") >= 0):
-    logger.debug("Ant 'compile' command failed, could not compile project in work area")
+    #logger.debug("Ant 'compile' command failed, could not compile project in work area")
     return False
   else:
     return True
@@ -719,3 +729,110 @@ def move_best_project_to_output(generation, memberNum):
   if os.path.exists(config._PROJECT_OUTPUT_DIR):
     shutil.rmtree(config._PROJECT_OUTPUT_DIR)
   shutil.copytree(srcDir, config._PROJECT_OUTPUT_DIR)
+
+# -----------------------------------------------------------------------------
+#
+# Disallowed mutants
+#
+# -----------------------------------------------------------------------------
+
+def was_run_synchronized(srcDir):
+
+  for root, dirs, files in os.walk(srcDir):
+
+    for aFile in files:
+      if ("." in aFile and aFile.split(".")[1] == "java"):
+        sourceFile = os.path.join(root, aFile)
+
+        #logger.debug("Checking if run was synched in:")
+        #logger.debug("\n{}".format(sourceFile))
+
+        return check_synch_run_work(sourceFile)
+
+  return False
+
+
+def check_synch_run(generation, memberNum, txlOperator, mutantNum):
+
+  javaFile = uniqueMutants[(generation, memberNum, txlOperator, mutantNum)]
+
+  return check_synch_run_work(javaFile)
+
+# Important note: The src/_evolution/test_exclusion subdirectory contains
+#                 a test program for the regular expressions below. See
+#                 exclusion-tester.py for details.
+
+def check_synch_run_work(javaFile):
+  with open(javaFile) as f:
+    lines = f.read().splitlines()
+
+  inRun = False
+  for line in lines:
+    # Strip out comments
+    if line.find("//") > 0:
+      line = line[:line.find("//")]
+
+    # look for "synchronized void run()"
+    if re.search("synchronized (.*) run[\ (]", line):
+      #logger.debug("Disallowed mutant detected (case 1):")
+      #logger.debug("\n{}".format(line))
+      return True
+
+    # This is a crude way to look for
+    # public void run(){
+    #   ...
+    #   synchronized
+    #   ...
+    #   }
+    # The only condition is that synchronized appears before ANY closing
+    # bracket, "}""
+
+    if re.search("[\ ]run[\ (]", line):
+      inRun = True
+
+    if re.search("synchronized", line) and inRun:
+      #logger.debug("Disallowed mutant detected (case 2):")
+      #logger.debug("\n{}".format(line))
+      return True
+
+    if re.search("[\}+]", line) and inRun:
+      inRun = False
+
+  return False
+
+
+# Important note: The src/_evolution/test_remove_multi_synch subdirectory
+#                 contains a test program for the regular expressions below.
+#                 See remove-multi-synch.py for details.
+
+def check_double_synch(generation, memberNum, txlOperator, mutantNum):
+  synchStack = list()
+  doubleSynchFound = False
+
+  javaFile = uniqueMutants[(generation, memberNum, txlOperator, mutantNum)]
+  #logger.debug("Java file: {}".format(javaFile))
+
+  with open(javaFile) as f:
+    lines = f.read().splitlines()
+
+  for line in lines:
+    # Strip out comments
+    if line.find("//") > 0:
+      line = line[:line.find("//")]
+
+    # Look for a synchronization variable. If found, add it to the stack
+    synchVar = re.search("synchronized \((\S+)\)", line)
+    if synchVar is not None:
+      #logger.debug("Synch var {}".format(synchVar.group(1)))
+      if synchVar.group(1) in synchStack:
+        doubleSynchFound = True
+        #logger.debug("Double synchronization found in file {} on variable {}"\
+        #  .format(javaFile, synchVar.group(1)))
+      else:
+        synchStack.append(synchVar.group(1))
+
+      # When we find a closing curly brace, we pop the stack
+      if line.find("}") > 0 and len(synchStack) > 0:
+        synchStack.pop()
+
+  return doubleSynchFound

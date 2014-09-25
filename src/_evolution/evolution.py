@@ -12,14 +12,13 @@ import math
 import traceback
 import copy
 from collections import Counter
-
 sys.path.append("..")  # To allow importing parent directory module
 import config
 from _contest import tester
 from _txl import txl_operator
 import hashlist
 import static
-
+import os
 import logging
 logger = logging.getLogger('output-log')
 
@@ -64,7 +63,7 @@ def initialize(bestIndividual=None):
   for i in xrange(1, config._EVOLUTION_POPULATION + 1):
 
     if bestIndividual is None:  # Functional phase
-      logger.debug("Creating individual {}".format(i))
+      #logger.debug("Creating individual {}".format(i))
       individual = Individual(mutationOperators, i)
     else:  # Non-functional phase
       logger.debug("Cloning best functional individual {} into individual {}".format(
@@ -171,8 +170,36 @@ def start():
     #logger.info("Note: Results of the run can be found before the listing of the population.")
     #logger.info("(Scroll up)")
 
+    # Notify the user if the solution found synchronizes run()
+    # If so, let them know about the _EXCLUDE_RUN option
+    outDir = os.path.join(config._PROJECT_OUTPUT_DIR,
+      config._PROJECT_SRC_DIR.replace(config._PROJECT_DIR, ''))
+    logger.debug("Checking if run was synchronized for the output project:")
+    logger.debug("{}".format(outDir))
+    if os.path.exists(outDir) and txl_operator.was_run_synchronized(outDir):
+      logger.info("------------------------------------------------------")
+      logger.info("Note that the solution found synchronizes run(). This ")
+      logger.info("turned your (potentially fixed) program into a sequential")
+      logger.info("one. There are two things you should consider doing:")
+      logger.info("1. Consider re-designing your parallel code, or")
+      logger.info("2. Use the `_EXCLUDE_RUN = True' option in config.py")
+      logger.info("   to prevent CORE from synchronizing run in the future.")
+      logger.info("------------------------------------------------------")
+
   except:
     logger.error("Unexpected error:\n", traceback.print_exc(file=sys.stdout))
+  finally:
+    # Save the final results of the static analysis to file.  See
+    # static.write_static_to_db for details.
+    if len(static._classVar) > 0 or len(static._classMeth) > 0 \
+      or len(static._classMethVar) > 0:
+      static.eliminate_primitives()
+      static.write_static_to_db(config._PROJECT_TESTSUITE)
+      logger.debug("Wrote static records to disk in section {}" \
+        .format(config._PROJECT_TESTSUITE))
+
+    # Delete all the remaining tmp\gen\mem\source directories
+    txl_operator.clean_up_remaining_mutants()
 
 
 def evolve(generation=0, worstScore=0):
@@ -402,6 +429,23 @@ def mutation(individual, deadlockVotes, dataraceVotes, nonFunctionalVotes):
 
     # When we get here, we have selected a new mutant
     totTriedMutants += 1
+
+    # Now we check for reasons to exclude a mutant file:
+
+    # 1. If we are excluding run as a synchronizable method, check the selected
+    # mutant for it
+    if hasattr(config, '_EXCLUDE_RUN'):
+      if config._EXCLUDE_RUN:
+        if txl_operator.check_synch_run(individual.generation, individual.id,
+          selectedOperator[0], randomMutant + 1):
+          continue
+
+    # 2. Double locking on a variable isn't allowed:
+    # removed the if...: for testing
+    if txl_operator.check_double_synch(individual.generation, individual.id,
+      selectedOperator[0], randomMutant + 1):
+      continue
+
     # Create the project, add the mutant
     txl_operator.create_local_project(individual.generation, individual.id, False)
 
@@ -411,11 +455,11 @@ def mutation(individual, deadlockVotes, dataraceVotes, nonFunctionalVotes):
     # Move the local project to the target's source
     txl_operator.move_local_project_to_workarea(individual.generation, individual.id)
 
-    logger.debug("Attempting to compile...")
+    #logger.debug("Attempting to compile...")
 
     # Compile target's source
     if txl_operator.compile_project():
-      logger.debug("Success!")
+      #logger.debug("Success!")
 
       # Update individual
       individual.lastOperator = selectedOperator
@@ -575,7 +619,7 @@ def feedback_selection(individual, deadlockVotes, dataraceVotes, nonFunctionalVo
       selectedOperator = candidateChoices[i]
       break
 
-  logger.debug("Selected operator returned: {}".format(selectedOperator[0]))
+  #logger.debug("Selected operator returned: {}".format(selectedOperator[0]))
 
   return selectedOperator
 
@@ -645,101 +689,124 @@ def evaluate(individual, worstScore):
 
   global _functionalPhase
 
+  # If the mutant is a repeat, there is nothing more to do here
+  seenBefore, hashVal = check_repeat_mutant(individual)
+  if seenBefore:
+    return
+
+  if hashVal != None and _functionalPhase:
+    #logger.debug("Didn't find this mutated project hash in hash list: {}. \
+    #  Adding it".format(hashVal))
+    hashlist.add_hash(hashVal, individual.generation, individual.id)
+
   # ConTest testing
   contest = tester.Tester()
 
+  logger.info("Evaluating individual {}, generation {} with ConTest".
+    format(individual.id, individual.generation))
+
+  # Bug fixing phase
   if _functionalPhase:
-    # Check if we have encountered this mutant already
-    md5Hash = hashlist.generate_hash(individual.generation, individual.id)
-    if md5Hash is not None:
-      hashGen, hashMem =  hashlist.find_hash(md5Hash)
-      # If we have, we can skip the contest runs (saves time) and copy the testing
-      # results from the first mutatn
-      if hashGen != -1 and hashMem != -1:
-        logger.debug("This is the same as generation {}, member {}.  Skipping evaluation".format(hashGen, hashMem))
-        prevIndvidual = _population[hashMem]
 
-        logger.debug("hashGen  : {}".format(hashGen))
-        logger.debug("Score    : {}".format(prevIndvidual.score))
-        logger.debug("Successes: {}".format(prevIndvidual.successes))
-        logger.debug("Timeouts : {}".format(prevIndvidual.timeouts))
+    contest.begin_testing(_functionalPhase, False)
 
-        if len(prevIndvidual.score) == 0 or len(prevIndvidual.score) < hashGen:
-          individual.score.append(0)
-        else:
-          individual.score.append(prevIndvidual.score[hashGen- 1])
+    # Fitness
+    individual.score.append((contest.successes * config._SUCCESS_WEIGHT) + \
+                            (contest.timeouts * config._TIMEOUT_WEIGHT))
 
-        if len(prevIndvidual.successes) == 0 or len(prevIndvidual.successes) < hashGen:
-          individual.successes.append(0)
-        else:
-          individual.successes.append(prevIndvidual.successes[hashGen - 1])
+    # Store results into genome
+    individual.successes.append(contest.successes)
+    individual.timeouts.append(contest.timeouts)
+    individual.dataraces.append(contest.dataraces)
+    individual.deadlocks.append(contest.deadlocks)
+    individual.errors.append(contest.errors)
 
-        if len(prevIndvidual.timeouts) == 0 or len(prevIndvidual.timeouts) < hashGen:
-          individual.timeouts.append(0)
-        else:
-          individual.timeouts.append(prevIndvidual.timeouts[hashGen - 1])
 
-        if len(prevIndvidual.dataraces) == 0 or len(prevIndvidual.dataraces) < hashGen:
-          individual.dataraces.append(0)
-        else:
-          individual.dataraces.append(prevIndvidual.dataraces[hashGen - 1])
-
-        if len(prevIndvidual.deadlocks) == 0 or len(prevIndvidual.deadlocks) < hashGen:
-          individual.deadlocks.append(0)
-        else:
-          individual.deadlocks.append(prevIndvidual.deadlocks[hashGen - 1])
-
-        if len(prevIndvidual.errors) == 0 or len(prevIndvidual.errors) < hashGen:
-          individual.errors.append(0)
-        else:
-          individual.errors.append(prevIndvidual.errors[hashGen - 1])
-
-      # If we haven't seen this mutant before, evaluate it with contest
-      else:
-        logger.debug("Didn't find this mutated project hash in hash list: {}.  Adding it".format(md5Hash))
-        hashlist.add_hash(md5Hash, individual.generation, individual.id)
-
-        contest.begin_testing(_functionalPhase, False)
-
-        individual.score.append((contest.successes * config._SUCCESS_WEIGHT) + \
-                                (contest.timeouts * config._TIMEOUT_WEIGHT))
-
-        # Store results into genome
-        individual.successes.append(contest.successes)
-        individual.timeouts.append(contest.timeouts)
-        individual.dataraces.append(contest.dataraces)
-        individual.deadlocks.append(contest.deadlocks)
-        individual.errors.append(contest.errors)
-    else:
-      logger.error("Hash value of member {} generation {} is NULL".format(
-        individual.id, individual.generation))
-
-  else: # Non-functional phase
+  # Optimization phase
+  else:
     # Ensure functionality is still there
-    if contest.begin_testing(False, True, config._CONTEST_RUNS * config._CONTEST_VALIDATION_MULTIPLIER):
-      logger.debug("Nonfunctional phase: Mutation didn't introduce any bugs")
+    if contest.begin_testing(_functionalPhase, True, config._CONTEST_RUNS *
+      config._CONTEST_VALIDATION_MULTIPLIER):
+      logger.debug("Optimization phase: Mutation didn't introduce any bugs")
 
-      # Nonfunctional fitness
+      # Optimization fitness
       individual.score.append(get_average_non_functional_score(contest,
         individual, config._CONTEST_RUNS * config._CONTEST_VALIDATION_MULTIPLIER))
     else:
-      logger.debug("Nonfunctional phase: Mutation introduced a bug")
+      logger.debug("Optimization phase: Mutation introduced a bug")
       individual.score.append(-1)
 
       # Need to ensure that the project from the last generation is used again
-      if individual.generation-1 is 0:
-        # Restarting the mutant if at 0th generation
-        logger.debug("Nonfunctional phase: Resetting back to pristine")
+      # If we are on the first generation, we copy the pristine project from
+      # config._PROJECT_PRISTINE_DIR, otherwise we use the project from the
+      # previous generation
+
+      # TODO: Double check that once the functional phase starts, the generation
+      #       is reset to 1.
+
+      if individual.generation - 1 is 0:
+        logger.debug("Optimization phase: Resetting back to pristine")
         txl_operator.create_local_project(individual.generation, individual.id, True)
       else:
-        logger.debug("Nonfunctional phase: Resetting back to the previous generation")
-        txl_operator.copy_local_project_a_to_b(individual.generation-1,
-                                              individual.id,
-                                              individual.generation,
-                                              individual.id)
+        logger.debug("Optimization phase: Resetting back to the previous generation")
+        txl_operator.copy_local_project_a_to_b(individual.generation-1, individual.id,
+                                               individual.generation, individual.id)
       individual.wasRestarted[-1] = True
 
   contest.clear_results()
+
+
+def check_repeat_mutant(individual):
+  """Check to see if this particular mutant has been seen before. If it has,
+  we don't need to evaluate it again.  Simply copy the results from the
+  first evaluation into this member.
+
+  Attributes:
+    individual (Individual): Who we are scoring
+  Returns:
+    Boolean: Has this mutant been seen before?
+    String: Hash value or none
+  """
+
+  global _functionalPhase
+
+  # TODO: Can this be used in the optimization phase too?
+  if not _functionalPhase:
+    return False, None
+
+  # Check if we have encountered this mutant already
+  md5Hash = hashlist.generate_hash(individual.generation, individual.id)
+  if md5Hash is None:
+    logger.error("Hash value of member {}, generation {} is NULL".format(
+      individual.id, individual.generation))
+    return False, None
+
+  hashGen, hashMem =  hashlist.find_hash(md5Hash)
+  if hashGen == None or hashMem == None:
+    #logger.debug("Hash value of member {}, generation {} not found".format(
+    #  individual.id, individual.generation))
+    return False, md5Hash
+
+  # If we have, we can skip the evaluation (saves time) and copy the testing
+  # results from the first mutant
+  #logger.debug("This is the same as generation {}, member {}.  Skipping \
+  #  evaluation".format(hashGen, hashMem))
+  prevIndvidual = _population[hashMem]
+
+  #logger.debug("hashGen  : {}".format(hashGen))
+  #logger.debug("Score    : {}".format(prevIndvidual.score))
+  #logger.debug("Successes: {}".format(prevIndvidual.successes))
+  #logger.debug("Timeouts : {}".format(prevIndvidual.timeouts))
+
+  # Copy the testing information into the individual
+  individual.score.append(prevIndvidual.score[-1])
+  individual.successes.append(prevIndvidual.successes[-1])
+  individual.timeouts.append(prevIndvidual.timeouts[-1])
+  individual.dataraces.append(prevIndvidual.dataraces[-1])
+  individual.deadlocks.append(prevIndvidual.deadlocks[-1])
+  individual.errors.append(prevIndvidual.errors[-1])
+
+  return True, md5Hash
 
 
 def get_average_non_functional_score(contest, individual, numberOfRuns = config._CONTEST_RUNS):
